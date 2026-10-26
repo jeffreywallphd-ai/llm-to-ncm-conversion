@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "dataset": "humaneval_plus",
+  "source_url": "https://github.com/evalplus/evalplus",
+  "revision": "26d6d00bb1fd0fa37f39c99d5290da67891d1c5e",
+  "license": "Apache-2.0",
+  "setup_download_budget_bytes": 0,
+  "gold_separation": "explicit loader allowlist",
+  "splits": {
+    "test": {
+      "url": null,
+      "blocker": "EvalPlus official task and isolated execution environment required; no host Python execution"
+    }
+  },
+  "reproduction_status": "not benchmark reproduced"
+}

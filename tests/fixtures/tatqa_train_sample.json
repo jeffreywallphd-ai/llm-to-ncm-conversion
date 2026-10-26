@@ -1,0 +1,419 @@
+[
+  {
+    "table": {
+      "uid": "e78f8b29-6085-43de-b32f-be1a68641be3",
+      "table": [
+        [
+          "",
+          "2019 %",
+          "2018 %",
+          "2017 %"
+        ],
+        [
+          "Weighted average actuarial assumptions used at 31 March1:",
+          "",
+          "",
+          ""
+        ],
+        [
+          "Rate of inflation2",
+          "2.9",
+          "2.9",
+          "3.0"
+        ],
+        [
+          "Rate of increase in salaries",
+          "2.7",
+          "2.7",
+          "2.6"
+        ],
+        [
+          "Discount rate",
+          "2.3",
+          "2.5",
+          "2.6"
+        ]
+      ]
+    },
+    "paragraphs": [
+      {
+        "uid": "62be4f5a-1693-4e6b-8bb4-0a4e1e40b409",
+        "order": 1,
+        "text": "Actuarial assumptions"
+      },
+      {
+        "uid": "c63e6ed5-8fe5-46e4-a02a-f923e90e8067",
+        "order": 2,
+        "text": "The Group\u2019s scheme liabilities are measured using the projected unit credit method using the principal actuarial assumptions set out below:"
+      },
+      {
+        "uid": "b4093fd4-43ea-4b31-9975-13c0012a0b18",
+        "order": 3,
+        "text": "Notes: 1 Figures shown represent a weighted average assumption of the individual schemes."
+      },
+      {
+        "uid": "9f6ecb32-9e2c-4036-8209-8905855145c0",
+        "order": 4,
+        "text": "2 The rate of increases in pensions in payment and deferred revaluation are dependent on the rate of inflation."
+      }
+    ],
+    "questions": [
+      {
+        "uid": "9c569bea-e036-4c27-8e41-82c6efab1d31",
+        "order": 1,
+        "question": "What does the Weighted average actuarial assumptions consist of?",
+        "answer": [
+          "Rate of inflation",
+          "Rate of increase in salaries",
+          "Discount rate"
+        ],
+        "derivation": "",
+        "answer_type": "multi-span",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": ""
+      },
+      {
+        "uid": "83dcc128-9777-4ae2-ba55-50162ac43257",
+        "order": 2,
+        "question": "How much is the 2019 rate of inflation?",
+        "answer": [
+          "2.9"
+        ],
+        "derivation": "",
+        "answer_type": "span",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "percent"
+      },
+      {
+        "uid": "0384152d-1f9f-4b12-85a9-2ca5e1c97682",
+        "order": 3,
+        "question": "How much is the 2018 rate of inflation?",
+        "answer": [
+          "2.9"
+        ],
+        "derivation": "",
+        "answer_type": "span",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "percent"
+      },
+      {
+        "uid": "dbee8930-0110-41c7-95fe-0178ddf4f841",
+        "order": 4,
+        "question": "What is the 2019 average rate of inflation?",
+        "answer": 2.9,
+        "derivation": "(2.9+2.9)/2",
+        "answer_type": "arithmetic",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "percent"
+      },
+      {
+        "uid": "1665b441-93e5-481d-b0b4-2d28ce70e1a8",
+        "order": 5,
+        "question": "What is the 2019 average rate of increase in salaries?",
+        "answer": 2.7,
+        "derivation": "(2.7+2.7)/2",
+        "answer_type": "arithmetic",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "percent"
+      },
+      {
+        "uid": "2cec8a99-3a83-409b-886b-dbb65a05fb25",
+        "order": 6,
+        "question": "What is the difference between 2019 average rate of inflation and 2019 average rate of increase in salaries?",
+        "answer": 0.2,
+        "derivation": "[(2.9+2.9)/2] - [(2.7+2.7)/2]",
+        "answer_type": "arithmetic",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "percent"
+      }
+    ]
+  },
+  {
+    "table": {
+      "uid": "98c16699-d385-4631-91de-1bc3c87f9f99",
+      "table": [
+        [
+          "",
+          "Rights and licenses",
+          "Internally generated software",
+          "Software under development",
+          "Total"
+        ],
+        [
+          "Movements",
+          "$'000",
+          "$'000",
+          "$'000",
+          "$'000"
+        ],
+        [
+          "At 30 June 2019",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "Cost",
+          "13",
+          "12,961",
+          "16,284",
+          "29,259"
+        ],
+        [
+          "Accumulated amortisation",
+          "-",
+          "(5,580)",
+          "-",
+          "(5,580)"
+        ],
+        [
+          "Netbook amount",
+          "13",
+          "7,381",
+          "16,284",
+          "23,678"
+        ],
+        [
+          "30 June 2018",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "Opening net book amount at 1 July 2017",
+          "43",
+          "442",
+          "8,053",
+          "8,538"
+        ],
+        [
+          "Additions \u2013 externally acquired",
+          "13",
+          "-",
+          "5,253",
+          "5,266"
+        ],
+        [
+          "Additions \u2013 internally developed",
+          "-",
+          "-",
+          "1,256",
+          "1,256"
+        ],
+        [
+          "Amortisation",
+          "(43)",
+          "(1,746)",
+          "-",
+          "(1,789)"
+        ],
+        [
+          "Transfers",
+          "-",
+          "7,563",
+          "(7,563)",
+          "-"
+        ],
+        [
+          "Transfer between classes",
+          "-",
+          "744",
+          "-",
+          "744"
+        ],
+        [
+          "Disposals",
+          "-",
+          "(618)",
+          "(490)",
+          "(1,108)"
+        ],
+        [
+          "Closing net book amount",
+          "13",
+          "6,385",
+          "6,509",
+          "12,907"
+        ],
+        [
+          "At 30 June 2018",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "Cost",
+          "104",
+          "9,555",
+          "6,509",
+          "16,168"
+        ],
+        [
+          "Accumulated amortisation",
+          "(91)",
+          "(3,170)",
+          "-",
+          "(3,261)"
+        ],
+        [
+          "Net book amount",
+          "13",
+          "6,385",
+          "6,509",
+          "12,907"
+        ]
+      ]
+    },
+    "paragraphs": [
+      {
+        "uid": "1ef0dbdd-15d0-4577-b068-dca80af4f851",
+        "order": 1,
+        "text": "11 Intangible assets (continued)"
+      },
+      {
+        "uid": "87193521-f886-49d3-b059-f8e7f5fc7dc1",
+        "order": 2,
+        "text": "(a) Intangible assets"
+      },
+      {
+        "uid": "1ef948be-979b-4ac2-9593-67114ccef125",
+        "order": 3,
+        "text": "RIGHTS AND LICENCES"
+      },
+      {
+        "uid": "5874de4f-3b36-4659-ad37-059679ef445d",
+        "order": 4,
+        "text": "Certain licences that NEXTDC possesses have an indefinite useful life and are carried at cost less impairment losses and are subject to impairment review at least annually and whenever there is an indication that it may be impaired."
+      },
+      {
+        "uid": "faa001e2-1bc2-446b-9c2c-9d4479013962",
+        "order": 5,
+        "text": "Other licences that NEXTDC acquires are carried at cost less accumulated amortisation and accumulated impairment losses. Amortisation is recognised on a straight-line basis over the estimated useful life. The estimated useful life and amortisation method are reviewed at the end of each annual reporting period."
+      },
+      {
+        "uid": "82ad7605-6ce3-40a1-919f-a8c7b3ca36ab",
+        "order": 6,
+        "text": "INTERNALLY GENERATED SOFTWARE"
+      },
+      {
+        "uid": "ddf26912-5783-4b3b-b351-87e91b4a5f5b",
+        "order": 7,
+        "text": "Internally developed software is capitalised at cost less accumulated amortisation. Amortisation is calculated using the straight-line basis over the asset\u2019s useful economic life which is generally two to three years. Their useful lives and potential impairment are reviewed at the end of each financial year."
+      },
+      {
+        "uid": "ba5b9da5-9420-4035-ae46-6239e4548a9e",
+        "order": 8,
+        "text": "SOFTWARE UNDER DEVELOPMENT"
+      },
+      {
+        "uid": "5f491929-b2e4-4fad-909b-bb77e3a440b4",
+        "order": 9,
+        "text": "Costs incurred in developing products or systems and costs incurred in acquiring software and licenses that will contribute to future period financial benefits through revenue generation and/or cost reduction are capitalised to software and systems. Costs capitalised include external direct costs of materials and services and employee costs."
+      },
+      {
+        "uid": "5f92f6fc-fdca-4f15-bab6-bcecd521d07a",
+        "order": 10,
+        "text": "Assets in the course of construction include only those costs directly attributable to the development phase and are only recognised following completion of technical feasibility and where the Group has an intention and ability to use the asset."
+      }
+    ],
+    "questions": [
+      {
+        "uid": "dd2a72ca-f65c-4673-9820-f7cefcb06ee4",
+        "order": 1,
+        "question": "How was internally developed software capitalised?",
+        "answer": [
+          "at cost less accumulated amortisation."
+        ],
+        "derivation": "",
+        "answer_type": "span",
+        "answer_from": "text",
+        "rel_paragraphs": [
+          "7"
+        ],
+        "req_comparison": false,
+        "scale": ""
+      },
+      {
+        "uid": "f4410a2a-6ce4-484c-ba08-0261a6c74893",
+        "order": 2,
+        "question": "How much was the closing net book amount for software under development in 2019?",
+        "answer": [
+          "16,284"
+        ],
+        "derivation": "",
+        "answer_type": "span",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "thousand"
+      },
+      {
+        "uid": "b3091542-8205-4661-9a7d-4d466cdf3134",
+        "order": 3,
+        "question": "What was the total cost for 2019?",
+        "answer": [
+          "29,259"
+        ],
+        "derivation": "",
+        "answer_type": "span",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "thousand"
+      },
+      {
+        "uid": "aa051557-3b4c-497f-b14e-2c8b8b2c99ef",
+        "order": 4,
+        "question": "What was the percentage change in cost of software under development between 2018 and 2019?",
+        "answer": 150.18,
+        "derivation": "(16,284 - 6,509) / 6,509 ",
+        "answer_type": "arithmetic",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "percent"
+      },
+      {
+        "uid": "f46b8d2a-06aa-4e51-a05d-f3beb255f73c",
+        "order": 5,
+        "question": "Which year have greater total accumulated amortisation? ",
+        "answer": [
+          "2019"
+        ],
+        "derivation": "2019: (5,580) vs 2018: (3,261)",
+        "answer_type": "span",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": true,
+        "scale": ""
+      },
+      {
+        "uid": "6a462285-d663-4da7-b614-77a0dfb56a8c",
+        "order": 6,
+        "question": "What was the difference between total opening and closing net book account in 2018?",
+        "answer": 4369,
+        "derivation": "12,907 - 8,538 ",
+        "answer_type": "arithmetic",
+        "answer_from": "table",
+        "rel_paragraphs": [],
+        "req_comparison": false,
+        "scale": "thousand"
+      }
+    ]
+  }
+]

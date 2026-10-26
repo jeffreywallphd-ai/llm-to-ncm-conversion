@@ -1,0 +1,8 @@
+{
+  "experiment_id": "SHR-001",
+  "executor": "fixture",
+  "profile": "cpu",
+  "seed": 0,
+  "result_origin": "test_fixture",
+  "precision": "float32"
+}

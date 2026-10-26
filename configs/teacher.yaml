@@ -1,0 +1,18 @@
+{
+  "experiment_id": "SHR-001",
+  "executor": "teacher",
+  "profile": "spark",
+  "device": "cuda",
+  "precision": "bfloat16",
+  "result_origin": "measured",
+  "prompts_path": "data/processed/oasst1_train_prompts.jsonl",
+  "max_new_tokens": 128,
+  "model": {
+    "target_id": "Qwen/Qwen3-8B",
+    "target_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "tokenizer_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "draft_id": "z-lab/Qwen3-8B-DFlash-b16",
+    "draft_revision": "9b41424b7109f9c5413454f481b09a82b85333f4",
+    "thinking": false
+  }
+}

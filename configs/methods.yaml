@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "methods": {
+    "AR": {
+      "description": "ordinary autoregressive target",
+      "adaptation": false
+    },
+    "FLAT_RELEASED": {
+      "description": "locked released five-layer DFlash, 15 future proposals plus anchor",
+      "adaptation": false
+    },
+    "FLAT_ADAPTED": {
+      "schedule": [
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "skip": false,
+      "adaptation": true
+    },
+    "HIER_SKIP": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true
+    },
+    "HIER_NO_SKIP": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": false,
+      "adaptation": true
+    },
+    "FLAT_COST": {
+      "description": "select active flat depth/cost tolerance on development profiling",
+      "selection_status": "pending"
+    },
+    "STRONG_EXTERNAL": {
+      "model_id": "ernie-research/DCore-DFlash-Qwen3-8B-Budget16",
+      "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
+      "backend": "DCore pinned SGLang; parity unverified"
+    }
+  }
+}

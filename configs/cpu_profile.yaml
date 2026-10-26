@@ -1,0 +1,18 @@
+{
+  "experiment_id": "ACL-001",
+  "executor": "profile",
+  "profile": "cpu",
+  "seed": 0,
+  "device": "cpu",
+  "result_origin": "test_fixture",
+  "concurrency": [
+    1,
+    4
+  ],
+  "prefix_lengths": [
+    8,
+    32
+  ],
+  "repetitions": 3,
+  "precision": "float32"
+}

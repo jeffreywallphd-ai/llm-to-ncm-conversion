@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "dataset": "ifeval",
+  "source_url": "https://github.com/google-research/google-research/tree/master/instruction_following_eval",
+  "revision": null,
+  "license": "Apache-2.0",
+  "setup_download_budget_bytes": 0,
+  "gold_separation": "explicit loader allowlist",
+  "splits": {
+    "test": {
+      "url": null,
+      "blocker": "pin official evaluator and data file revision before acquisition; no approximate compliance scorer"
+    }
+  },
+  "reproduction_status": "not benchmark reproduced"
+}

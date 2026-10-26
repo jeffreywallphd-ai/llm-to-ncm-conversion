@@ -1,0 +1,11 @@
+{
+  "profile": "spark",
+  "devices": 1,
+  "architecture": "aarch64",
+  "precision": "bfloat16",
+  "usable_memory_bytes": null,
+  "compatibility": "detect with doctor; GPU parity and throughput not validated",
+  "remote_resources_required": false,
+  "unified_memory": "detect, never sum host and GPU totals",
+  "precision_must_be_probed": true
+}

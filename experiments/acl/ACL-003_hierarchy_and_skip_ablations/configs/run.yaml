@@ -1,0 +1,32 @@
+{
+  "experiment_id": "ACL-003",
+  "executor": "train",
+  "profile": "spark",
+  "device": "cuda",
+  "precision": "bfloat16",
+  "result_origin": "measured",
+  "model": {
+    "target_id": "Qwen/Qwen3-8B",
+    "target_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "tokenizer_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "draft_id": "z-lab/Qwen3-8B-DFlash-b16",
+    "draft_revision": "9b41424b7109f9c5413454f481b09a82b85333f4",
+    "thinking": false,
+    "scope": "hierarchical speculative drafting; unchanged AR target; not native NCM"
+  },
+  "method": "HIER_SKIP",
+  "schedule": [
+    4,
+    4,
+    8,
+    15,
+    15
+  ],
+  "skip": true,
+  "seed": 0,
+  "require_gpu_parity": false,
+  "required_files": [
+    "results/generated/real_model_readiness.json"
+  ],
+  "training_data": "data/processed/oasst1_train_teacher.jsonl"
+}

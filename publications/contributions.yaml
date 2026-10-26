@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "human_assignments": [],
+  "authorship": "pending actual team decisions; no automatic assignment",
+  "ai_assistance": [{"date": "2026-10-25", "tool": "Codex", "scope": "repository implementation, source audit, CPU correctness tests and documentation", "human_verification": "pending"}],
+  "experiment_owner_and_independent_reviewer": "unassigned in every protocol; actual team must fill"
+}

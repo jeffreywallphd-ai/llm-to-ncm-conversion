@@ -1,0 +1,76 @@
+{
+  "id": "IS-003",
+  "slug": "workpapers_and_validation",
+  "directory": "experiments/is_journal/IS-003_workpapers_and_validation",
+  "study": "is_journal",
+  "schema_version": 1,
+  "question": "Do output contracts, checking, and one repair improve auditable workpapers?",
+  "hypothesis": "Checks/repair improve correct returned coverage net of introduced errors and latency; no gain or harmful repairs disconfirm benefit.",
+  "methods": [
+    "AR",
+    "FLAT_RELEASED",
+    "HIER_SKIP"
+  ],
+  "datasets": [
+    "finqa",
+    "tatqa",
+    "docfinqa"
+  ],
+  "primary_metrics": [
+    "fully_correct_workpapers",
+    "coverage",
+    "repair_errors",
+    "request_seconds"
+  ],
+  "dependencies": [
+    "IS-002"
+  ],
+  "seeds": [
+    0
+  ],
+  "timing_repetitions": 5,
+  "owner": null,
+  "independent_reviewer": null,
+  "selection": "Lock architecture, checkpoint, prompts, and cost tolerance using development data only; never test outcomes.",
+  "stopping": "Stop at first finite step, time, source-token, supervised-position, storage or aggregate phase cap. Preserve failures.",
+  "grouping_unit": "report/context for financial records; message_tree_id for OASST; original task IDs otherwise",
+  "splits": "official train/dev/test retained; full declared test for headline results; smoke subsets labeled",
+  "uncertainty": "paired report/tree-group bootstrap per training seed; timing repetitions separately recorded",
+  "result_status": "Not run; no empirical findings yet",
+  "implementation_status": "CPU reference and protocol implemented; real-model/optimized runs gated",
+  "controls": {
+    "thinking": false,
+    "target_unchanged": true,
+    "native_ncm": false,
+    "sample_from_anchor": false,
+    "proposal_horizon": 15,
+    "prefix_cutoff": "strictly before each anchor",
+    "same_templates_precision_stop_policy": true,
+    "eos_not_suppressed": true
+  },
+  "exclusions": [
+    "test_fixture results",
+    "failed parity configurations",
+    "unsupported sandbox/engine",
+    "missing gold/evaluator"
+  ],
+  "additional_training_match": "same warm start, data, source-token exposure, anchor sampling and valid-token CE for paired controls",
+  "claim_ids": [
+    "IS-003-C1"
+  ],
+  "factorial_controls": {
+    "bundle_sizes": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "validation": [
+      "contract",
+      "checks",
+      "checks_one_repair"
+    ],
+    "cache_policy": "explicitly match per-request/joint workpaper prefix reuse",
+    "gold_visible_to_validator": false
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "claims": [
+    {
+      "id": "ACL-001-C1",
+      "claim": "Cycle time / expected committed tokens improves on the best matched flat development control; no runtime opportunity and no quality benefit stops escalation.",
+      "experiment_ids": [
+        "ACL-001"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    },
+    {
+      "id": "ACL-002-C1",
+      "claim": "Matched trained comparisons improve complete-request latency with parity; slower or inconclusive results are retained.",
+      "experiment_ids": [
+        "ACL-002"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    },
+    {
+      "id": "ACL-003-C1",
+      "claim": "Predeclared paired contrasts isolate useful contributions; a flat/cost-matched win or null contrast limits the mechanism claim.",
+      "experiment_ids": [
+        "ACL-003"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    },
+    {
+      "id": "ACL-004-C1",
+      "claim": "A bounded replication across lengths/load/compatible target sizes retains the effect; missing hardware limits the claim.",
+      "experiment_ids": [
+        "ACL-004"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    }
+  ]
+}

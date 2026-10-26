@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "claims": [
+    {
+      "id": "IS-001-C1",
+      "claim": "Verified decoding preserves original target outputs; throughput can change while intrinsic answer accuracy remains equal.",
+      "experiment_ids": [
+        "IS-001"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    },
+    {
+      "id": "IS-002-C1",
+      "claim": "A table-preserving condition improves evidence/answer outcomes within cost constraints; citation validity alone cannot establish support.",
+      "experiment_ids": [
+        "IS-002"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    },
+    {
+      "id": "IS-003-C1",
+      "claim": "Checks/repair improve correct returned coverage net of introduced errors and latency; no gain or harmful repairs disconfirm benefit.",
+      "experiment_ids": [
+        "IS-003"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    },
+    {
+      "id": "IS-004-C1",
+      "claim": "Pre-generation routing improves correct completions per elapsed hour against the best development-selected fixed method; test hindsight is an unavailable oracle.",
+      "experiment_ids": [
+        "IS-004"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "uncertainty": "unmeasured",
+      "evidence_class": "unsupported",
+      "new_vs_shared": "new study evidence required"
+    }
+  ]
+}

@@ -1,0 +1,602 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-25",
+  "assets": [
+    {
+      "id": "target:LICENSE",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "LICENSE",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/LICENSE",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/LICENSE",
+      "size_bytes": 11343,
+      "sha256": null,
+      "git_blob_sha1": "6634c8cc3133b3848ec74b9f275acaaa1ea618ab",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:README.md",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "README.md",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/README.md",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/README.md",
+      "size_bytes": 16660,
+      "sha256": null,
+      "git_blob_sha1": "ecc3ebd0849aa08d9484bd911dddfd5261b10d30",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:config.json",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "config.json",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/config.json",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/config.json",
+      "size_bytes": 728,
+      "sha256": null,
+      "git_blob_sha1": "d46195ac87f837ad233d02b2f80f148bf7c005e0",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:generation_config.json",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "generation_config.json",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/generation_config.json",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/generation_config.json",
+      "size_bytes": 239,
+      "sha256": null,
+      "git_blob_sha1": "20a8a9156fc8c3f25295ca067f61fdf120d517c5",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:merges.txt",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "merges.txt",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/merges.txt",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/merges.txt",
+      "size_bytes": 1671853,
+      "sha256": null,
+      "git_blob_sha1": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:model-00001-of-00005.safetensors",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "model-00001-of-00005.safetensors",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/model-00001-of-00005.safetensors",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/model-00001-of-00005.safetensors",
+      "size_bytes": 3996250744,
+      "sha256": "31d6a825ae35f11fb85b195b4c42c146c051e446433125a215336abdf95cbf5f",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:model-00002-of-00005.safetensors",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "model-00002-of-00005.safetensors",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/model-00002-of-00005.safetensors",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/model-00002-of-00005.safetensors",
+      "size_bytes": 3993160032,
+      "sha256": "5991236cea6fe21f3d43cab0f0e84448734fbbe0789816202989f2ddc9d18282",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:model-00003-of-00005.safetensors",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "model-00003-of-00005.safetensors",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/model-00003-of-00005.safetensors",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/model-00003-of-00005.safetensors",
+      "size_bytes": 3959604768,
+      "sha256": "c5185c4794be2d8a9784d5753c9922db38df478ce11f9ed0b415b7304d896836",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:model-00004-of-00005.safetensors",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "model-00004-of-00005.safetensors",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/model-00004-of-00005.safetensors",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/model-00004-of-00005.safetensors",
+      "size_bytes": 3187841392,
+      "sha256": "b5ee7de71fbf17db3d5704e0c8f2bc7d005ca9e1d7ca2aeb19827b0cfcaa917a",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:model-00005-of-00005.safetensors",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "model-00005-of-00005.safetensors",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/model-00005-of-00005.safetensors",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/model-00005-of-00005.safetensors",
+      "size_bytes": 1244659840,
+      "sha256": "20c2d6366ab85c90786ccdd829cd2b9e7d30ef3b2ebbb998280e7e4014b542ff",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:model.safetensors.index.json",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "model.safetensors.index.json",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/model.safetensors.index.json",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/model.safetensors.index.json",
+      "size_bytes": 32878,
+      "sha256": null,
+      "git_blob_sha1": "2b85c00f1b118961cd7a477e2bba0fe197a4ce1a",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:tokenizer.json",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "tokenizer.json",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/tokenizer.json",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/tokenizer.json",
+      "size_bytes": 11422654,
+      "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:tokenizer_config.json",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "tokenizer_config.json",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/tokenizer_config.json",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/tokenizer_config.json",
+      "size_bytes": 9732,
+      "sha256": null,
+      "git_blob_sha1": "417d038a63fa3de29cfde265caedae14d1a58d92",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "target:vocab.json",
+      "role": "target",
+      "repo_id": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "filename": "vocab.json",
+      "split": null,
+      "path": "target/b968826d9c46dd6066d109eabc6255188de91218/vocab.json",
+      "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/vocab.json",
+      "size_bytes": 2776833,
+      "sha256": null,
+      "git_blob_sha1": "4783fe10ac3adce15ac8f358ef5462739852c569",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "draft:README.md",
+      "role": "draft",
+      "repo_id": "z-lab/Qwen3-8B-DFlash-b16",
+      "revision": "9b41424b7109f9c5413454f481b09a82b85333f4",
+      "filename": "README.md",
+      "split": null,
+      "path": "draft/9b41424b7109f9c5413454f481b09a82b85333f4/README.md",
+      "url": "https://huggingface.co/z-lab/Qwen3-8B-DFlash-b16/resolve/9b41424b7109f9c5413454f481b09a82b85333f4/README.md",
+      "size_bytes": 5449,
+      "sha256": null,
+      "git_blob_sha1": "fe6e9a0f5e6fb85e66f75d01183f7de81a0f70c2",
+      "groups": [
+        "pilot"
+      ],
+      "license": "mit"
+    },
+    {
+      "id": "draft:config.json",
+      "role": "draft",
+      "repo_id": "z-lab/Qwen3-8B-DFlash-b16",
+      "revision": "9b41424b7109f9c5413454f481b09a82b85333f4",
+      "filename": "config.json",
+      "split": null,
+      "path": "draft/9b41424b7109f9c5413454f481b09a82b85333f4/config.json",
+      "url": "https://huggingface.co/z-lab/Qwen3-8B-DFlash-b16/resolve/9b41424b7109f9c5413454f481b09a82b85333f4/config.json",
+      "size_bytes": 1099,
+      "sha256": null,
+      "git_blob_sha1": "15e54c3c5f3f81c90c2a6954cb0858400bb11e61",
+      "groups": [
+        "pilot"
+      ],
+      "license": "mit"
+    },
+    {
+      "id": "draft:model.safetensors",
+      "role": "draft",
+      "repo_id": "z-lab/Qwen3-8B-DFlash-b16",
+      "revision": "9b41424b7109f9c5413454f481b09a82b85333f4",
+      "filename": "model.safetensors",
+      "split": null,
+      "path": "draft/9b41424b7109f9c5413454f481b09a82b85333f4/model.safetensors",
+      "url": "https://huggingface.co/z-lab/Qwen3-8B-DFlash-b16/resolve/9b41424b7109f9c5413454f481b09a82b85333f4/model.safetensors",
+      "size_bytes": 2097259104,
+      "sha256": "c702878094f38ad5843e6ac40b327720b3147ffbf669a5d9ca1974865ca6c080",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "mit"
+    },
+    {
+      "id": "oasst1:LICENSE",
+      "role": "oasst1",
+      "repo_id": "OpenAssistant/oasst1",
+      "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
+      "filename": "LICENSE",
+      "split": null,
+      "path": "oasst1/fdf72ae0827c1cda404aff25b6603abec9e3399b/LICENSE",
+      "url": "https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/fdf72ae0827c1cda404aff25b6603abec9e3399b/LICENSE",
+      "size_bytes": 11357,
+      "sha256": null,
+      "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "oasst1:README.md",
+      "role": "oasst1",
+      "repo_id": "OpenAssistant/oasst1",
+      "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
+      "filename": "README.md",
+      "split": null,
+      "path": "oasst1/fdf72ae0827c1cda404aff25b6603abec9e3399b/README.md",
+      "url": "https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/fdf72ae0827c1cda404aff25b6603abec9e3399b/README.md",
+      "size_bytes": 10168,
+      "sha256": null,
+      "git_blob_sha1": "7973fcd39f6489029d0b5e7409f0ed9e6cee468a",
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "oasst1:data/train-00000-of-00001-b42a775f407cee45.parquet",
+      "role": "oasst1",
+      "repo_id": "OpenAssistant/oasst1",
+      "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
+      "filename": "data/train-00000-of-00001-b42a775f407cee45.parquet",
+      "split": "train",
+      "path": "oasst1/fdf72ae0827c1cda404aff25b6603abec9e3399b/data/train-00000-of-00001-b42a775f407cee45.parquet",
+      "url": "https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/fdf72ae0827c1cda404aff25b6603abec9e3399b/data/train-00000-of-00001-b42a775f407cee45.parquet",
+      "size_bytes": 39516251,
+      "sha256": "bbfadf5ed1278ba2208c837fdcad865adf65f5df55d80abadab2745db13fcb5e",
+      "git_blob_sha1": null,
+      "groups": [
+        "pilot"
+      ],
+      "license": "apache-2.0"
+    },
+    {
+      "id": "docfinqa:README.md",
+      "role": "docfinqa",
+      "repo_id": "kensho/DocFinQA",
+      "revision": "64ebaff62f692495bcc182f45cf9a9606251b19b",
+      "filename": "README.md",
+      "split": null,
+      "path": "docfinqa/64ebaff62f692495bcc182f45cf9a9606251b19b/README.md",
+      "url": "https://huggingface.co/datasets/kensho/DocFinQA/resolve/64ebaff62f692495bcc182f45cf9a9606251b19b/README.md",
+      "size_bytes": 24,
+      "sha256": null,
+      "git_blob_sha1": "7be5fc7f47d5db027d120b8024982df93db95b74",
+      "groups": [
+        "financial-notices"
+      ],
+      "license": "mit"
+    },
+    {
+      "id": "docfinqa:dev.json",
+      "role": "docfinqa",
+      "repo_id": "kensho/DocFinQA",
+      "revision": "64ebaff62f692495bcc182f45cf9a9606251b19b",
+      "filename": "dev.json",
+      "split": "dev",
+      "path": "docfinqa/64ebaff62f692495bcc182f45cf9a9606251b19b/dev.json",
+      "url": "https://huggingface.co/datasets/kensho/DocFinQA/resolve/64ebaff62f692495bcc182f45cf9a9606251b19b/dev.json",
+      "size_bytes": 496285887,
+      "sha256": "f8b69c455c6772320caf42544eaf802fbabdc716fecd12c938356fbe0635deb9",
+      "git_blob_sha1": null,
+      "groups": [
+        "docfinqa-dev"
+      ],
+      "license": "mit"
+    },
+    {
+      "id": "docfinqa:test.json",
+      "role": "docfinqa",
+      "repo_id": "kensho/DocFinQA",
+      "revision": "64ebaff62f692495bcc182f45cf9a9606251b19b",
+      "filename": "test.json",
+      "split": "test",
+      "path": "docfinqa/64ebaff62f692495bcc182f45cf9a9606251b19b/test.json",
+      "url": "https://huggingface.co/datasets/kensho/DocFinQA/resolve/64ebaff62f692495bcc182f45cf9a9606251b19b/test.json",
+      "size_bytes": 581393499,
+      "sha256": "0ebf95ccc719e72f45333e256928c90e8fa7a9a81f226dcb38ad7b3a48a3ff42",
+      "git_blob_sha1": null,
+      "groups": [
+        "docfinqa-test"
+      ],
+      "license": "mit"
+    },
+    {
+      "id": "docfinqa:train.json",
+      "role": "docfinqa",
+      "repo_id": "kensho/DocFinQA",
+      "revision": "64ebaff62f692495bcc182f45cf9a9606251b19b",
+      "filename": "train.json",
+      "split": "train",
+      "path": "docfinqa/64ebaff62f692495bcc182f45cf9a9606251b19b/train.json",
+      "url": "https://huggingface.co/datasets/kensho/DocFinQA/resolve/64ebaff62f692495bcc182f45cf9a9606251b19b/train.json",
+      "size_bytes": 3624998065,
+      "sha256": "ab59345df17638ebd59402adeab07b0768563a670cfb3538aea97cfdefb93f31",
+      "git_blob_sha1": null,
+      "groups": [
+        "docfinqa-train"
+      ],
+      "license": "mit"
+    },
+    {
+      "id": "gsm8k:train",
+      "role": "gsm8k",
+      "repo_id": "openai/grade-school-math",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "filename": "train.jsonl",
+      "split": "train",
+      "path": "gsm8k/3101c7d5072418e28b9008a6636bde82a006892c/train.jsonl",
+      "url": "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/grade_school_math/data/train.jsonl",
+      "size_bytes": 4166206,
+      "sha256": null,
+      "git_blob_sha1": "7d97154b91aef28d01c3301741c81ce90039a4b1",
+      "groups": [
+        "pilot"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "gsm8k:test",
+      "role": "gsm8k",
+      "repo_id": "openai/grade-school-math",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "filename": "test.jsonl",
+      "split": "test",
+      "path": "gsm8k/3101c7d5072418e28b9008a6636bde82a006892c/test.jsonl",
+      "url": "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/grade_school_math/data/test.jsonl",
+      "size_bytes": 749738,
+      "sha256": null,
+      "git_blob_sha1": "e4c2ff4942b9a78bd74f04141224c11e28d12dc9",
+      "groups": [
+        "gsm8k-test"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "gsm8k:notice",
+      "role": "gsm8k",
+      "repo_id": "openai/grade-school-math",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "filename": "LICENSE",
+      "split": "notice",
+      "path": "gsm8k/3101c7d5072418e28b9008a6636bde82a006892c/LICENSE",
+      "url": "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/LICENSE",
+      "size_bytes": 1062,
+      "sha256": null,
+      "git_blob_sha1": "9e84fcbc4d81a1f433c90caf9f1cef373c12edae",
+      "groups": [
+        "pilot"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "finqa:train",
+      "role": "finqa",
+      "repo_id": "czyssrs/FinQA",
+      "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+      "filename": "train.json",
+      "split": "train",
+      "path": "finqa/0f16e2867befa6840783e58be38c9efb9229d742/train.json",
+      "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/train.json",
+      "size_bytes": 78216616,
+      "sha256": null,
+      "git_blob_sha1": "a6c2c5a60f9abe3fba5a793cc4d9e1dee2e09209",
+      "groups": [
+        "finqa-train"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "finqa:dev",
+      "role": "finqa",
+      "repo_id": "czyssrs/FinQA",
+      "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+      "filename": "dev.json",
+      "split": "dev",
+      "path": "finqa/0f16e2867befa6840783e58be38c9efb9229d742/dev.json",
+      "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/dev.json",
+      "size_bytes": 10954658,
+      "sha256": null,
+      "git_blob_sha1": "970f239f591c782b17df420c0d343b780737f3da",
+      "groups": [
+        "finqa-dev"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "finqa:test",
+      "role": "finqa",
+      "repo_id": "czyssrs/FinQA",
+      "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+      "filename": "test.json",
+      "split": "test",
+      "path": "finqa/0f16e2867befa6840783e58be38c9efb9229d742/test.json",
+      "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/test.json",
+      "size_bytes": 14395143,
+      "sha256": null,
+      "git_blob_sha1": "59958c7c3bb3b21f4dff6bc912a0fe0ae710aee0",
+      "groups": [
+        "finqa-test"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "finqa:notice",
+      "role": "finqa",
+      "repo_id": "czyssrs/FinQA",
+      "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+      "filename": "LICENSE",
+      "split": "notice",
+      "path": "finqa/0f16e2867befa6840783e58be38c9efb9229d742/LICENSE",
+      "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/LICENSE",
+      "size_bytes": 1067,
+      "sha256": null,
+      "git_blob_sha1": "fb3b513238ba5ec7e0799cb1190ff30c759a5bdf",
+      "groups": [
+        "financial-notices"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "tatqa:train",
+      "role": "tatqa",
+      "repo_id": "NExTplusplus/TAT-QA",
+      "revision": "870accc41953dcde885aabeb963d94aabdc0fbc3",
+      "filename": "tatqa_dataset_train.json",
+      "split": "train",
+      "path": "tatqa/870accc41953dcde885aabeb963d94aabdc0fbc3/tatqa_dataset_train.json",
+      "url": "https://raw.githubusercontent.com/NExTplusplus/TAT-QA/870accc41953dcde885aabeb963d94aabdc0fbc3/dataset_raw/tatqa_dataset_train.json",
+      "size_bytes": 12845647,
+      "sha256": null,
+      "git_blob_sha1": "ec6a61be61ea7bb92c3278877e46e8488cc5203c",
+      "groups": [
+        "tatqa-train"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "tatqa:dev",
+      "role": "tatqa",
+      "repo_id": "NExTplusplus/TAT-QA",
+      "revision": "870accc41953dcde885aabeb963d94aabdc0fbc3",
+      "filename": "tatqa_dataset_dev.json",
+      "split": "dev",
+      "path": "tatqa/870accc41953dcde885aabeb963d94aabdc0fbc3/tatqa_dataset_dev.json",
+      "url": "https://raw.githubusercontent.com/NExTplusplus/TAT-QA/870accc41953dcde885aabeb963d94aabdc0fbc3/dataset_raw/tatqa_dataset_dev.json",
+      "size_bytes": 1637431,
+      "sha256": null,
+      "git_blob_sha1": "48075c812af3fe6698b1d5cb50d9dbf358d52784",
+      "groups": [
+        "tatqa-dev"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "tatqa:test",
+      "role": "tatqa",
+      "repo_id": "NExTplusplus/TAT-QA",
+      "revision": "870accc41953dcde885aabeb963d94aabdc0fbc3",
+      "filename": "tatqa_dataset_test_gold.json",
+      "split": "test",
+      "path": "tatqa/870accc41953dcde885aabeb963d94aabdc0fbc3/tatqa_dataset_test_gold.json",
+      "url": "https://raw.githubusercontent.com/NExTplusplus/TAT-QA/870accc41953dcde885aabeb963d94aabdc0fbc3/dataset_raw/tatqa_dataset_test_gold.json",
+      "size_bytes": 2167546,
+      "sha256": null,
+      "git_blob_sha1": "3d5d3b691af572646ba9b1ac4d8f78c5dca09732",
+      "groups": [
+        "tatqa-test"
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "tatqa:notice",
+      "role": "tatqa",
+      "repo_id": "NExTplusplus/TAT-QA",
+      "revision": "870accc41953dcde885aabeb963d94aabdc0fbc3",
+      "filename": "LICENSE",
+      "split": "notice",
+      "path": "tatqa/870accc41953dcde885aabeb963d94aabdc0fbc3/LICENSE",
+      "url": "https://raw.githubusercontent.com/NExTplusplus/TAT-QA/870accc41953dcde885aabeb963d94aabdc0fbc3/LICENSE",
+      "size_bytes": 1068,
+      "sha256": null,
+      "git_blob_sha1": "7855a66ee0e672eda63b018d8b0d37f848b4015a",
+      "groups": [
+        "financial-notices"
+      ],
+      "license": "MIT"
+    }
+  ],
+  "notes": "Pinned file hashes/sizes; safetensors only; test payloads excluded from pilot preparation."
+}

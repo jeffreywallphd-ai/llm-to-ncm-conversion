@@ -1,0 +1,9 @@
+{
+  "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "pooling": "attention-mask-weighted mean, L2-normalized",
+  "max_tokens": 256,
+  "oversized_policy": "reject; rechunk explicitly",
+  "local_files_only": true,
+  "status": "cached encoder inspected; no benchmark retrieval findings"
+}

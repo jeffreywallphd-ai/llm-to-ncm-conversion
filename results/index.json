@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "experiments": [
+    {
+      "experiment_id": "ACL-001",
+      "summary": "results/generated/ACL-001.json"
+    },
+    {
+      "experiment_id": "SHR-001",
+      "summary": "results/generated/SHR-001.json"
+    }
+  ]
+}

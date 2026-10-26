@@ -1,0 +1,9 @@
+# Install only in a separately verified existing CUDA PyTorch environment.
+# This file intentionally does not select or replace torch / CUDA / driver packages.
+transformers==5.15.0
+PyYAML==6.0.3
+numpy==2.4.1
+scipy==1.17.0
+pandas==3.0.0
+sympy==1.14.0
+tqdm==4.70.0

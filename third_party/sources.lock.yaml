@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-25",
+  "sources": {
+    "dflash": {
+      "url": "https://github.com/z-lab/dflash",
+      "revision": "07ebd93db9f472af339b644bb70221ad8428328a",
+      "files": {
+        "LICENSE": "6fd2aebd899c0b48ea9abb845aef043c6dadff00a6726a10a1bc32db528a5422",
+        "README.md": "e39074de245d5893f1812b18755fd3a232fedeb38ed2608d9dfd0b5b4db8780b",
+        "pyproject.toml": "639e088fcc98a1ecc45e45dc53282d0ee4af8a1c29847ff6c059bcde4b537ef3",
+        "dflash/model.py": "f55b7fe0a4c0b3073e0f9cdce547cce29f4b8e2168c4d2818760007c43b7651e",
+        "dflash/model_mlx.py": "2f8598eaca4cb814e63ea69e791c1bdf55ba82280bfd299f9141906356b7cb87"
+      }
+    },
+    "dcore": {
+      "url": "https://github.com/ernie-research/DCore",
+      "revision": "ae8f2456ec6988c3fe9a5aaf4dccaf5ac6a2d4b3",
+      "files": {
+        "LICENSE": "fe51fb05fcbebfd99aaed0daf5baca964ae29dcd03257730b157025c5121a0e1",
+        "README.md": "440b190778d395dbff6b57175c7b56ef168847517a6f5223c136ef44774bdf79",
+        "pyproject.toml": "78bbd719e756591cd888c30d67d4e81c63fdec52d2289665b59f0425afa22213",
+        "configs/qwen3-4b-dflash-bs8.json": "e89edf3e63ce46a5903d96e30c2141954b82573b947bd3a6a8bb7c8a1850e590",
+        "configs/qwen3-4b-dflash.json": "d5d47debc7ed684d828988cb4d392bcdb7895a29105ffdefc093b565e496738d",
+        "configs/qwen3-8b-dflash-1layer-bs8.json": "4f19016aca70b2ca646e1cb5276945fd87e0c64eb9a590e0b66d3c75c0e81026",
+        "configs/qwen3-8b-dflash-3layer-bs16.json": "1da7a404dad6aef779492cf5eba616a1c1f61bc8095f8569e8404141ac409f06",
+        "configs/qwen3-8b-dflash-7layer.json": "5acc1950c8775611e34fdc58e26aff1db5b6310ebc26a87d8467b75971d4c417",
+        "configs/qwen3-8b-dflash-bs15.json": "5fb4418bf2dde2e8c0adc42ad4bd66d2848a5aa85c566147ff24fd16972af5c3",
+        "configs/qwen3-8b-dflash-bs7.json": "b8f4c3745b3e4992106aa8998a1ec4c87907ee073f7fbbcac1d9c22d75a4040d",
+        "configs/qwen3-8b-dflash-bs8.json": "66be6b00b95c655862b701e13c079bbf383bfa340270d7bff1a77d38d9bf6189",
+        "configs/qwen3-8b-dflash.json": "3fb10e9ca4b13f8991811bb98061fdd461413f50e284e11d35498684dc906fd5",
+        "specforge/core/dflash.py": "b0ef30674f3e234cfef10451c4a86825d3833ce55bbb60908afc5e79a30f6062",
+        "examples/colocated/qwen3_8b/dflash/5l_bs16_5hs_ce_exp.sh": "9127743bfd2a422426b0325fbc5b174a5f22d28f9d72c5ac5c2a587fa9efb4d7",
+        "tests/test_utils/test_dflash_losses.py": "7c6bd3d56f36ac650043b78c35242d9f0c533ccc52f27467cf11b8fe20080e8f",
+        "tests/test_utils/test_dflash_mask.py": "4aded310eac6b032ab66c5f72aea28dc09616d9e376194d720142ed340f0f986",
+        "specforge/modeling/draft/dflash.py": "01060e0cf01165689b14c5077429fab00a58b45d22f07100efce851bd59e7eac"
+      }
+    },
+    "ncm": {
+      "url": "https://github.com/HazyResearch/ncm",
+      "revision": "c70274273f489abc73832b2b98584a8483b6b203",
+      "files": {
+        "LICENSE": "2b379bec6e8f7f362eef851d10a2afc4171b0e96a3525d50350e2cf783f2c441",
+        "README.md": "45d8951cc4d5146bbae2a930c3b133bfb91756aded6e759bb42f71dd74708aa9"
+      }
+    },
+    "longspark": {
+      "url": "https://github.com/Hao-Yuan-He/LongSpark",
+      "revision": "9ab6526e481bbea67489f3a73ebc782218d56f71",
+      "files": {
+        "LICENSE": "76d60faa6b1e2de1d16c7c1c2ec3f9192077527f8da3780981726860790f7a13",
+        "README.md": "ced43e3f9c8e0e3a5b1f3c21997d2c45eb10389a179a1a5029d408849e7ea888",
+        "pyproject.toml": "85f18854c6be7e15203b298bce7c8e17ff5fc93fb12a0368eb880fa67bbed12a"
+      }
+    },
+    "finqa": {
+      "url": "https://github.com/czyssrs/FinQA",
+      "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+      "files": {
+        "LICENSE": "92c0e67bd762c15c07ba60de09558338315a8ebf99aac4f51f487179809ac087",
+        "README.md": "eb86779cfed6f0a253913761d8e4fabe032a29d9fcf2944e56c23bf007064605",
+        "code/evaluate/evaluate.py": "845cd131cab843eceff256cf6d392978cc470a7da4a80107beb56027fdca5c13",
+        "dataset/train.json": {
+          "error": "metadata audit byte budget exceeded"
+        }
+      }
+    },
+    "tatqa": {
+      "url": "https://github.com/NExTplusplus/TAT-QA",
+      "revision": "870accc41953dcde885aabeb963d94aabdc0fbc3",
+      "files": {
+        "LICENSE": "46e27ffbc49c3fd44a9595c2213f8a5f4319a81b53238e49ce1eec39e7e25662",
+        "README.md": "85c398173d771a2531abea5b81f3696914296642da2af78c2c34545715c14d5f",
+        "tatqa_metric.py": "2aeeac479f89f8c76300af1cc0e8d098eb86af84bc386b38b6ab4af484a6dea8",
+        "tatqa_utils.py": "a84bb2f960737cf0a53733637a674cc4b20ef030a2be6a4b21dc2c4356f415ec"
+      }
+    },
+    "gsm8k": {
+      "url": "https://github.com/openai/grade-school-math",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "files": {
+        "LICENSE": "86bbb73e855821d7c401912fd4bf82e34313e6e3b6fd6f909f2b6cc9e209a53b",
+        "README.md": "27e1676d572f2289210170ff6dbb8c2ef7d9f6950c0f08c978ea8ee6b39dca29"
+      }
+    },
+    "evalplus": {
+      "url": "https://github.com/evalplus/evalplus",
+      "revision": "26d6d00bb1fd0fa37f39c99d5290da67891d1c5e",
+      "files": {
+        "LICENSE": "fcc1f77fe5443b21bfc4dfcc3d66f7654f599b91582df771850e5e876986a103",
+        "README.md": "667f3f937cf8dfa67dd6624c24c22cb0e938c9b31179cf2e40457d2708ff2260",
+        "pyproject.toml": "39083b726dc4b931974c3defb886352a23b1c1a887e36fdb025d138a2cf1ee81"
+      }
+    },
+    "longbench": {
+      "url": "https://github.com/THUDM/LongBench",
+      "revision": "2e00731f8d0bff23dc4325161044d0ed8af94c1e",
+      "files": {
+        "LICENSE": "bf7f05f274d65931bdf14f060b6855f1c359b8424eb74fd3091d25de89d700c3",
+        "README.md": "7de8f5cec86e49b9a0f3f90bf112e797903bcf93bd458d78c854fec532b08ef1"
+      }
+    },
+    "target": {
+      "url": "https://huggingface.co/Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "files": {
+        "config.json": "f7c4eadfbbf522470667b797a3c89be2524832d2d599797248dc304fff447c30",
+        "README.md": "0f36caaff9c2516411a7738db384606263ba653c1e63e61d72f511606164d5a6"
+      }
+    },
+    "drafter": {
+      "url": "https://huggingface.co/z-lab/Qwen3-8B-DFlash-b16",
+      "revision": "9b41424b7109f9c5413454f481b09a82b85333f4",
+      "files": {
+        "config.json": "9834d608c9ca53d5548b415471ae9e8ebc9aab6cedfc2a7af95b6bd097373102",
+        "README.md": "5aae3cb1633e80fea3578f7330776320409313a6aeb6d922750d833fc89aa647"
+      }
+    },
+    "dcore_drafter": {
+      "url": "https://huggingface.co/ernie-research/DCore-DFlash-Qwen3-8B-Budget16",
+      "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
+      "files": {
+        "config.json": "211aaca6a6ca15ccc4136d2533cd859ff010fe909212b92a13798702e2829e97",
+        "README.md": "23c73719368da846a85eb5cc33f0fd77028c1895c2c7aec9b1cc54b530965c69"
+      }
+    },
+    "oasst1": {
+      "url": "https://huggingface.co/datasets/OpenAssistant/oasst1",
+      "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
+      "files": {
+        "config.json": {
+          "error": "HTTP Error 404: Not Found"
+        },
+        "README.md": "68483ac2fcc2f3f7779f453352363827678070ef35b6d746ccb2ca6958540fff"
+      }
+    },
+    "docfinqa": {
+      "url": "https://huggingface.co/datasets/kensho/DocFinQA",
+      "revision": "64ebaff62f692495bcc182f45cf9a9606251b19b",
+      "files": {
+        "config.json": {
+          "error": "HTTP Error 404: Not Found"
+        },
+        "README.md": "d8d7a46d41a1a37fe4f0a5f637bf55c649310185329127d8a2204632e480be17"
+      }
+    }
+  }
+}
