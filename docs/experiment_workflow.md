@@ -19,7 +19,7 @@ For a portable first run:
 ```sh
 ncm smoke
 ncm experiment run --id ACL-001 --config configs/cpu_profile.yaml --budget configs/budgets/cpu_profile.yaml
-ncm results analyze --experiment ACL-001
+ncm results analyze --experiment ACL-001 --runs EXACT_RUN_ID
 ncm report build --study acl
 ```
 
@@ -56,6 +56,6 @@ write an archive digest/internal receipt, and request human anonymity review. No
 is uploaded or submitted. Preserve the ACL code/config/checkpoint/result snapshot
 before journal-specific research changes alter shared results.
 
-## Revision-2 implementation update — 2026-10-27
+## Revision-2 implementation update â€” 2026-10-27
 
 Use ncm acceptance for the full bounded CPU codec-to-transfer workflow; ncm matrix plan/run freezes and executes a DAG. Codec/transfer configs are under ACL-005. The train handler evaluates actual held-out records and writes selection.json; the codec handler writes codec-selection.json. ncm checkpoint validate-selection checks retained weights and optional dev identity. Recovery final.pt is transient latest within an active run; selected.pt is deployment state, not an optimizer-resume artifact.

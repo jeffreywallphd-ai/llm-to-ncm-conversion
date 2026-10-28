@@ -1,6 +1,6 @@
-"""Analyze immutable runs for SHR-003; no model implementation here."""
-from ncm_lab.reporting.reports import analyze
-import json
+"""Thin explicit-input analysis CLI for SHR-003."""
+import sys
+from ncm_lab.cli import main
 
 if __name__ == "__main__":
-    print(json.dumps(analyze("SHR-003"), indent=2))
+    raise SystemExit(main(["results", "analyze", "--experiment", "SHR-003", *sys.argv[1:]]))

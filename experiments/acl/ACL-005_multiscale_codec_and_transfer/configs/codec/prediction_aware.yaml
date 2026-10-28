@@ -23,7 +23,6 @@
   "executor": "codec",
   "codec_kind": "nested",
   "prediction_weights": [
-    0,
     0.1
   ],
   "levels": [
@@ -33,5 +32,6 @@
   ],
   "latent_width": 256,
   "steps": 2,
-  "codec_seed": 17
+  "codec_seed": 17,
+  "codec_objective": "prediction_aware"
 }

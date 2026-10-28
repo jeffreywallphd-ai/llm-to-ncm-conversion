@@ -1,6 +1,6 @@
-"""Analyze immutable runs for ACL-001; no model implementation here."""
-from ncm_lab.reporting.reports import analyze
-import json
+"""Thin explicit-input analysis CLI for ACL-001."""
+import sys
+from ncm_lab.cli import main
 
 if __name__ == "__main__":
-    print(json.dumps(analyze("ACL-001"), indent=2))
+    raise SystemExit(main(["results", "analyze", "--experiment", "ACL-001", *sys.argv[1:]]))

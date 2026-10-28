@@ -1,9 +1,10 @@
 """Nested whole-group subsets, never enlarged with repeated source positions."""
+
 import hashlib
 from ncm_lab.runtime.io import canonical_hash
 
 
-def resolve_ladder(records, tiers, seed=0):
+def resolve_ladder(records, tiers, seed=0, eligibility_version=3):
     if any(r["split"] != "train" for r in records) or sorted(set(tiers)) != list(tiers):
         raise ValueError("data ladder needs train-only data and increasing unique tiers")
     groups = {}
@@ -15,7 +16,19 @@ def resolve_ladder(records, tiers, seed=0):
         identities.add(identity)
         groups.setdefault(row["group_id"], []).append(row)
     order = sorted(groups, key=lambda g: hashlib.sha256(f"{seed}:{g}".encode()).hexdigest())
-    counts = {g: sum(sum(r["response_mask"]) for r in rows) for g, rows in groups.items()}
+    if eligibility_version not in {1, 3}:
+        raise ValueError("unknown data-ladder eligibility version")
+    counts = {
+        g: sum(
+            sum(
+                r["response_mask"][r["prompt_length"] + 1 :]
+                if eligibility_version == 3
+                else r["response_mask"]
+            )
+            for r in rows
+        )
+        for g, rows in groups.items()
+    }
     available = sum(counts.values())
     results = []
     for tier in tiers:
@@ -28,9 +41,19 @@ def resolve_ladder(records, tiers, seed=0):
                     break
                 selected.extend(groups[group])
                 positions += counts[group]
-        results.append({"requested_positions": tier, "available_positions": available,
-            "admitted_positions": positions, "status": "available" if selected else "unavailable",
-            "original_ids": [r["original_id"] for r in selected],
-            "subset_hash": canonical_hash(selected) if selected else None,
-            "rule": "seeded whole-group prefix bounded above by tier; no repeated fill"})
+        results.append(
+            {
+                "requested_positions": tier,
+                "available_positions": available,
+                "eligibility_version": eligibility_version,
+                "units": "distinct observed next-response labels after the known anchor"
+                if eligibility_version == 3
+                else "legacy response-mask positions including anchor",
+                "admitted_positions": positions,
+                "status": "available" if selected else "unavailable",
+                "original_ids": [r["original_id"] for r in selected],
+                "subset_hash": canonical_hash(selected) if selected else None,
+                "rule": "seeded whole-group prefix bounded above by tier; no repeated fill",
+            }
+        )
     return results

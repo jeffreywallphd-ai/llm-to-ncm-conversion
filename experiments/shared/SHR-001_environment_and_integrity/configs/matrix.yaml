@@ -1,39 +1,5 @@
 {
-  "schema_version": 1,
-  "timing_seed": 17,
-  "aggregate_limits": {
-    "steps": 1000000,
-    "wall_seconds": 300,
-    "source_positions": 0,
-    "storage_bytes": 32000000,
-    "download_bytes": 0
-  },
-  "launch_policy": "Resolve and inspect blockers; calibration must precede research execution; benchmark fixtures never fill this plan.",
-  "requires_calibration": true,
-  "calibration_run": null,
-  "jobs": [
-    {
-      "id": "adaptation-overlap-audit",
-      "config": {
-        "experiment_id": "SHR-001",
-        "executor": "overlap_audit",
-        "profile": "cpu",
-        "device": "cpu",
-        "result_origin": "measured",
-        "seed": 0,
-        "training_prompt_receipt": "data/processed/oasst1_train_prompts.input.json",
-        "benchmark_receipts": [
-          "data/processed/gsm8k_train.input.json",
-          "data/processed/gsm8k_test.input.json",
-          "data/processed/ifeval_test.input.json",
-          "data/processed/humaneval_plus_test.input.json",
-          "data/processed/longbench_test.input.json"
-        ],
-        "threshold": 0.85
-      },
-      "budget": "configs/budgets/data_audit.yaml",
-      "depends_on": []
-    }
-  ],
-  "scope": "SHR-001 jobs plus explicitly reused dependencies; real calibration required"
+  "schema_version": 3,
+  "parent_spec": "experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml",
+  "select_experiment": "SHR-001"
 }

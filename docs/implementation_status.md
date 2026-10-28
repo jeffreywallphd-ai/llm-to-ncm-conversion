@@ -1,3 +1,7 @@
+# Current status: V3 supersedes the implementation claims below
+
+The following table records the pre-correction state at `8452835`; its broad “complete” labels did not establish the V3 scientific contracts. Current implementation, CPU checks, pending released-model/GPU validation, and unmeasured research evidence are documented in [corrections_v3_report.md](corrections_v3_report.md), [checklist](corrections_v3_checklist.json), and [validation receipt](corrections_v3_validation.json). IS-only FIX-13/14 remain deferred.
+
 # Implementation and evidence status — 2026-10-28
 
 Starting commit: c60a8a1849410e7266dcdca494362bf108eecceb (main). Implementation branch: codex/multiscale-latent-remediation. The validation receipt records the pre-commit snapshot; Git history records the current commit. The auxiliary codec and causal transfer are part of the first technical study.

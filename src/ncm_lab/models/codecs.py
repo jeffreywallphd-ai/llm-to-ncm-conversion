@@ -1,4 +1,5 @@
 """Continuous independent-level codecs. No target or vocabulary weights are owned here."""
+
 import torch
 from torch import nn
 from ncm_lab.models.intervals import partition
@@ -37,34 +38,56 @@ class Upsampler(nn.Module):
 
 
 class MultiscaleCodec(nn.Module):
-    def __init__(self, hidden_size, width=256, kind="nested", levels=(4, 8, 15), architecture_version=2):
+    def __init__(self, hidden_size, width=256, kind="nested", levels=(4, 8, 15), architecture_version=None):
         super().__init__()
         if kind not in {"nested", "linear", "independent", "pooling", "channel"}:
             raise ValueError("unknown codec kind")
         if not set(levels) <= {4, 8, 15} or not levels:
             raise ValueError("invalid codec levels")
-        if architecture_version not in {1,2}:
+        architecture_version = architecture_version or (3 if kind == "independent" else 2)
+        if architecture_version not in {1, 2, 3}:
             raise ValueError("unsupported codec architecture version")
-        self.spec = {"hidden_size": hidden_size, "width": width, "kind": kind, "levels": list(levels),
-                     "architecture_version":architecture_version}
+        self.spec = {
+            "hidden_size": hidden_size,
+            "width": width,
+            "kind": kind,
+            "levels": list(levels),
+            "architecture_version": architecture_version,
+        }
         self.levels = tuple(levels)
+
         def projection(a, b):
-            return nn.Linear(a, b) if kind in {"linear", "pooling"} else nn.Sequential(
-                nn.Linear(a, b), nn.SiLU(), nn.Linear(b, b))
+            return (
+                nn.Linear(a, b)
+                if kind in {"linear", "pooling"}
+                else nn.Sequential(nn.Linear(a, b), nn.SiLU(), nn.Linear(b, b))
+            )
+
         nested = kind == "nested" or kind == "linear" and architecture_version >= 2
-        self.encoder = projection(hidden_size, width) if nested or architecture_version==1 else nn.Identity()
-        self.coarsen8 = projection(width, width) if nested or architecture_version==1 else nn.Identity()
-        self.coarsen4 = projection(width, width) if nested or architecture_version==1 else nn.Identity()
-        self.independent = nn.ModuleDict({str(n): projection(hidden_size, width) for n in levels}
-                                       if not nested or architecture_version==1 else {})
-        self.up4 = Upsampler(4, 8, width) if 4 in levels or architecture_version==1 else nn.Identity()
-        self.up8 = Upsampler(8, 15, width) if set(levels)&{4,8} or architecture_version==1 else nn.Identity()
+        self.encoder = (
+            projection(hidden_size, width) if nested or architecture_version == 1 else nn.Identity()
+        )
+        self.coarsen8 = projection(width, width) if nested or architecture_version == 1 else nn.Identity()
+        self.coarsen4 = projection(width, width) if nested or architecture_version == 1 else nn.Identity()
+        self.independent = nn.ModuleDict(
+            {str(n): projection(hidden_size, width) for n in levels}
+            if not nested or architecture_version == 1
+            else {}
+        )
+        self.up4 = Upsampler(4, 8, width) if 4 in levels or architecture_version == 1 else nn.Identity()
+        self.up8 = (
+            Upsampler(8, 15, width) if set(levels) & {4, 8} or architecture_version == 1 else nn.Identity()
+        )
         self.output = projection(width, hidden_size)
         if kind == "pooling":
             self.requires_grad_(False)
 
     def encode(self, states, valid):
-        if self.spec["kind"] == "nested" or self.spec["kind"] == "linear" and self.spec["architecture_version"]>=2:
+        if (
+            self.spec["kind"] == "nested"
+            or self.spec["kind"] == "linear"
+            and self.spec["architecture_version"] >= 2
+        ):
             z15 = self.encoder(states)
             z8, m8 = pool(z15, 8, valid)
             z8 = self.coarsen8(z8)
@@ -73,7 +96,12 @@ class MultiscaleCodec(nn.Module):
             z4 = self.coarsen4(z4)
             codes = {4: z4, 8: z8, 15: z15}
         else:
-            codes = {n: self.independent[str(n)](pool(states, n, valid)[0]) for n in self.levels}
+            if self.spec["kind"] == "independent" and self.spec["architecture_version"] >= 3:
+                # Independent F_l transforms every original position before P_l;
+                # no branch consumes another branch's representation. G_l is identity.
+                codes = {n: pool(self.independent[str(n)](states), n, valid)[0] for n in self.levels}
+            else:
+                codes = {n: self.independent[str(n)](pool(states, n, valid)[0]) for n in self.levels}
         return {n: codes[n] for n in self.levels}
 
     def reconstruct(self, code, level):
@@ -88,7 +116,10 @@ class MultiscaleCodec(nn.Module):
     def rates(self):
         element_size = next(self.parameters()).element_size()
         counts = {str(n): n * self.spec["width"] for n in self.levels}
-        return {"standalone_scalars": counts, "all_levels_scalars": sum(counts.values()),
-                "standalone_bytes": {n: r * element_size for n, r in counts.items()},
-                "all_levels_bytes": sum(counts.values()) * element_size,
-                "parameters": sum(p.numel() for p in self.parameters())}
+        return {
+            "standalone_scalars": counts,
+            "all_levels_scalars": sum(counts.values()),
+            "standalone_bytes": {n: r * element_size for n, r in counts.items()},
+            "all_levels_bytes": sum(counts.values()) * element_size,
+            "parameters": sum(p.numel() for p in self.parameters()),
+        }

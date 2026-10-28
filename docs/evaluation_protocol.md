@@ -44,6 +44,25 @@ existence, actual evidence support, and financial period/unit appropriateness.
 Structural checks establish only some of these. A blinded fixed-rubric support audit
 needs recorded sampling and human verification; it is not analyst acceptance.
 
-## Revision-2 implementation update — 2026-10-27
+## Revision-2 implementation update â€” 2026-10-27
 
 Current evaluation uses one normalized multi-EOS greedy policy and hash-bound inputs/checkpoints. IFEval strict/loose and LongBench GovReport official scorer calls are implemented against provisioned, hash-verified source. Official environments and full-test data remain unvalidated. HumanEval+ is blocked before loading until a verified external execution boundary exists. Oracle codec diagnostics and fixture outputs are excluded from deployable performance claims.
+# V3 endpoint and analysis contracts
+
+GSM8K exact match and IFEval prompt strict accuracy are binary endpoints. IFEval
+instruction strict accuracy is total correct instructions divided by total
+instructions. Original LongBench GovReport ROUGE-L is continuous; it has no binary
+accuracy or correct-request throughput. A missing required score is an explicit
+scoring failure, separate from measured zero. Report scored-only denominators and
+the declared zero-for-failures estimand separately. HumanEval+ remains blocked
+until a verified external execution boundary is provisioned; no generated Python
+is executed on the host.
+
+V3 analyses require exact `--runs` or immutable matrix `--bindings`. Distinct tiers,
+budgets, selected weights/objectives, independent seed pairs, runtime conditions,
+and pilot/final scopes cannot silently merge. Locked comparisons explicitly vary
+treatment weights while holding declared request/policy/runtime fields fixed.
+Reject duplicate observations, retain unmatched requests and failures, and sort
+groups before within-seed bootstrap resampling. Timing blocks are nested within
+independent codec/student pairs; there is no inferred across-seed aggregate.
+See [correction report](corrections_v3_report.md) for exact commands and coverage.

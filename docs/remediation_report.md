@@ -1,3 +1,7 @@
+# Historical remediation report
+
+This report describes work preceding V3 at `8452835`. Its completion statements and 779-job plan do not establish current scientific readiness. See [V3 corrections](corrections_v3_report.md) and its new validation receipt for superseding evidence; historical runs and failures are preserved.
+
 # Implementation handoff — 2026-10-28
 
 The first technical-paper software architecture is implemented and CPU validated. The unchanged autoregressive target supplies post-final-normalization prediction-state labels to an independently reconstructable nested codec. A frozen selected codec then supervises causal latent heads, refinements and live bridges in hierarchical DFlash. Runtime generation uses predicted codes. Native target conversion remains future work.

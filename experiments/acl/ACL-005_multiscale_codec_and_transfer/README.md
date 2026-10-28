@@ -1,7 +1,53 @@
-# ACL-005: multiscale codec and causal transfer
+# ACL-005: Multiscale codec and causal transfer
 
-Implements frozen-target post-normalization labels, independent nested reconstruction, development codec selection, causal predictors and bridges, and response-only drafter adaptation. Run `ncm acceptance` for the complete bounded software-fixture path. Research-stage configs live under configs/codec and configs/transfer. Set verified input receipts and selected codec identities before research execution. No research findings yet. See docs/remediation_report.md for validation and limitations.
+Purpose and hypothesis: Test information preservation, causal prediction versus oracle diagnostics, runtime conditioning beyond auxiliary/capacity controls, and complete adaptation/inference cost.
 
-Revision-2 status: shared factory, bounded stages, incremental policy/verifier and codec/transfer controls are implemented; released research execution is pending. See docs/remediation_report.md and the ACL-005 stage specifications.
+Methods and controls: Nested positive prediction-aware and zero-coefficient reconstruction codecs; linear, independent version 3, rate-matched single-scale, channel, and pooling controls. Each fitted control has held-out diagnostics or selected transfer consumers. Nested/independent comparisons test declared designs, not pure parameter sharing.
 
-2026-10-28 wiring: `configs/matrix.yaml` selects this experiment's actual bounded study jobs and reused dependency closure. The full study is `experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml`; it requires measured calibration. Raw runs retain configurations, input/dependency receipts and failures. `ncm results analyze --experiment ACL-005` produces per-seed observation analysis and codec/cost tables; claim eligibility and explicit selection are separate. CPU fixtures remain ineligible. See `docs/remediation_report.md` for executed validation and external prerequisites.
+Data and split: Whole-group 0.25M/1M eligible response-label tiers by default, optional 4M/16M. Codec statistics, scales, and student fitting use admitted subsets. Held-out codec diagnostics are separate from development selection.
+
+The [single study declaration](../../acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml)
+and [locked contrast definitions](../../../publications/acl/contrasts.yaml) generate
+this folder's matrix plus required dependencies/consumers. Seed pairs 17/17,
+29/29, and 43/43 independently fit codecs and students. Five randomized timing
+blocks are nested within each pair; shared references remain shared. ACL-001
+cost profiling uses three recorded repeats after its warmup. Detailed source,
+endpoint, failure, pairing, and cost rules are in the
+[V3 correction report](../../../docs/corrections_v3_report.md).
+
+Finite budgets: stage runs reserve at most 100 attempted steps, 40M processed
+positions, 1,800 seconds, and 16 GB; evaluation reserves 10,000 steps, 50M positions,
+1,800 seconds, and 256 MB. Audit and robustness analysis have separate finite
+budgets. Conservative phase caps, reserved totals, and download cap zero are
+checked by planning. These candidate caps require real calibration before a full
+study; they do not guarantee completion of a data tier or official split.
+
+From the repository root:
+
+```sh
+ncm matrix plan --spec experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/matrix.yaml --output results/generated/ACL-005-v3-plan.json
+# Only after assets, measured calibration, and study authorization:
+ncm matrix run --plan results/generated/ACL-005-v3-plan.json
+ncm results analyze --experiment ACL-005 --bindings MATRIX_OUTPUT/analysis-bindings.json
+```
+
+Planning is offline and model-free. `MATRIX_OUTPUT` is the exact returned execution
+directory; there is no latest-run or historical scan selection. For a deliberately
+exploratory analysis, use `--runs EXACT_RUN_ID ...` instead of `--bindings`.
+`ncm acceptance` exercises a bounded connected CPU fixture path without research
+downloads. The complete candidate plan and all eight subset plans have static
+validation; distinct production contracts have bounded CPU tests.
+
+Outputs: immutable per-run resolved configuration, source/input/dependency hashes,
+resource counters, raw observations, failures and selection receipts as applicable;
+matrix role bindings; new immutable per-seed grouped analyses with unmatched and
+failed requests retained. Codec tables distinguish selection, held-out diagnostics,
+normalized error units, intermediate costs, and full selected-procedure costs.
+ACL-004 writes `strata.json` identifying the shared source runs and denominators.
+
+Results status: implemented software with bounded CPU validation. Released-model
+GPU/Spark validation and research measurements are **not measured**. No speed,
+quality, broad generalization, or publication-ready result follows from fixtures.
+Research claim selections remain empty. Official data/scorer environments, cached
+pinned models, complete source contracts, real calibration, and HumanEval+
+isolation remain external prerequisites. IS-only FIX-13/14 are deferred.

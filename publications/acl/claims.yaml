@@ -1,11 +1,12 @@
 {
-  "schema_version": 1,
+  "schema_version": 3,
   "claims": [
     {
       "id": "ACL-001-C1",
-      "claim": "Cycle time / expected committed tokens improves on the best matched flat development control; no runtime opportunity and no quality benefit stops escalation.",
+      "claim": "Development-selected reduced-depth flat versus complete hierarchical transfer procedure on designated final requests; component profiling alone establishes no end-to-end benefit.",
       "experiment_ids": [
-        "ACL-001"
+        "ACL-001",
+        "ACL-002"
       ],
       "eligible_run_ids": [],
       "analysis_outputs": [],
@@ -15,7 +16,34 @@
       "required_evidence_classes": [
         "performance",
         "full_test"
-      ]
+      ],
+      "required_contrast_ids": [
+        "matched-cost-flat"
+      ],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      }
     },
     {
       "id": "ACL-002-C1",
@@ -31,7 +59,39 @@
       "required_evidence_classes": [
         "performance",
         "full_test"
-      ]
+      ],
+      "required_contrast_ids": [
+        "flat-transfer",
+        "hierarchical-transfer",
+        "released-reference",
+        "matched-cost-flat",
+        "strong-reference",
+        "ar-reference"
+      ],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      }
     },
     {
       "id": "ACL-003-C1",
@@ -47,11 +107,39 @@
       "required_evidence_classes": [
         "performance",
         "full_test"
-      ]
+      ],
+      "required_contrast_ids": [
+        "hierarchy",
+        "original-skip"
+      ],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      }
     },
     {
       "id": "ACL-004-C1",
-      "claim": "A bounded replication across lengths/load/compatible target sizes retains the effect; missing hardware limits the claim.",
+      "claim": "The main LongBench request-cost and continuous-quality pattern is described across predeclared input-token length strata of shared observations.",
       "experiment_ids": [
         "ACL-004"
       ],
@@ -59,11 +147,40 @@
       "analysis_outputs": [],
       "uncertainty": "unmeasured",
       "evidence_class": "unsupported",
-      "new_vs_shared": "new study evidence required",
+      "new_vs_shared": "shared ACL-002 LongBench evidence; no independent model/load/precision replication",
       "required_evidence_classes": [
         "performance",
         "full_test"
-      ]
+      ],
+      "required_contrast_ids": [],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      },
+      "limitations": [
+        "input-length association only; no cross-model or load-generalization claim"
+      ],
+      "analysis_spec": "publications/acl/contrasts.yaml#robustness"
     },
     {
       "id": "ACL-005-C1",
@@ -80,11 +197,37 @@
       "new_vs_shared": "new independent codec/student seed-pair evidence required",
       "required_evidence_classes": [
         "representation"
-      ]
+      ],
+      "required_contrast_ids": [],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      },
+      "analysis_spec": "publications/acl/contrasts.yaml#representation"
     },
     {
       "id": "ACL-005-C2",
-      "claim": "Causal predictions approach oracle codec performance without future access.",
+      "claim": "Causal predictions approach oracle codec reconstruction on a predeclared held-out test subset without future access during generation.",
       "experiment_ids": [
         "ACL-005",
         "ACL-002",
@@ -97,7 +240,33 @@
       "new_vs_shared": "new independent codec/student seed-pair evidence required",
       "required_evidence_classes": [
         "mechanism"
-      ]
+      ],
+      "required_contrast_ids": [],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      },
+      "analysis_spec": "publications/acl/contrasts.yaml#causal_predictions"
     },
     {
       "id": "ACL-005-C3",
@@ -115,6 +284,44 @@
       "required_evidence_classes": [
         "performance",
         "full_test"
+      ],
+      "required_contrast_ids": [
+        "practical-transfer",
+        "runtime-capacity",
+        "runtime-codec-ce",
+        "runtime-aux",
+        "runtime-linear",
+        "codec-design",
+        "runtime-single",
+        "runtime-reconstruction"
+      ],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      },
+      "limitations": [
+        "decisive mechanism controls designate full GSM8K only",
+        "nested versus independent tests declared designs, not pure parameter sharing or depth"
       ]
     },
     {
@@ -133,7 +340,41 @@
       "required_evidence_classes": [
         "performance",
         "full_test"
-      ]
+      ],
+      "required_contrast_ids": [
+        "flat-transfer",
+        "hierarchical-transfer",
+        "practical-transfer",
+        "total-budget",
+        "released-reference",
+        "matched-cost-flat",
+        "strong-reference",
+        "ar-reference"
+      ],
+      "evidence_complete": false,
+      "required_seed_pairs": [
+        {
+          "codec": 17,
+          "student": 17
+        },
+        {
+          "codec": 29,
+          "student": 29
+        },
+        {
+          "codec": 43,
+          "student": 43
+        }
+      ],
+      "availability": {
+        "software_paths": "see V3 plan coverage",
+        "measured_evidence": false,
+        "prerequisites": [
+          "released-model/GPU calibration",
+          "eligible measured locked runs",
+          "explicit evidence selection"
+        ]
+      }
     }
   ]
 }

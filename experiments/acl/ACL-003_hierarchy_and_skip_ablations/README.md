@@ -1,55 +1,53 @@
-# ACL-003: hierarchy and skip ablations
+# ACL-003: Decisive hierarchy, skip, and runtime contrasts
 
-Which effects are due to resolution, learned expansion, and the default skip?
+Purpose and hypothesis: Estimate locked within-seed paired effects for hierarchy, transfer, original skip, runtime injection, objective, and codec-design controls.
 
-## Protocol
+Methods and controls: Capacity-only, fitted-codec CE-only, auxiliary-only, reconstruction-only, linear, independent version 3, rate-matched single scale, four-cell no-skip, and practical skip controls. Decisive mechanisms designate full GSM8K; exploratory schedules stay development-only.
 
-Hypothesis: Predeclared paired contrasts isolate useful contributions; a flat/cost-matched win or null contrast limits the mechanism claim.
+Data and split: Same admitted train/dev tier and designated full GSM8K test identities for each contrast. Shared references are labeled; test gold is scorer-only.
 
-Treatments and controls: FLAT_ADAPTED, HIER_SKIP, HIER_NO_SKIP, FIXED_BROADCAST, EARLIER, LATER, LATE_NEAR_BUDGET. Match target, tokenizer, thinking
-mode (off), precision, prompt/stop policies, resource envelope and optimizations.
-Released comparisons and equal-additional-adaptation comparisons are separate.
+The [single study declaration](../../acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml)
+and [locked contrast definitions](../../../publications/acl/contrasts.yaml) generate
+this folder's matrix plus required dependencies/consumers. Seed pairs 17/17,
+29/29, and 43/43 independently fit codecs and students. Five randomized timing
+blocks are nested within each pair; shared references remain shared. ACL-001
+cost profiling uses three recorded repeats after its warmup. Detailed source,
+endpoint, failure, pairing, and cost rules are in the
+[V3 correction report](../../../docs/corrections_v3_report.md).
 
-Inputs: oasst1, general_dev, gsm8k, ifeval; pinned revisions and terms are in
-[`data/manifests`](../../../data/manifests). Preserve official splits and group by
-report/context or conversation tree. Freeze development selection before opening test.
-Do not expose gold, future target features, or oracle routing information to deployment.
+Finite budgets: stage runs reserve at most 100 attempted steps, 40M processed
+positions, 1,800 seconds, and 16 GB; evaluation reserves 10,000 steps, 50M positions,
+1,800 seconds, and 256 MB. Audit and robustness analysis have separate finite
+budgets. Conservative phase caps, reserved totals, and download cap zero are
+checked by planning. These candidate caps require real calibration before a full
+study; they do not guarantee completion of a data tier or official split.
 
-Primary outcomes: cycle_seconds_per_expected_committed_token, accepted_prefix_survival. Training seeds: [0, 1, 2]; five randomized
-timing trials. The independent unit is a request group, with training seed uncertainty
-reported separately. Retain failed and timed-out requests in denominators.
-
-Dependencies: ACL-001. CPU checks are portable. Real-model work
-requires cached locked weights, measured hardware readiness, a compatible GPU stack,
-correctness gates, data/evaluator access, and finite run AND aggregate phase budgets.
-Human owner and independent reviewer are unassigned; the actual team must assign them.
-
-## Commands
-
-Run from any directory after installation with `NCM_REPO_ROOT` pointing at the checkout:
+From the repository root:
 
 ```sh
-ncm experiment plan --id ACL-003 --profile spark
-ncm experiment run --id ACL-003 --config experiments/acl/ACL-003_hierarchy_and_skip_ablations/configs/run.yaml --budget configs/budgets/pilot.yaml
-ncm results analyze --experiment ACL-003
+ncm matrix plan --spec experiments/acl/ACL-003_hierarchy_and_skip_ablations/configs/matrix.yaml --output results/generated/ACL-003-v3-plan.json
+# Only after assets, measured calibration, and study authorization:
+ncm matrix run --plan results/generated/ACL-003-v3-plan.json
+ncm results analyze --experiment ACL-003 --bindings MATRIX_OUTPUT/analysis-bindings.json
 ```
 
-The run command records precise unmet prerequisites instead of downloading weights.
-Select checkpoints/architecture on development data only. Stop at the first configured
-budget cap; no automatic escalation. See [protocol.yaml](protocol.yaml) for contrasts,
-selection, exclusions and stopping rules, and [workflow](../../../docs/experiment_workflow.md).
+Planning is offline and model-free. `MATRIX_OUTPUT` is the exact returned execution
+directory; there is no latest-run or historical scan selection. For a deliberately
+exploratory analysis, use `--runs EXACT_RUN_ID ...` instead of `--bindings`.
+`ncm acceptance` exercises a bounded connected CPU fixture path without research
+downloads. The complete candidate plan and all eight subset plans have static
+validation; distinct production contracts have bounded CPU tests.
 
-## Results and interpretation
+Outputs: immutable per-run resolved configuration, source/input/dependency hashes,
+resource counters, raw observations, failures and selection receipts as applicable;
+matrix role bindings; new immutable per-seed grouped analyses with unmatched and
+failed requests retained. Codec tables distinguish selection, held-out diagnostics,
+normalized error units, intermediate costs, and full selected-procedure costs.
+ACL-004 writes `strata.json` identifying the shared source runs and denominators.
 
-Not run; no empirical findings yet.
-
-CPU software validation is separate from research results. Real-model/optimized engine
-and GPU parity remain unverified. See [result index](results/README.md). An eager reference
-cannot establish deployment speed. A null result or unsupported hypothesis remains in
-the run history. No native NCM, semantic-concept, or universal hardware claim is implied.
-Claim reference: `ACL-003-C1`; eligibility is selected in the study manifest, never inferred
-from file existence or a completed fixture run.
-
-Revision-2 status: shared factory, bounded stages, incremental policy/verifier and codec/transfer controls are implemented; released research execution is pending. See docs/remediation_report.md and the ACL-005 stage specifications.
-
-2026-10-28 wiring: `configs/matrix.yaml` selects this experiment's actual bounded study jobs and reused dependency closure. The full study is `experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml`; it requires measured calibration. Raw runs retain configurations, input/dependency receipts and failures. `ncm results analyze --experiment ACL-003` produces per-seed observation analysis and codec/cost tables; claim eligibility and explicit selection are separate. CPU fixtures remain ineligible. See `docs/remediation_report.md` for executed validation and external prerequisites.
+Results status: implemented software with bounded CPU validation. Released-model
+GPU/Spark validation and research measurements are **not measured**. No speed,
+quality, broad generalization, or publication-ready result follows from fixtures.
+Research claim selections remain empty. Official data/scorer environments, cached
+pinned models, complete source contracts, real calibration, and HumanEval+
+isolation remain external prerequisites. IS-only FIX-13/14 are deferred.

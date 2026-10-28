@@ -64,5 +64,21 @@
   "claim_ids": [
     "ACL-004-C1"
   ],
-  "codec_dependency": "ACL-005 selected codec; same frozen target and deployment policy"
+  "codec_dependency": "ACL-005 selected codec; same frozen target and deployment policy",
+  "robustness": {
+    "factor": "input token length",
+    "strata": [
+      0,
+      2048,
+      8192,
+      32768,
+      null
+    ],
+    "shared_source_experiment": "ACL-002",
+    "new_independent_runs": false,
+    "unsupported": [
+      "second target",
+      "concurrent serving"
+    ]
+  }
 }

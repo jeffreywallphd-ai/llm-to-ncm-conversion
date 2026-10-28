@@ -22,5 +22,12 @@
     "ai_assistance": "Codex continued shared implementation, CPU tests, metadata audit, documentation and engineering validation",
     "human_experiment_execution": null,
     "independent_human_review": null
+  },
+  "corrections_v3_2026_10_28": {
+    "human_input": "User supplied the V3 corrections and requested implementation, tests, commit, and local main fast-forward",
+    "ai_assistance": "Codex implemented shared software corrections, bounded fixture checks, static plan validation, packaging checks, and documentation",
+    "human_experiment_execution": null,
+    "independent_human_review": null,
+    "authorship_assignment": null
   }
 }

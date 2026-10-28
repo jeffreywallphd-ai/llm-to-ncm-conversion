@@ -107,7 +107,7 @@ financial datasets. The current development drive lacks space for the full asset
 ncm experiment list
 ncm experiment plan --id ACL-001 --profile spark
 ncm experiment run --id ACL-001 --config configs/cpu_profile.yaml --budget configs/budgets/cpu_profile.yaml
-ncm results analyze --experiment ACL-001
+ncm results analyze --experiment ACL-001 --runs RUN_ID
 ncm report build --study acl
 ncm report build --study is_journal
 ncm publication export --study acl --anonymize --output publications/exports/acl-review.zip
@@ -172,3 +172,39 @@ ncm experiment plan --id ACL-005 --profile spark
 ```
 
 The candidate research study uses separate codec/student seed pairs, explicit dependencies and finite aggregate caps. Its launcher requires measured calibration. Released weights, CUDA/Spark, official evaluation environments and the strong external adapter remain prerequisites. Later IS workflow repairs are explicitly pending. No empirical speed, quality, business, novelty or publication-readiness result is established.
+
+## First-paper corrections V3
+
+The [correction report](docs/corrections_v3_report.md) and
+[checklist](docs/corrections_v3_checklist.json) describe the current software
+contracts and verification. The earlier remediation reports are historical.
+The unchanged AR target supplies post-final-normalization prediction states;
+independently reconstructable codecs supervise causal student predictors, whose
+predicted codes condition hierarchical speculative drafting. The target verifies
+every proposal. This remains speculative drafting rather than native NCM conversion.
+
+The compact [study declaration](experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml)
+and [locked contrasts](publications/acl/contrasts.yaml) generate the full study and
+experiment subsets. Selected tiers are 250,000 and 1,000,000 distinct eligible
+response-label positions; 4M and 16M are optional and cannot be filled by repetition.
+Each decisive adapted procedure uses independent codec/student pairs 17/17, 29/29,
+and 43/43. Timing repeats stay within a pair. The four-cell hierarchy/transfer
+comparison disables the original skip throughout; the practical skip comparison
+and capacity, auxiliary, codec-CE, reconstruction, linear, independent, and single
+scale controls have explicit final-test paths. Focused mechanism controls use GSM8K;
+the main reference comparison covers the four designated tasks. ACL-004 analyzes
+length strata of shared LongBench observations and provides no independent
+cross-model or load evidence.
+
+```sh
+ncm matrix plan --spec experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml --output results/generated/study-v3-plan.json
+# After authorized execution, analyze only the exact recorded role bindings:
+ncm results analyze --experiment ACL-003 --bindings MATRIX_OUTPUT/analysis-bindings.json
+```
+
+Planning validates configurations and finite caps without loading models or
+starting research. Real execution still requires measured calibration, cached
+pinned weights, complete teacher/source contracts, official input/scorer receipts,
+and verified external isolation for HumanEval+. Use the [bounded Spark pilot](docs/corrections_v3_report.md)
+before authorizing a full study. Research effects, GPU compatibility, and speed are
+**not measured**; research selections remain empty.

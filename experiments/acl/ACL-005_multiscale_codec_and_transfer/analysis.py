@@ -1,4 +1,6 @@
-from ncm_lab.reporting.reports import analyze
+"""Thin explicit-input analysis CLI for ACL-005."""
+import sys
+from ncm_lab.cli import main
 
 if __name__ == "__main__":
-    print(analyze("ACL-005"))
+    raise SystemExit(main(["results", "analyze", "--experiment", "ACL-005", *sys.argv[1:]]))

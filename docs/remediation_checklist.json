@@ -551,5 +551,7 @@
     "DCore pinned-source adapter is implemented; its released weights and GPU parity were not executed.",
     "DFlare remains close prior art with no implemented adapter; DCore is the selected external baseline.",
     "No native NCM target conversion, research speedup, quality improvement or novelty claim is established."
-  ]
+  ],
+  "historical_scope": "Snapshot of pre-V3 work at 8452835. Original item statuses below are preserved as history and are not current scientific readiness.",
+  "superseded_by": "docs/corrections_v3_checklist.json"
 }

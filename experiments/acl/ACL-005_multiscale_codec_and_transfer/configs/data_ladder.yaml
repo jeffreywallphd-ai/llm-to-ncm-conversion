@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 3,
   "distinct_response_positions": [
     250000,
     1000000,
@@ -9,5 +9,13 @@
   "nested": true,
   "oversized_tier": "unavailable; no repetition to fill",
   "total_data_curve": "all fitted components restricted to tier",
-  "fixed_codec_curve": "separately named; disclose codec data and cost"
+  "fixed_codec_curve": "separately named; disclose codec data and cost",
+  "candidate_positions": [
+    250000,
+    1000000,
+    4000000,
+    16000000
+  ],
+  "units": "distinct observed next-response labels after the known first response anchor; EOS retained when it is a next-token label",
+  "eligibility_version": 3
 }
