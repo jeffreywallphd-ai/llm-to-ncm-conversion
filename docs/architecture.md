@@ -82,3 +82,7 @@ categorical proposals with actual q: acceptance min(1,p/q), positive residual
 max(p-q,0) at first rejection and target bonus after full acceptance. Its finite
 distribution tests do not certify arbitrary model sampling, latent marginalization,
 history-dependent processors or GPU sampling. The initial research protocol is greedy.
+
+## Revision-2 implementation update — 2026-10-27
+
+The current first-paper extension is the auxiliary frozen-target codec and causal latent transfer described in autoencoder_architecture.md. It is implemented in shared model/training modules; native target conversion remains future work. Production inference uses incremental confirmed-prefix target features and predicted codes only.

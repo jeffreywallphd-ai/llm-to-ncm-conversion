@@ -23,12 +23,16 @@
     15
   ],
   "skip": false,
-  "seed": 0,
+  "seed": 17,
   "require_gpu_parity": true,
   "dataset": "gsm8k",
-  "data_path": "data/processed/locked_evaluation.jsonl",
-  "split": "dev",
+  "data_path": "data/processed/gsm8k_train.jsonl",
+  "split": "train",
   "max_requests": 8,
   "max_new_tokens": 256,
-  "output_instruction": "Return the required benchmark answer/program only. For GSM8K terminate with #### followed by the number."
+  "output_instruction": "Return the required benchmark answer/program only. For GSM8K terminate with #### followed by the number.",
+  "input_receipts": [
+    "data/processed/gsm8k_train.input.json"
+  ],
+  "result_scope": "bounded official training subset; development diagnostic, not a new official dev split"
 }

@@ -12,5 +12,14 @@
       "blocker": "pin the original GovReport release and official scoring dependencies; LongBench v2 is not a substitute"
     }
   },
-  "reproduction_status": "not benchmark reproduced"
+  "reproduction_status": "not benchmark reproduced",
+  "data_release": {
+    "repository": "zai-org/LongBench",
+    "revision": "5e628be450b7e67fb7ae6e201bd6d8f7056f7672",
+    "archive": "data.zip",
+    "sha256": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64",
+    "bytes": 113932529,
+    "selected_task": "gov_report",
+    "variant": "original LongBench"
+  }
 }

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "distinct_response_positions": [
+    250000,
+    1000000,
+    4000000,
+    16000000
+  ],
+  "nested": true,
+  "oversized_tier": "unavailable; no repetition to fill",
+  "total_data_curve": "all fitted components restricted to tier",
+  "fixed_codec_curve": "separately named; disclose codec data and cost"
+}

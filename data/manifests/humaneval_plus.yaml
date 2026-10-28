@@ -12,5 +12,7 @@
       "blocker": "EvalPlus official task and isolated execution environment required; no host Python execution"
     }
   },
-  "reproduction_status": "not benchmark reproduced"
+  "reproduction_status": "not benchmark reproduced",
+  "data_version": "HumanEvalPlus v0.1.10",
+  "version_source_sha256": "105969e0c700fa77f18b1ae7dd06230e22f81540cf030ddca2cbfeb2630055b4"
 }

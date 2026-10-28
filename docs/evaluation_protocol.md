@@ -43,3 +43,7 @@ Validation distinguishes parses, executes, answer/calculation consistency, refer
 existence, actual evidence support, and financial period/unit appropriateness.
 Structural checks establish only some of these. A blinded fixed-rubric support audit
 needs recorded sampling and human verification; it is not analyst acceptance.
+
+## Revision-2 implementation update — 2026-10-27
+
+Current evaluation uses one normalized multi-EOS greedy policy and hash-bound inputs/checkpoints. IFEval strict/loose and LongBench GovReport official scorer calls are implemented against provisioned, hash-verified source. Official environments and full-test data remain unvalidated. HumanEval+ is blocked before loading until a verified external execution boundary exists. Oracle codec diagnostics and fixture outputs are excluded from deployable performance claims.

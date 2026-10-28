@@ -23,3 +23,7 @@ Review current guidance before submission; no universal new-material percentage 
 The actual team assigns human experiment owners/reviewers and substantive student
 design, implementation, analysis and writing roles. Service alone does not confer
 authorship. Record work and AI assistance transparently; AI is not an author.
+
+## Revision-2 implementation update — 2026-10-27
+
+The ACL study now includes ACL-005 codec learning and frozen-target causal latent transfer, integrated with ACL-001 through ACL-004 controls. The IS study remains the later financial workflow contribution; FIX-13/14 are explicitly pending and cannot be described as completed by decoder fixtures.

@@ -1,0 +1,14 @@
+{
+  "phase_budget_id": "codec-acceptance-v1",
+  "max_steps": 64,
+  "max_wall_seconds": 120,
+  "max_training_source_token_passes": 20000,
+  "max_supervised_future_positions": 2000,
+  "max_storage_bytes": 64000000,
+  "max_download_bytes": 0,
+  "max_phase_steps": 64000,
+  "max_phase_source_token_passes": 20000000,
+  "max_phase_wall_seconds": 120000,
+  "max_phase_storage_bytes": 64000000000,
+  "max_phase_download_bytes": 0
+}

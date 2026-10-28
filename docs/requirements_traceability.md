@@ -26,3 +26,7 @@ and operating-frontier measurements, repeated-seed learning/evaluation, and huma
 owners/reviewers. These cannot be established by a folder tree or CPU fixture run.
 The setup implements the feasible local paths and prevents the missing evidence
 from appearing as research findings. Native NCM conversion remains future work.
+
+## Revision-2 implementation update — 2026-10-27
+
+The twelve directories include the original eleven IDs and ACL-005. The remediation checklist supersedes earlier folder-based completion statements: working fixtures validate software, not complete scientific experiment implementations. The auxiliary codec/latent path is current first-paper scope. Strong external adaptation, generated-Python isolation and later IS workflow repairs are explicitly unfinished; released-model and official-evaluator execution are separate gates.

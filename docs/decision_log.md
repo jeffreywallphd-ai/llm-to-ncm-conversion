@@ -35,3 +35,17 @@ Use official OASST train parquet, requiring pinned PyArrow, and derive whole-tre
 holdout. Test payloads require a separate explicit flag. Teacher data is referenced
 by hash from its canonical run rather than copied. Acquisition does not replace GPU
 PyTorch or run generation/training. Full weights were not fetched on the small disk.
+
+## Revision-2 implementation update — 2026-10-27
+
+2026-10-27: revision-2 remediation explicitly moves the auxiliary continuous prediction-state codec and causal transfer into the first technical study. Preserve original CE-only method identities. Use a shared placement factory, restricted student-only checkpoints, independently reconstructable levels, predicted-only runtime conditioning and one incremental SDPA verifier. Preserve the GPL/vendor sources, failed/legacy runs and original experiment IDs. The new document supersedes codec deferral, not the prohibition on native-target claims or automatic research execution.
+
+## Continued implementation — 2026-10-28
+
+Use DCore-DFlash-Qwen3-8B-Budget16 at e2f43607fb2531341b09e41889f593c75456a3f2 as the implemented external control. Preserve its untouched source and MIT notice, and disclose that the model card does not specify a weights license. DFlare remains an unimplemented comparison, not a substitute identity. No released weights were downloaded.
+
+Keep all required controls, including the pooled-prefix control, and evaluate focused ablations separately from locked final tests. Share AR/released reference timings explicitly across trained-seed contrasts. Development cost selection can fail if no depth meets tolerance. The 779-job plan is a provisional finite envelope, blocked by real calibration and input/evaluator prerequisites, not an instruction to launch an uncalibrated study.
+
+Measure short durations with perf_counter: Windows monotonic returned a zero-duration tiny profile and exposed a division-by-zero failure. Preserve that failed run; reject nonpositive timing observations. Account for preparation, codec search and resumed dependencies once rather than inferring missing costs.
+
+Pin IFEval scorer dependencies and original LongBench release metadata from primary sources. No benchmark payload was retrieved for this audit. Official scoring runtime validation remains outstanding.

@@ -38,6 +38,7 @@ class DecodeResult:
     bonus: int = 0
     verification_calls: int = 0
     cycles: list[dict] = field(default_factory=list)
+    telemetry: dict = field(default_factory=dict)
 
 
 def _stopped(tokens, eos, stop_sequences):

@@ -24,10 +24,19 @@ def fetch(dataset, split, max_bytes=None):
     if (item.get("size_bytes") or 0) > cap:
         raise ValueError(f"release requires {item['size_bytes']} bytes; budget is {cap}; no download started")
     dest = root() / "data/raw" / dataset / spec["revision"] / item["filename"]
+    def verify(path):
+        if item.get('size_bytes') is not None and path.stat().st_size!=item['size_bytes']:
+            raise ValueError('release size mismatch')
+        actual=digest(path)
+        if item.get('sha256') and actual!=item['sha256']:
+            raise ValueError('release hash mismatch')
+        if item.get('git_blob_sha1'):
+            from ncm_lab.data.download import verify_asset
+            if verify_asset(path,{**item,'size_bytes':path.stat().st_size}) is None:
+                raise ValueError('release Git blob mismatch')
+        return actual
     if dest.exists():
-        if item.get("sha256") and digest(dest) != item["sha256"]:
-            raise ValueError("cached release hash mismatch")
-        return {"path": str(dest), "sha256": digest(dest), "cached": True}
+        return {"path": str(dest), "sha256": verify(dest), "cached": True}
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".partial")
     try:
@@ -38,14 +47,18 @@ def fetch(dataset, split, max_bytes=None):
                 if used > cap:
                     raise ValueError("download byte budget exceeded; partial release removed")
                 out.write(chunk)
-        actual = digest(tmp)
-        if item.get("sha256") and actual != item["sha256"]:
-            raise ValueError("downloaded release hash mismatch")
+        actual = verify(tmp)
         tmp.rename(dest)
     finally:
         tmp.unlink(missing_ok=True)
     receipt = {"dataset": dataset, "split": split, "revision": spec["revision"], "sha256": actual,
                "size_bytes": dest.stat().st_size, "source_url": item["url"], "license": spec["license"]}
+    if dest.suffix=='.jsonl':
+        with dest.open(encoding='utf-8') as stream:
+            count=sum(1 for line in stream if line.strip())
+        if item.get('expected_questions') is not None and count!=item['expected_questions']:
+            raise ValueError('official release cardinality mismatch; acquired file retained for inspection')
+        receipt.update(official_split=split,scope='full_official_split',official_split_record_count=count)
     write_json(dest.with_suffix(dest.suffix + ".receipt.json"), receipt)
     return {"path": str(dest), **receipt}
 

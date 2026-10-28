@@ -8,8 +8,12 @@
   "hypothesis": "Cycle time / expected committed tokens improves on the best matched flat development control; no runtime opportunity and no quality benefit stops escalation.",
   "methods": [
     "FLAT_ADAPTED",
-    "HIER_SKIP",
-    "HIER_NO_SKIP"
+    "FLAT_COST",
+    "FLAT_MULTI_AE",
+    "HIER_MULTI_AE",
+    "HIER_MULTI_AE_NO_SKIP",
+    "HIER_NO_SKIP",
+    "HIER_SKIP"
   ],
   "datasets": [
     "oasst1",
@@ -22,7 +26,7 @@
     "SHR-003"
   ],
   "seeds": [
-    0
+    17
   ],
   "timing_repetitions": 5,
   "owner": null,
@@ -33,7 +37,7 @@
   "splits": "official train/dev/test retained; full declared test for headline results; smoke subsets labeled",
   "uncertainty": "paired report/tree-group bootstrap per training seed; timing repetitions separately recorded",
   "result_status": "Not run; no empirical findings yet",
-  "implementation_status": "CPU reference and protocol implemented; real-model/optimized runs gated",
+  "implementation_status": "shared production handlers implemented; released-hardware and research execution pending",
   "controls": {
     "thinking": false,
     "target_unchanged": true,
@@ -58,5 +62,6 @@
     "A": "physically smaller query tensors; expansion/head/context/verify costs; concurrency 1 and 4",
     "B": "calibrate <=100 steps AND <=1800 seconds; pilot <=1M source-token passes per trained method",
     "continuation_target": "10% development cycle-cost improvement is provisional, not a promised result"
-  }
+  },
+  "codec_dependency": "ACL-005 selected codec; same frozen target and deployment policy"
 }

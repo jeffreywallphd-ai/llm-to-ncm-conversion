@@ -1,32 +1,15 @@
-# Two studies, one shared research implementation
+# First technical study
 
-ACL working title: Progressive Query Expansion for Efficient Speculative Language
-Generation. Question: can fewer future states early in existing drafter layers
-improve proposal acceptance versus measured cycle cost without changing target
-outputs? Test the progressive schedule, learned expansion, one default skip,
-early/late/near-budget schedules and strong/cost-matched flat controls. ACL-001
-is a bounded opportunity/pilot gate; ACL-002 is decisive quality/cost comparison;
-ACL-003 isolates mechanisms; ACL-004 states model/context/load/hardware boundaries.
+Working title: Transferring Multiscale Representations from Frozen Language Models to Hierarchical Speculative Drafters.
 
-All necessary technical controls belong in ACL. Controlled additional adaptation
-uses the same warm start, examples, token exposure, anchor policy and objective.
-Parameter, inference-cost, training-compute and data matching are distinct controls.
-Choose FLAT_COST using development profiling rather than unused parameter padding.
-Decisive trained-method results need three independent seeds, with paired request
-groups and timing repeats treated separately. General language, reasoning,
-instructions, code and original long-context summarization are the evaluation scope.
+Test four hypotheses separately: compact codes preserve prediction information; causal predictors recover useful codes from permitted context; actual conditioning helps beyond auxiliary loss or capacity; acceptance gains exceed all added runtime cost. Reconstruction is an oracle diagnostic. Exact greedy verification preserves the target output, so different task scores require a pipeline/parity investigation.
 
-IS working title: Designing Efficient and Verifiable Financial Analysis Systems with
-Local Language Models. It studies evidence preparation, retrieval, calculation,
-output contracts, one bounded repair, genuine multi-question workpapers, and a
-development-trained pre-generation policy under controlled workload scenarios.
-FinQA, TAT-QA and DocFinQA retain original financial gold. IS-001 supplies objective
-answer controls; IS-002 tests full filings; IS-003 tests workpapers/validation; IS-004
-tests operating policy. Numerical correctness, supporting evidence and structural
-validity are separate endpoints. No investment-return, adoption or trust claims.
+ACL-005 owns codec fitting, prediction-aware versus reconstruction-only selection, latent transfer, rate/distortion, interventions and data ladders. ACL-001 owns finite calibration; ACL-002 owns main quality/runtime evaluation; ACL-003 owns hierarchy/skip and mechanism controls; ACL-004 owns held-out long-context/generalization conditions. Original experiment IDs and the later journal study remain separate.
 
-No hypothesis is established. Prior-art overlap is reviewed before scaling; see
-novelty_review.md. Owner/reviewer assignments are pending the real team. A negative
-pilot is a valid stopping point; a journal domain speed table alone does not justify
-a new system-design contribution. See publication_relationship.md for snapshot and
-disclosure rules, and claim maps for missing evidence.
+The four-cell comparison is flat versus progressive, crossed with no codec versus multilevel transfer, with the original skip disabled in all four cells. Compare HIER_MULTI_AE with HIER_SKIP separately. Capacity-only, frozen-codec CE-only, auxiliary-only, linear, independent-level and eight-slot single-scale transfer controls are named implementations. HIER_POOLED_CONTEXT supplies a lower-cost confirmed-feature conditioning comparison. FLAT_COST requires an actual reduced-depth development cost-selection receipt. STRONG_EXTERNAL uses the pinned DCore DFlash release through its distinct source adapter. Direct-forward CPU parity is tested; released-weight/GPU parity is pending. DFlare remains close prior art without an adapter, limiting any broad superiority claim.
+
+The candidate study specification uses paired codec/student seeds 17, 29 and 43 and separately randomized timing jobs. The source ladder is 0.25M, 1M, 4M and 16M eligible response positions. A tier above the available corpus is unavailable. Every fitted component must use its tier; fixed-codec transfer curves must disclose the codec's larger fitting corpus separately. Pilot screening uses four fixed held-out examples; the candidate set, criterion and evaluation schedule must be frozen before research comparisons.
+
+Equal-data and measured total-wall-budget comparisons have distinct configuration identities. Total-cost comparison requires immutable real teacher-cost evidence and charges the codec's complete candidate search. Upstream pretraining costs are disclosed separately. Wall budgets do not establish equal hardware FLOPs, convergence or universal data efficiency.
+
+The study file is a finite candidate plan, not permission to run a sweep or a claim of readiness. Its launcher requires real bounded training/storage calibration. The current host lacks the released target/drafter, CUDA PyTorch and Spark. Full official evaluators/data must be pinned; generated Python remains blocked without verified isolation. Failed and unavailable conditions stay in accounting. No empirical paper tables are populated.

@@ -26,9 +26,12 @@
   "seed": 0,
   "require_gpu_parity": true,
   "dataset": "finqa",
-  "data_path": "data/processed/locked_evaluation.jsonl",
+  "data_path": "data/processed/finqa_dev.jsonl",
   "split": "dev",
   "max_requests": 8,
   "max_new_tokens": 256,
-  "output_instruction": "Return the required benchmark answer/program only. For GSM8K terminate with #### followed by the number."
+  "output_instruction": "Return the required benchmark answer/program only. For GSM8K terminate with #### followed by the number.",
+  "input_receipts": [
+    "data/processed/finqa_dev.input.json"
+  ]
 }

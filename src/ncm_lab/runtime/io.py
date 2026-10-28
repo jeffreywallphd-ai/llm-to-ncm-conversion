@@ -7,7 +7,7 @@ import yaml
 
 def root() -> Path:
     configured = os.environ.get("NCM_REPO_ROOT")
-    candidates = [Path(configured)] if configured else [*Path.cwd().resolve().parents, Path.cwd().resolve()]
+    candidates = [Path(configured)] if configured else [Path.cwd().resolve(), *Path.cwd().resolve().parents]
     candidates += list(Path(__file__).resolve().parents)
     for p in candidates:
         if (p / "experiments/registry.yaml").is_file() and (p / "pyproject.toml").is_file():
@@ -17,11 +17,16 @@ def root() -> Path:
 
 def read(path):
     with Path(path).open(encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        text = f.read()
+    return json.loads(text) if text.lstrip().startswith(("{", "[")) else yaml.safe_load(text)
 
 
 def digest(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    h = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def canonical_hash(value):

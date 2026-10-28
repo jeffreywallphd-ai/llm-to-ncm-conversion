@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import uuid
+import zipfile
 from ncm_lab.runtime.io import root, digest, read, canonical_hash, write_json
 
 
@@ -17,14 +18,20 @@ def source_tree_hash():
     files = []
     for folder in ("src", "configs", "tests", "third_party"):
         for p in sorted((root() / folder).rglob("*")):
-            if p.is_file() and "__pycache__" not in p.parts and p.suffix not in {".pyc", ".pt"}:
+            if source_file(p):
                 files.append((p.relative_to(root()).as_posix(), digest(p)))
     return canonical_hash(files)
 
 
 def implementation_hash():
     return canonical_hash([(p.relative_to(root()).as_posix(),digest(p))
-        for p in sorted((root()/"src").rglob("*")) if p.is_file() and "__pycache__" not in p.parts])
+        for p in sorted((root()/"src").rglob("*")) if source_file(p)])
+
+
+def source_file(path):
+    return (path.is_file() and '__pycache__' not in path.parts
+            and not any(part.endswith('.egg-info') for part in path.parts)
+            and path.suffix not in {'.pyc','.pt','.safetensors'})
 
 
 def reserve_phase(budget, run_id):
@@ -73,6 +80,21 @@ class Run:
         write_json(self.path / "config.json", config, exclusive=True)
         write_json(self.path / "protocol.json", protocol, exclusive=True)
         write_json(self.path / "environment.json", environment, exclusive=True)
+        if config.get("resolved_plan_artifact"):
+            plan = read(config["resolved_plan_artifact"])
+            if plan["sha256"] != config["resolved_plan"]:
+                raise ValueError("resolved plan reference changed")
+            write_json(self.path/"resolved_plan.json",plan,exclusive=True)
+        snapshot = self.path/"source_snapshot.zip"
+        files = [root()/n for n in ("LICENSE", "pyproject.toml", "uv.lock", "experiments/registry.yaml")]
+        for directory in ("src", "configs", "third_party"):
+            files += [p for p in (root()/directory).rglob("*") if source_file(p)]
+        total = sum(p.stat().st_size for p in files)
+        if total + sum(p.stat().st_size for p in self.path.iterdir()) > budget.max_storage_bytes:
+            raise ValueError("run storage cap cannot preserve the source snapshot")
+        with zipfile.ZipFile(snapshot,"x",compression=zipfile.ZIP_DEFLATED) as archive:
+            for p in files:
+                archive.write(p,p.relative_to(root()).as_posix())
         self.base = {"schema_version": 1, "run_id": self.id, "experiment_id": protocol["id"],
                      "run_kind": config["executor"], "result_origin": config.get("result_origin", "measured"),
                      "study_membership": [], "parent_run_ids": list(parent_run_ids),
@@ -84,14 +106,21 @@ class Run:
                      "data_manifest_hashes": {p.name: digest(p) for p in (root() / "data/manifests").glob("*.yaml")},
                      "target": config.get("model", {}), "drafter": {"method_id": config.get("method", "fixture")},
                      "upstream": {"lock_hash": digest(root() / "third_party/sources.lock.yaml")},
-                     "seeds": {"training": config.get("seed", 0), "data_order": config.get("seed", 0),
-                               "inference": config.get("seed", 0), "timing_order": config.get("seed", 0)},
+                     "seeds": {"training": config.get("seed", 0), 'initialization':config.get('init_seed',config.get('seed',0)),
+                               'codec':config.get('codec_seed'),"data_order": config.get("data_seed", config.get('seed',0)),
+                               "inference": config.get("inference_seed", config.get('seed',0)),
+                               "timing_order": config.get("timing_seed", config.get('seed',0))},
                      "runtime": {"hardware_profile": environment, "precision": config.get("precision", "float32"),
                                  "attention_backend": "sdpa", "compile_settings": {},
                                  "software_lock_hash": digest(root() / "uv.lock") if (root() / "uv.lock").exists() else None},
                      "budget": asdict(budget)}
         self.base["code"]["implementation_hash"] = implementation_hash()
+        self.base["code"]["source_snapshot_sha256"] = digest(snapshot)
         write_json(self.path / "launch.json", self.base, exclusive=True)
+        engineering = (config.get("result_origin") == "test_fixture"
+                       and not self.path.is_relative_to((root()/"experiments").resolve()))
+        index = root()/"results/generated"/("engineering_run_locations" if engineering else "run_locations")/(self.id+".json")
+        write_json(index, {"run_id": self.id, "path": str(self.path)}, exclusive=True)
         self.event("running")
 
     def event(self, status, **details):
@@ -120,6 +149,26 @@ def validate_run(path, require_current_code=False):
             raise ValueError(f"missing/changed run artifact: {name}")
     if digest(path / "config.json") != manifest["config_hash"] or digest(path / "protocol.json") != manifest["protocol_hash"]:
         raise ValueError("resolved configuration/protocol changed")
+    launch=read(path/'launch.json')
+    if any(manifest.get(key)!=value for key,value in launch.items()):
+        raise ValueError('closed manifest contradicts immutable launch identity')
+    events=[json.loads(line) for line in (path/'events.jsonl').read_text().splitlines()]
+    if not events or events[-1]['status']!=manifest['status'] or events[-1].get('error')!=manifest['error']:
+        raise ValueError('closed manifest contradicts final event')
+    inputs = path/"inputs.json"
+    if inputs.is_file():
+        from ncm_lab.data.artifacts import verify_input
+        for item in read(inputs):
+            actual = verify_input(item["receipt"])
+            if canonical_hash(actual) != canonical_hash(item["identity"]):
+                raise ValueError("consumed input receipt identity changed")
+    config = read(path/"config.json")
+    if (path/'model_assets.json').exists():
+        for asset in read(path/'model_assets.json'):
+            if digest(asset['path']) != asset['sha256']:
+                raise ValueError('model/tokenizer dependency changed')
+    if config.get("checkpoint") and digest(config["checkpoint"]) != config.get("checkpoint_sha256"):
+        raise ValueError("checkpoint dependency changed")
     if manifest["result_origin"] == "test_fixture" and manifest["publication_eligible"]:
         raise ValueError("fixture runs cannot become publication evidence")
     if require_current_code:

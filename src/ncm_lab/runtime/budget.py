@@ -45,13 +45,27 @@ class Budget:
 class Meter:
     def __init__(self, budget: Budget, artifact_dir: Path):
         self.budget, self.artifact_dir = budget, artifact_dir
+        self.accounting_dir = artifact_dir
         self.started = time.monotonic()
         self.steps = self.source_tokens = self.supervised_positions = 0
+        self.inherited_steps = self.inherited_source_tokens = self.inherited_supervised_positions = 0
 
-    def check(self, source_tokens=0, supervised_positions=0):
+    @property
+    def new_steps(self):
+        return self.steps-self.inherited_steps
+
+    @property
+    def new_source_tokens(self):
+        return self.source_tokens-self.inherited_source_tokens
+
+    @property
+    def new_supervised_positions(self):
+        return self.supervised_positions-self.inherited_supervised_positions
+
+    def check(self, source_tokens=0, supervised_positions=0, step=True):
         b = self.budget
-        size = sum(p.stat().st_size for p in self.artifact_dir.rglob("*") if p.is_file())
-        if (self.steps >= b.max_steps or time.monotonic() - self.started >= b.max_wall_seconds
+        size = sum(p.stat().st_size for p in self.accounting_dir.rglob("*") if p.is_file())
+        if (step and self.steps >= b.max_steps or time.monotonic() - self.started >= b.max_wall_seconds
                 or self.source_tokens + source_tokens > b.max_training_source_token_passes
                 or self.supervised_positions + supervised_positions > b.max_supervised_future_positions
                 or size > b.max_storage_bytes):

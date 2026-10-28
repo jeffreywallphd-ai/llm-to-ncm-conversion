@@ -6,6 +6,10 @@
       "summary": "results/generated/ACL-001.json"
     },
     {
+      "experiment_id": "ACL-005",
+      "summary": "results/generated/ACL-005.json"
+    },
+    {
       "experiment_id": "SHR-001",
       "summary": "results/generated/SHR-001.json"
     }

@@ -43,7 +43,7 @@ def main():
             for name,count in [("train",5735),("dev",780),("test",922)]}})
     for dataset,url,revision,license_name,blocker in [
         ("oasst1","https://huggingface.co/datasets/OpenAssistant/oasst1",sources["oasst1"]["revision"],"Apache-2.0 (card; verify at acquisition)","use English undeleted approved training prompts; split entire message_tree_id and deduplicate evaluation overlap"),
-        ("ifeval","https://github.com/google-research/google-research/tree/master/instruction_following_eval",None,"Apache-2.0","pin official evaluator and data file revision before acquisition; no approximate compliance scorer"),
+        ("ifeval","https://github.com/google-research/google-research/tree/master/instruction_following_eval",sources.get('ifeval',{}).get('revision'),"Apache-2.0","use pinned evaluator source/data metadata; provision official environment before scoring"),
         ("humaneval_plus","https://github.com/evalplus/evalplus",sources["evalplus"]["revision"],"Apache-2.0","EvalPlus official task and isolated execution environment required; no host Python execution"),
         ("longbench","https://github.com/THUDM/LongBench",sources["longbench"]["revision"],"MIT code; inspect original GovReport dataset terms","pin the original GovReport release and official scoring dependencies; LongBench v2 is not a substitute")]:
         put(dataset,{"schema_version":1,"dataset":dataset,"source_url":url,"revision":revision,"license":license_name,
@@ -54,6 +54,16 @@ def main():
 def put(name,spec):
     path = ROOT / "data/manifests" / f"{name}.yaml"
     path.parent.mkdir(parents=True,exist_ok=True)
+    if path.exists() and name in {'ifeval','longbench','humaneval_plus'}:
+        existing=json.loads(path.read_text(encoding='utf-8'))
+        # Preserve separately inspected immutable payload/scorer metadata.
+        for key in ('data_release','data_version','version_source_sha256'):
+            if key in existing:
+                spec[key]=existing[key]
+        if existing.get('revision') and not spec.get('revision'):
+            spec['revision']=existing['revision']
+        if existing['splits']['test'].get('git_blob_sha1'):
+            spec['splits']['test']=existing['splits']['test']
     path.write_text(json.dumps(spec,indent=2)+"\n",encoding="utf-8")
 
 

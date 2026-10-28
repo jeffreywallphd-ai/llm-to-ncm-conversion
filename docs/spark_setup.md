@@ -33,3 +33,7 @@ Do not compare a published multi-GPU LongSpark number with a single Spark measur
 The first training phase caps each matched method at 100 steps, 1800 seconds and
 1M source-token passes; its aggregate caps cover three methods. Runtime duration,
 throughput and memory estimates remain unknown until calibration is measured.
+
+## Revision-2 implementation update — 2026-10-27
+
+The implemented efficient reference path uses Transformers incremental KV/features and SDPA; no SGLang/vLLM-specific hierarchy adapter is claimed. Run exact cache-only SHR-002 verification with the generated verification config and full effective EOS policy before research timing. Qwen3-8B/DFlash and Spark/CUDA validation remain unexecuted on this Windows CPU PyTorch host. Preserve a separate CUDA environment.

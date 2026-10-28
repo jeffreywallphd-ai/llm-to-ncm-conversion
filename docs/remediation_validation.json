@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "branch": "codex/multiscale-latent-remediation",
+  "starting_commit": "c60a8a1849410e7266dcdca494362bf108eecceb",
+  "resulting_commit": "c60a8a1849410e7266dcdca494362bf108eecceb",
+  "changes_committed": false,
+  "git_state_scope": "Captured before the implementation commit; Git history records the later commit and fast-forward of main.",
+  "commit_gate": {
+    "tests_passed": 127,
+    "tests_skipped": 1,
+    "test_seconds": 32.59,
+    "ruff": "passed",
+    "implementation_matches_recorded_validation": true,
+    "acceptance_integrity": "passed"
+  },
+  "implementation_sha256": "cc4d8e80f82de9cd5fd9a663907b8cfb06f864188e7cbf052ac11d72a03cc952",
+  "tests": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q",
+      "passed": 127,
+      "skipped": 1,
+      "seconds": 26.37,
+      "exit_code": 0
+    },
+    {
+      "command": "installed wheel: python -m pytest -q in disposable checkout overlay",
+      "passed": 127,
+      "skipped": 1,
+      "seconds": 25.63,
+      "warnings": 3,
+      "warning_scope": "unchanged vendored TAT-QA invalid-escape SyntaxWarnings",
+      "exit_code": 0
+    }
+  ],
+  "lint": {
+    "command": ".venv/Scripts/ruff.exe check .",
+    "exit_code": 0
+  },
+  "whitespace": {
+    "command": "git -c core.safecrlf=false diff --check -- . :(exclude)src/ncm_lab/vendor/**",
+    "exit_code": 0
+  },
+  "wheel": {
+    "path": ".cache/remediation-wheel-final/ncm_lab-0.1.0-py3-none-any.whl",
+    "sha256": "eabfdde41f0e83b513444e66b9867f7d5de872be4a63a14cc342552132268cb5",
+    "vendored_licenses_present": [
+      "dcore",
+      "dflash",
+      "finqa",
+      "tatqa"
+    ]
+  },
+  "acceptance": {
+    "run_id": "20261028T125454Z-a9d35633b35d",
+    "path": "C:\\ai-projects\\llm-to-ncm-conversion\\experiments\\acl\\ACL-005_multiscale_codec_and_transfer\\runs\\20261028T125454Z-a9d35633b35d",
+    "manifest_sha256": "9ba241eea21d1d002d95d4390497dad84e7812372342ee1614dbd8d457d06902",
+    "export": {
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\publications\\exports\\20261028T125454Z-a9d35633b35d-engineering.zip",
+      "sha256": "f08d70667fc774c1b078daf6447eb0fefe23e266f178cd0bf030e4835a31b69b",
+      "research_eligible": false
+    },
+    "archive_validation": {
+      "valid": true,
+      "files": 192,
+      "research_eligible": false,
+      "analysis": null,
+      "archive_code_executed": false
+    }
+  },
+  "fixture_resources": {
+    "executor_wall_seconds": 5.280999999959022,
+    "target_processed_positions": 1359,
+    "optimizer_steps": 13,
+    "teacher_generated_tokens": 48,
+    "storage_bytes": 3384117
+  },
+  "fixture_operations": 20,
+  "outside_checkout_validation": {
+    "valid": true,
+    "archive_code_executed": false,
+    "method": "trusted installed ncm CLI reads archive JSON; no archive code imported/executed"
+  },
+  "plans": {
+    "jobs": 779,
+    "sha256": "aedc571ef242adb95a3bb387261f791405007430e5cd552aafcb1401dfad9413",
+    "aggregate_limits": {
+      "steps": 6958400,
+      "wall_seconds": 1400700,
+      "source_positions": 29884000000,
+      "storage_bytes": 3096096000000,
+      "download_bytes": 0
+    },
+    "calibration_guard": {
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\results\\generated\\plans\\aedc571ef242-aca708b2",
+      "status": "blocked",
+      "jobs": 779,
+      "reason": "calibration prerequisite missing; no research job launched"
+    },
+    "experiments": {
+      "SHR-001": {
+        "jobs": 1,
+        "sha256": "ec83ee1b3b7e97c86d697785722768d3303c4c261b3a4968f4423f2889d177e2",
+        "direct_jobs": 1
+      },
+      "SHR-002": {
+        "jobs": 128,
+        "sha256": "8d97bd8c50614e7f14779ee9c03397690df1cb538171c238f57942c87db90823",
+        "direct_jobs": 57
+      },
+      "SHR-003": {
+        "jobs": 6,
+        "sha256": "ac161fd77f9fc21ed8511c2cc5295bdfdef326143d9b396a1f6c49bf71edb5cb",
+        "direct_jobs": 3
+      },
+      "ACL-001": {
+        "jobs": 4,
+        "sha256": "14bc2b3a1285a957309832d9dc445bf0d7e947cf539663a5af89b123b5b8b886",
+        "direct_jobs": 4
+      },
+      "ACL-002": {
+        "jobs": 533,
+        "sha256": "a0dd14eb625d16b1c09dddadc803553f1073240c16b29b9e28c2f0b232e7e0ba",
+        "direct_jobs": 480
+      },
+      "ACL-003": {
+        "jobs": 179,
+        "sha256": "0fbe018ae408b372f158ce5a959994223ba6bff0f07485e20c86793c470690dc",
+        "direct_jobs": 66
+      },
+      "ACL-004": {
+        "jobs": 94,
+        "sha256": "28ce4af7ed5c1bdad4196a164b54664376bbf94aa5fe6541b702c1310a7a2f8c",
+        "direct_jobs": 54
+      },
+      "ACL-005": {
+        "jobs": 119,
+        "sha256": "d831562144c72adb8d4c825bd64c8d5bbeb74f00b2ca24150c87987485dd68e5",
+        "direct_jobs": 114
+      }
+    }
+  },
+  "figures": {
+    "path": "results/generated/remediation-final/figures",
+    "rows": {
+      "rate_distortion": 12,
+      "learning_curves": 9,
+      "interventions": 6,
+      "oracle_predicted": 3,
+      "total_dependency_cost": 1
+    },
+    "manifest_sha256": "11399b15e4a882ef1d0fecae382458478afa403ea7cc6d9e73070421e7007f7b"
+  },
+  "research_evidence": "none",
+  "research_assets_downloaded": false,
+  "research_training_started": false,
+  "research_jobs_launched": 0,
+  "failed_attempts": [
+    {
+      "scope": "initial baseline",
+      "result": "71 passed, 1 failed, 1 skipped",
+      "cause": "CRLF fixture bytes differed from existing LF receipts",
+      "resolution": "newline-only restoration recovered pinned hashes; outcomes/receipts not changed"
+    },
+    {
+      "scope": "expanded production DAG",
+      "result": "1 failed, 125 passed, 1 skipped",
+      "cause": "Windows monotonic clock produced zero-duration profile; cost division failed",
+      "resolution": "high-resolution perf_counter timings; reject nonpositive observations; failed run retained"
+    },
+    {
+      "scope": "extracted standalone validator",
+      "result": "automatic approval review rejected execution",
+      "cause": "repository prohibits host execution of generated Python",
+      "resolution": "trusted installed CLI performs hash verification and data-only reanalysis; no archive code executed"
+    },
+    {
+      "scope": "early disposable wheel install",
+      "result": "sandbox PE-resource access failure",
+      "resolution": "approved offline installation into workspace disposable target succeeded"
+    }
+  ],
+  "external_prerequisites": [
+    "released-weight GPU/backend parity",
+    "measured calibration and locking finite research caps",
+    "real train/dev/test source receipts and completed benchmark overlap audit",
+    "official evaluator runtimes",
+    "verified external isolation for generated-Python benchmarks",
+    "independent research runs/human review"
+  ],
+  "is_only_deferrals": [
+    "FIX-13",
+    "FIX-14"
+  ]
+}

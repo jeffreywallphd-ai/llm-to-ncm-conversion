@@ -33,3 +33,7 @@ release writes a revision/size/SHA256 receipt; expected counts still need auditi
 
 No remote resources, paid compute or large sweeps are provisioned by install/plan.
 The present host's RTX 4060 is not a substitute for a verified Spark Qwen3-8B run.
+
+## Revision-2 implementation update — 2026-10-27
+
+Current candidate study caps are enumerated in ACL-005/configs/study.yaml and stage budgets. They are conservative finite reservations, not estimates of required research compute. Calibration is required before study launch. Distinct corpus positions, repeated passes, physical target positions, supervised positions, codec search and teacher costs are distinct. Fixed-codec and complete-procedure curves require separate identities. See remediation_report.md for the meta-device storage calculation; no released-model runtime was measured.

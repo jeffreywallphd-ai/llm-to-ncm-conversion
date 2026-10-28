@@ -1,0 +1,555 @@
+{
+  "schema_version": 1,
+  "starting_commit": "c60a8a1849410e7266dcdca494362bf108eecceb",
+  "branch": "codex/multiscale-latent-remediation",
+  "overall": "first-paper software implemented and CPU validated; research execution remains gated; IS-only FIX-13/14 deferred",
+  "items": [
+    {
+      "id": "FIX-01",
+      "requirement": "Fresh checkout and baseline bytes",
+      "files": [
+        "pyproject.toml",
+        ".gitattributes",
+        "runtime/io.py"
+      ],
+      "executed_acceptance": "CPU suite and LF receipt regression",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "CPU suite and LF receipt regression",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-02",
+      "requirement": "Model placement and shared frozen modules",
+      "files": [
+        "models/factory.py"
+      ],
+      "executed_acceptance": "FP32/BF16 factory forward/backward/optimizer",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "FP32/BF16 factory forward/backward/optimizer",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "FIX-03",
+      "requirement": "One effective generation policy and complete EOS",
+      "files": [
+        "decoding/policy.py",
+        "decoding/hf.py",
+        "models/upstream.py"
+      ],
+      "executed_acceptance": "two-EOS production adapters, unsupported-processor rejection, pinned generation metadata",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "two-EOS production adapters, unsupported-processor rejection, pinned generation metadata",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "FIX-04",
+      "requirement": "Initialization, sampling and recovery state",
+      "files": [
+        "models/factory.py",
+        "training/loop.py",
+        "training/checkpoints.py"
+      ],
+      "executed_acceptance": "same/different initialization seed and exact interrupted/resumed weights/optimizer/order",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "Independent seed streams and restricted sampler/optimizer/RNG recovery for both codec search and student adaptation.",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-05",
+      "requirement": "Response boundaries and held-out admission",
+      "files": [
+        "training/records.py",
+        "training/teacher.py",
+        "training/latent_supervision.py"
+      ],
+      "executed_acceptance": "first response anchor, partial windows, source-token/feature mutation and gold-mask independence",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "first response anchor, partial windows, source-token/feature mutation and gold-mask independence",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-06",
+      "requirement": "Peak checkpoint storage and atomic recovery",
+      "files": [
+        "training/checkpoints.py",
+        "training/loop.py"
+      ],
+      "executed_acceptance": "1KiB preflight, interrupted write/update, selected weights retained without target duplication",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "1KiB preflight, interrupted write/update, selected weights retained without target duplication",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-07",
+      "requirement": "True held-out scoring and selection",
+      "files": [
+        "training/loop.py",
+        "training/codec.py",
+        "training/selection.py"
+      ],
+      "executed_acceptance": "multiple actual candidates and selected-weight replacement rejection",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "multiple actual candidates and selected-weight replacement rejection",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-08",
+      "requirement": "Authoritative methods and cost controls",
+      "files": [
+        "models/factory.py",
+        "experiments/cost_selection.py"
+      ],
+      "executed_acceptance": "physical depths/schedules, fixed offsets, conflicts, real profile selector; external adapter unavailable",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "physical depths/schedules, fixed offsets, conflicts, real profile selector; external adapter unavailable",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-09",
+      "requirement": "Incremental confirmed target features",
+      "files": [
+        "decoding/hf.py"
+      ],
+      "executed_acceptance": "one prefill plus one target call per verification; recomputing oracle logits/features",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "one prefill plus one target call per verification; recomputing oracle logits/features",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "FIX-10",
+      "requirement": "Bounded matrix and stage dispatch",
+      "files": [
+        "experiments/matrix.py",
+        "experiments/codec_stages.py",
+        "experiments/runner.py"
+      ],
+      "executed_acceptance": "production CPU DAG and dependency/digest checks; candidate research plan offline",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "All shared/ACL matrices select actual research jobs and dependency closure; 779-job full plan, phase/input/protocol hashes, deterministic order, explicit failed/blocked outcomes.",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "FIX-11",
+      "requirement": "Telemetry and declared statistical analysis",
+      "files": [
+        "evaluation/tables.py",
+        "evaluation/codec_analysis.py",
+        "evaluation/latent_mechanisms.py"
+      ],
+      "executed_acceptance": "nonzero decoder counters, per-seed/grouped contrasts, actual codec CSV/figure path",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "Serialized decoder/request telemetry, official endpoints, grouped paired seed analysis, dependency-cost joining, learning/rate-distortion/intervention/oracle-gap/cost tables and figures.",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "FIX-12",
+      "requirement": "Bind actual consumed input files",
+      "files": [
+        "data/artifacts.py",
+        "data/ladder.py",
+        "runtime/provenance.py"
+      ],
+      "executed_acceptance": "wrong split/schema/hash/order rejected; nested tiers unavailable above corpus",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "Content-bound source receipts, recomputed whole-tree split assignment, immutable gold-free benchmark overlap audit required for locked adaptation.",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-13",
+      "requirement": "Financial filing identities and overlap audit",
+      "files": [
+        "data/loaders.py",
+        "data/manifests"
+      ],
+      "executed_acceptance": "reviewed IS-specific specification preserved",
+      "implementation": "not_implemented",
+      "validation": "not_validated",
+      "research_evidence": "none",
+      "is_only_deferral": true,
+      "remaining": [
+        "explicitly deferred later IS implementation"
+      ],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "reviewed IS-specific specification preserved",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-14",
+      "requirement": "Complete bundle evidence and IS workflow dispatch",
+      "files": [
+        "business/pipeline.py",
+        "business/workload.py"
+      ],
+      "executed_acceptance": "existing tests preserved; reviewed bundle/dispatch work deferred",
+      "implementation": "not_implemented",
+      "validation": "not_validated",
+      "research_evidence": "none",
+      "is_only_deferral": true,
+      "remaining": [
+        "explicitly deferred later IS implementation"
+      ],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "existing tests preserved; reviewed bundle/dispatch work deferred",
+      "external_prerequisites": []
+    },
+    {
+      "id": "FIX-15",
+      "requirement": "Append-only eligibility and study selection",
+      "files": [
+        "reporting/evidence.py",
+        "reporting/reports.py"
+      ],
+      "executed_acceptance": "fixture exclusion, immutable assessments, external-root lookup",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "Append-only claim-class gates, actual parity/warmup/full-split checks, analysis/selection provenance and explicit author selection; no fixture promotion.",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "FIX-16",
+      "requirement": "Evidence closure and portable export integrity",
+      "files": [
+        "reporting/portable.py",
+        "reporting/export.py"
+      ],
+      "executed_acceptance": "nonempty transformed-byte archive validation plus data-only analysis outside checkout using trusted installed CLI; no archive code executed",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "Research dependency closure and portable content-addressed external references; transformed-byte integrity and independently rerun engineering analysis outside checkout.",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review",
+        "positive replay of selected measured-research export; no eligible real run exists yet"
+      ]
+    },
+    {
+      "id": "FIX-17",
+      "requirement": "Preparation and honest handoff",
+      "files": [
+        "runtime/prepare.py",
+        "docs/remediation_report.md"
+      ],
+      "executed_acceptance": "separate train/dev teacher configs and receipts; no readiness inferred from file existence",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "Generated cache-only train/dev teacher, calibration, codec-transfer DAG and optional pinned DCore verification configs; actual readiness checks remain separate.",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "PAPER-01",
+      "requirement": "Research contribution and close prior art",
+      "files": [
+        "docs/research_plan.md",
+        "docs/novelty_review.md",
+        "docs/paper_outline.md"
+      ],
+      "executed_acceptance": "primary DFlare/EAGLE-3/Matryoshka sources inspected; hypotheses explicit",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "primary DFlare/EAGLE-3/Matryoshka sources inspected; hypotheses explicit",
+      "external_prerequisites": []
+    },
+    {
+      "id": "PAPER-02",
+      "requirement": "Aligned independently reconstructed continuous codec",
+      "files": [
+        "models/codecs.py",
+        "training/codec.py"
+      ],
+      "executed_acceptance": "prediction-position logit alignment, rates, held-out candidate selection and frozen reload",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "prediction-position logit alignment, rates, held-out candidate selection and frozen reload",
+      "external_prerequisites": []
+    },
+    {
+      "id": "PAPER-03",
+      "requirement": "Causal predicted codes and live bridges",
+      "files": [
+        "models/latent_adapters.py",
+        "models/hierarchy.py"
+      ],
+      "executed_acceptance": "zero-gate baseline parity, enabled-bridge gradients, fixed inference shapes and encoder sentinel",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "zero-gate baseline parity, enabled-bridge gradients, fixed inference shapes and encoder sentinel",
+      "external_prerequisites": []
+    },
+    {
+      "id": "PAPER-04",
+      "requirement": "Staged training and data/cost ladders",
+      "files": [
+        "training/codec.py",
+        "training/loop.py",
+        "data/ladder.py",
+        "experiments/cost_selection.py"
+      ],
+      "executed_acceptance": "CPU codec-to-student selection/resume; measured-cost prerequisite logic; full cost runs pending",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "CPU codec-to-student selection/resume; measured-cost prerequisite logic; full cost runs pending",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "PAPER-05",
+      "requirement": "ACL-005 and integrated controls/analysis",
+      "files": [
+        "experiments/acl/ACL-005_multiscale_codec_and_transfer",
+        "publications/acl"
+      ],
+      "executed_acceptance": "modular stages, paired seed plan and real engineering tables; complete research reporting not yet exercised",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "All codec controls and causal transfer treatments connect to shared training, held-out diagnostics, parity, evaluation, paired analysis and finite experiment matrices.",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    },
+    {
+      "id": "PAPER-06",
+      "requirement": "Full production-interface CPU acceptance and handoff",
+      "files": [
+        "experiments/acceptance.py",
+        "tests/test_remediation.py"
+      ],
+      "executed_acceptance": "127 passing CPU tests; saved-model production DAG; codec/train/select/resume/parity/diagnostics/evaluate; outside-checkout data-only archive reanalysis",
+      "implementation": "complete",
+      "validation": "cpu_validated",
+      "research_evidence": "none",
+      "is_only_deferral": false,
+      "remaining": [],
+      "evidence": [
+        "tests/test_remediation.py",
+        "docs/remediation_report.md",
+        "docs/remediation_validation.json"
+      ],
+      "actual_change": "Both one-command acceptance and a separate saved-model production-executor DAG exercise the architecture; engineering export validates outside checkout.",
+      "external_prerequisites": [
+        "released-weight GPU/backend parity and bounded memory/storage calibration",
+        "provisioned official evaluator environments and verified benchmark receipts",
+        "actual independently seeded research runs and human review"
+      ]
+    }
+  ],
+  "scope_limits": [
+    "HumanEval+ remains blocked until a verified external execution boundary exists; generated Python never executes on the host.",
+    "DCore pinned-source adapter is implemented; its released weights and GPU parity were not executed.",
+    "DFlare remains close prior art with no implemented adapter; DCore is the selected external baseline.",
+    "No native NCM target conversion, research speedup, quality improvement or novelty claim is established."
+  ]
+}

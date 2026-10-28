@@ -63,7 +63,7 @@
       "path": "target/b968826d9c46dd6066d109eabc6255188de91218/generation_config.json",
       "url": "https://huggingface.co/Qwen/Qwen3-8B/resolve/b968826d9c46dd6066d109eabc6255188de91218/generation_config.json",
       "size_bytes": 239,
-      "sha256": null,
+      "sha256": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
       "git_blob_sha1": "20a8a9156fc8c3f25295ca067f61fdf120d517c5",
       "groups": [
         "pilot"
@@ -596,6 +596,74 @@
         "financial-notices"
       ],
       "license": "MIT"
+    },
+    {
+      "id": "external_draft:README.md",
+      "role": "draft",
+      "repo_id": "ernie-research/DCore-DFlash-Qwen3-8B-Budget16",
+      "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
+      "filename": "README.md",
+      "split": null,
+      "path": "external_draft/e2f43607fb2531341b09e41889f593c75456a3f2/README.md",
+      "url": "https://huggingface.co/ernie-research/DCore-DFlash-Qwen3-8B-Budget16/resolve/e2f43607fb2531341b09e41889f593c75456a3f2/README.md",
+      "size_bytes": 1576,
+      "sha256": null,
+      "git_blob_sha1": "2bb79bec10ab12290c3a7106c26a2c56f56ad04e",
+      "groups": [
+        "external-baseline"
+      ],
+      "license": "MIT source; model-card weights license unspecified"
+    },
+    {
+      "id": "external_draft:config.json",
+      "role": "draft",
+      "repo_id": "ernie-research/DCore-DFlash-Qwen3-8B-Budget16",
+      "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
+      "filename": "config.json",
+      "split": null,
+      "path": "external_draft/e2f43607fb2531341b09e41889f593c75456a3f2/config.json",
+      "url": "https://huggingface.co/ernie-research/DCore-DFlash-Qwen3-8B-Budget16/resolve/e2f43607fb2531341b09e41889f593c75456a3f2/config.json",
+      "size_bytes": 1099,
+      "sha256": null,
+      "git_blob_sha1": "19ff3c426785e5949a97e18129c13885ee29c955",
+      "groups": [
+        "external-baseline"
+      ],
+      "license": "MIT source; model-card weights license unspecified"
+    },
+    {
+      "id": "external_draft:dflash.py",
+      "role": "draft",
+      "repo_id": "ernie-research/DCore-DFlash-Qwen3-8B-Budget16",
+      "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
+      "filename": "dflash.py",
+      "split": null,
+      "path": "external_draft/e2f43607fb2531341b09e41889f593c75456a3f2/dflash.py",
+      "url": "https://huggingface.co/ernie-research/DCore-DFlash-Qwen3-8B-Budget16/resolve/e2f43607fb2531341b09e41889f593c75456a3f2/dflash.py",
+      "size_bytes": 15312,
+      "sha256": null,
+      "git_blob_sha1": "e1e58705110279eef9dd18119c462e4e83027fea",
+      "groups": [
+        "external-baseline"
+      ],
+      "license": "MIT source; model-card weights license unspecified"
+    },
+    {
+      "id": "external_draft:model.safetensors",
+      "role": "draft",
+      "repo_id": "ernie-research/DCore-DFlash-Qwen3-8B-Budget16",
+      "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
+      "filename": "model.safetensors",
+      "split": null,
+      "path": "external_draft/e2f43607fb2531341b09e41889f593c75456a3f2/model.safetensors",
+      "url": "https://huggingface.co/ernie-research/DCore-DFlash-Qwen3-8B-Budget16/resolve/e2f43607fb2531341b09e41889f593c75456a3f2/model.safetensors",
+      "size_bytes": 2097259104,
+      "sha256": "aa2500849c4c7357aeff972ded6f7f55749d67df7fb9f7511b3b8d5ea7429531",
+      "git_blob_sha1": null,
+      "groups": [
+        "external-baseline"
+      ],
+      "license": "MIT source; model-card weights license unspecified"
     }
   ],
   "notes": "Pinned file hashes/sizes; safetensors only; test payloads excluded from pilot preparation."

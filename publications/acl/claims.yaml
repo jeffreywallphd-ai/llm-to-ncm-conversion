@@ -11,7 +11,11 @@
       "analysis_outputs": [],
       "uncertainty": "unmeasured",
       "evidence_class": "unsupported",
-      "new_vs_shared": "new study evidence required"
+      "new_vs_shared": "new study evidence required",
+      "required_evidence_classes": [
+        "performance",
+        "full_test"
+      ]
     },
     {
       "id": "ACL-002-C1",
@@ -23,7 +27,11 @@
       "analysis_outputs": [],
       "uncertainty": "unmeasured",
       "evidence_class": "unsupported",
-      "new_vs_shared": "new study evidence required"
+      "new_vs_shared": "new study evidence required",
+      "required_evidence_classes": [
+        "performance",
+        "full_test"
+      ]
     },
     {
       "id": "ACL-003-C1",
@@ -35,7 +43,11 @@
       "analysis_outputs": [],
       "uncertainty": "unmeasured",
       "evidence_class": "unsupported",
-      "new_vs_shared": "new study evidence required"
+      "new_vs_shared": "new study evidence required",
+      "required_evidence_classes": [
+        "performance",
+        "full_test"
+      ]
     },
     {
       "id": "ACL-004-C1",
@@ -47,7 +59,81 @@
       "analysis_outputs": [],
       "uncertainty": "unmeasured",
       "evidence_class": "unsupported",
-      "new_vs_shared": "new study evidence required"
+      "new_vs_shared": "new study evidence required",
+      "required_evidence_classes": [
+        "performance",
+        "full_test"
+      ]
+    },
+    {
+      "id": "ACL-005-C1",
+      "claim": "Compact independently reconstructed codes preserve prediction information.",
+      "experiment_ids": [
+        "ACL-005",
+        "ACL-002",
+        "ACL-003"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "evidence_class": "unsupported",
+      "uncertainty": "unmeasured",
+      "new_vs_shared": "new independent codec/student seed-pair evidence required",
+      "required_evidence_classes": [
+        "representation"
+      ]
+    },
+    {
+      "id": "ACL-005-C2",
+      "claim": "Causal predictions approach oracle codec performance without future access.",
+      "experiment_ids": [
+        "ACL-005",
+        "ACL-002",
+        "ACL-003"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "evidence_class": "unsupported",
+      "uncertainty": "unmeasured",
+      "new_vs_shared": "new independent codec/student seed-pair evidence required",
+      "required_evidence_classes": [
+        "mechanism"
+      ]
+    },
+    {
+      "id": "ACL-005-C3",
+      "claim": "Runtime conditioning helps beyond auxiliary supervision and added capacity.",
+      "experiment_ids": [
+        "ACL-005",
+        "ACL-002",
+        "ACL-003"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "evidence_class": "unsupported",
+      "uncertainty": "unmeasured",
+      "new_vs_shared": "new independent codec/student seed-pair evidence required",
+      "required_evidence_classes": [
+        "performance",
+        "full_test"
+      ]
+    },
+    {
+      "id": "ACL-005-C4",
+      "claim": "Acceptance gains outweigh all predictor, bridge, cache and verification work.",
+      "experiment_ids": [
+        "ACL-005",
+        "ACL-002",
+        "ACL-003"
+      ],
+      "eligible_run_ids": [],
+      "analysis_outputs": [],
+      "evidence_class": "unsupported",
+      "uncertainty": "unmeasured",
+      "new_vs_shared": "new independent codec/student seed-pair evidence required",
+      "required_evidence_classes": [
+        "performance",
+        "full_test"
+      ]
     }
   ]
 }

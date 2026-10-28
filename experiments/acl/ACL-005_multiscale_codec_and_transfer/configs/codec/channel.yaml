@@ -1,0 +1,34 @@
+{
+  "experiment_id": "ACL-005",
+  "profile": "spark",
+  "device": "cuda",
+  "precision": "bfloat16",
+  "result_origin": "measured",
+  "model": {
+    "target_id": "Qwen/Qwen3-8B",
+    "target_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "tokenizer_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "draft_id": "z-lab/Qwen3-8B-DFlash-b16",
+    "draft_revision": "9b41424b7109f9c5413454f481b09a82b85333f4",
+    "thinking": false,
+    "scope": "hierarchical speculative drafting; unchanged AR target; not native NCM"
+  },
+  "training_data": "data/processed/teacher_train.jsonl",
+  "development_data": "data/processed/teacher_dev.jsonl",
+  "input_receipts": [
+    "data/processed/teacher_train.input.json",
+    "data/processed/teacher_dev.input.json"
+  ],
+  "seed": 17,
+  "executor": "codec",
+  "codec_kind": "channel",
+  "prediction_weights": [
+    0.1
+  ],
+  "levels": [
+    15
+  ],
+  "latent_width": 256,
+  "steps": 2,
+  "codec_seed": 17
+}

@@ -66,6 +66,12 @@
       "slug": "operating_frontier",
       "directory": "experiments/is_journal/IS-004_operating_frontier",
       "study": "is_journal"
+    },
+    {
+      "id": "ACL-005",
+      "slug": "multiscale_codec_and_transfer",
+      "directory": "experiments/acl/ACL-005_multiscale_codec_and_transfer",
+      "study": "acl"
     }
   ]
 }

@@ -11,11 +11,13 @@ from ncm_lab.data.download import PreparationBudget, AcquisitionMeter, asset_pat
 from ncm_lab.runtime.io import root, read, digest, canonical_hash, write_json
 
 
-def selected_assets(include_financial=False,with_test_data=False):
+def selected_assets(include_financial=False,with_test_data=False,include_external_baseline=False):
     lock = read(root()/"third_party/preparation_assets.lock.json")
     if lock["schema_version"] != 1:
         raise ValueError("unsupported preparation asset lock")
     groups = {"pilot"}
+    if include_external_baseline:
+        groups.add('external-baseline')
     if include_financial:
         groups |= {"financial-notices",*(f"{dataset}-{split}" for dataset in ("finqa","tatqa","docfinqa") for split in ("train","dev"))}
     if with_test_data:
@@ -87,11 +89,13 @@ def plan(base,budget,assets):
 
 
 def prepare(assets_root=None,budget_path=None,profile="spark",dry_run=False,include_financial=False,
-            with_test_data=False,progress=None):
+            with_test_data=False,progress=None,include_external_baseline=False):
     base,budget = resolve_inputs(assets_root,budget_path)
     if include_financial or with_test_data:
         budget = replace(budget,phase_budget_id=budget.phase_budget_id+("-financial" if include_financial else "")+("-tests" if with_test_data else ""))
-    assets = selected_assets(include_financial,with_test_data)
+    assets = selected_assets(include_financial,with_test_data,include_external_baseline)
+    if include_external_baseline:
+        budget=replace(budget,phase_budget_id=budget.phase_budget_id+'-external')
     overview = plan(base,budget,assets)
     if dry_run:
         return {"status":"planned",**overview}
@@ -134,13 +138,18 @@ def prepare(assets_root=None,budget_path=None,profile="spark",dry_run=False,incl
         cuda = environment["torch"]["cuda_available"]
         hardware_ok = environment["spark_ready"] if profile=="spark" else cuda if profile=="cuda" else False
         blockers = [] if hardware_ok else ["assets are prepared; a verified CUDA/Spark runtime and sufficient model/training memory are still required"]
+        import time
         result = {"schema_version":1,"status":"completed","attempt":str(attempt),"assets_root":str(base),
+            "resources":{"preparation_phase_wall_seconds":meter.state['elapsed_seconds']+time.monotonic()-meter.saved_at,
+                         "charged_download_bytes":meter.state['charged_download_bytes']},
             "assets_verified":True,"environment":environment,"hardware_matches_profile":hardware_ok,
             "gpu_parity_validated":False,"ready_for_training":False,"remaining_prerequisites":blockers+[
                 "run the bounded teacher-generation step", "real-model correctness/parity and training-memory validation remain unverified"],
             "prompts":prompts,"configs":configs,"download_receipts":receipts,"training_started":False,
             "teacher_generation_started":False,"research_findings":[]}
         write_json(attempt/"manifest.json",result,exclusive=True)
+        write_json(attempt/'manifest.reference.json',{'manifest':str(attempt/'manifest.json'),
+            'sha256':digest(attempt/'manifest.json')},exclusive=True)
         atomic_json(base/"preparations/latest.json",{"manifest":str(attempt/"manifest.json"),"sha256":digest(attempt/"manifest.json")})
         return result
     except (Exception,KeyboardInterrupt) as exc:
@@ -165,13 +174,34 @@ def write_launch_configs(attempt,base,assets,prompts,profile,budget):
         "precision":precision,"result_origin":"measured","model":model,"prompts_path":prompts["outputs"]["train"]["path"],
         "max_new_tokens":128,"max_examples":100,"teacher_output_reference":str(attempt/"teacher_output.json"),
         "artifact_root":str(base/"runs")}
+    teacher['preparation_reference']=str(attempt/'manifest.reference.json')
+    from ncm_lab.data.artifacts import lock_input
+    for split, item in prompts["outputs"].items():
+        source = Path(item["path"])
+        provenance = source.parent/"prompt_provenance.json"
+        if source.is_file() and provenance.is_file():
+            receipt = attempt/(split+"-prompts.input.json")
+            lock_input(source,receipt,"prompts",split,"oasst1",source_receipt=provenance)
+            if split == "train":
+                teacher["input_receipts"] = [str(receipt)]
+    teacher["purpose"] = "train"
     train = read(root()/"experiments/acl/ACL-001_component_profile_and_pilot/configs/run.yaml")
     train.update(model=model,profile=profile,device=device,precision=precision,
         required_files=[str(attempt/"manifest.json")],artifact_root=str(base/"runs"),
         training_data_reference=str(attempt/"teacher_output.json"))
+    train["development_data_reference"] = str(attempt/"teacher_dev_output.json")
     train.pop("training_data",None)
+    train.pop('development_data',None)
+    train.pop('input_receipts',None)
+    train.pop('overlap_audit',None)
+    train['research_scope']='bounded_calibration_pilot; full benchmark overlap audit required before locked study'
     launch = attempt/"launch"
     write_json(launch/"teacher.yaml",teacher,exclusive=True)
+    dev_teacher = {**teacher,"purpose":"dev","teacher_output_reference":str(attempt/"teacher_dev_output.json"),
+                   "prompts_path":prompts["outputs"].get("dev",{}).get("path",str(attempt/"missing_dev_prompts.jsonl"))}
+    if (attempt/"dev-prompts.input.json").is_file():
+        dev_teacher["input_receipts"] = [str(attempt/"dev-prompts.input.json")]
+    write_json(launch/"teacher_dev.yaml",dev_teacher,exclusive=True)
     write_json(launch/"pilot.yaml",train,exclusive=True)
     pilot_budget = read(root()/"configs/budgets/pilot.yaml")
     pilot_budget["phase_budget_id"] = "pilot-"+attempt.name
@@ -182,9 +212,53 @@ def write_launch_configs(attempt,base,assets,prompts,profile,budget):
     parity = read(root()/"experiments/shared/SHR-002_target_and_verification/configs/run.yaml")
     parity.update(model=model,profile=profile,device=device,precision=precision,
                   data_path=str(asset_path(base,gsm)),split="train",artifact_root=str(base/"runs"))
+    if asset_path(base,gsm).is_file():
+        lineage = attempt/"gsm_source.json"
+        write_json(lineage,{"asset":gsm,"sha256":digest(asset_path(base,gsm))},exclusive=True)
+        receipt = attempt/"gsm.input.json"
+        lock_input(asset_path(base,gsm),receipt,"gsm8k","train","gsm8k",source_receipt=lineage)
+        parity["input_receipts"] = [str(receipt)]
     write_json(launch/"verification.yaml",parity,exclusive=True)
-    return {"teacher_config":str(launch/"teacher.yaml"),"teacher_budget":str(launch/"teacher_budget.yaml"),
+    codec={"experiment_id":"ACL-005","executor":"codec","model":model,"profile":profile,"device":device,
+        "precision":precision,"result_origin":"measured","artifact_root":str(base/'runs'),'seed':17,'codec_seed':17,
+        'training_data':'@teacher-train/teacher.jsonl','development_data':'@teacher-dev/teacher.jsonl',
+        'input_receipts':['@teacher-train/teacher.input.json','@teacher-dev/teacher.input.json'],
+        'prediction_weights':[0.0,.1],'latent_width':256,'steps':2,'max_development_examples':4}
+    codec_budget={**pilot_budget,'phase_budget_id':'codec-'+attempt.name}
+    write_json(launch/'codec_budget.yaml',codec_budget,exclusive=True)
+    transfer={**codec,'executor':'train','method':'HIER_MULTI_AE','init_seed':17,'data_seed':17,
+        'codec_selection':'@codec/codec-selection.json','codec_sha256':'@codec/codec-selected.pt#sha256',
+        'learning_rate':1e-5,'evaluation_interval':1,'checkpoint_interval':1}
+    transfer.pop('prediction_weights')
+    transfer.pop('latent_width')
+    after={**parity,'method':'HIER_MULTI_AE','schedule':[4,4,8,15,15],'skip':True,
+        'codec_selection':'@codec/codec-selection.json','codec_sha256':'@codec/codec-selected.pt#sha256',
+        'checkpoint':'@transfer/selected.pt','checkpoint_sha256':'@transfer/selected.pt#sha256','seed':17,'init_seed':17,'data_seed':17}
+    jobs=[{'id':'initial-parity','config':parity,'budget':str(launch/'pilot_budget.yaml'),'depends_on':[]},
+        {'id':'teacher-train','config':teacher,'budget':str(launch/'teacher_budget.yaml'),'depends_on':['initial-parity']},
+        {'id':'teacher-dev','config':dev_teacher,'budget':str(launch/'teacher_budget.yaml'),'depends_on':['initial-parity']},
+        {'id':'codec','config':codec,'budget':str(launch/'codec_budget.yaml'),'depends_on':['teacher-train','teacher-dev']},
+        {'id':'transfer','config':transfer,'budget':str(launch/'pilot_budget.yaml'),'depends_on':['codec']},
+        {'id':'adapted-parity','config':after,'budget':str(launch/'pilot_budget.yaml'),'depends_on':['transfer']}]
+    external=next((a for a in assets if a['id']=='external_draft:config.json'),None)
+    if external:
+        external_model={**model,'draft_id':external['repo_id'],'draft_revision':external['revision'],
+                        'draft_path':str(asset_path(base,external).parent)}
+        external_parity={**parity,'method':'STRONG_EXTERNAL','model':external_model}
+        write_json(launch/'external_verification.yaml',external_parity,exclusive=True)
+        external_budget={**pilot_budget,'phase_budget_id':'external-parity-'+attempt.name}
+        write_json(launch/'external_budget.yaml',external_budget,exclusive=True)
+        jobs.append({'id':'external-parity','config':external_parity,'budget':str(launch/'external_budget.yaml'),
+                     'depends_on':['initial-parity']})
+    caps={'steps':len(jobs)*pilot_budget['max_steps'],'wall_seconds':len(jobs)*pilot_budget['max_wall_seconds'],
+        'source_positions':len(jobs)*pilot_budget['max_training_source_token_passes'],
+        'storage_bytes':len(jobs)*pilot_budget['max_storage_bytes'],'download_bytes':0}
+    write_json(launch/'codec_pilot_matrix.yaml',{'schema_version':1,'jobs':jobs,'aggregate_limits':caps,'timing_seed':17},exclusive=True)
+    return {"teacher_config":str(launch/"teacher.yaml"),"teacher_dev_config":str(launch/"teacher_dev.yaml"),
+        "teacher_budget":str(launch/"teacher_budget.yaml"),
         "pilot_config":str(launch/"pilot.yaml"),"pilot_budget":str(launch/"pilot_budget.yaml"),
         "verification_config":str(launch/"verification.yaml"),
+        'codec_pilot_matrix':str(launch/'codec_pilot_matrix.yaml'),
         "next_commands":[f'ncm experiment run --id SHR-001 --config "{launch / "teacher.yaml"}" --budget "{launch / "teacher_budget.yaml"}"',
+                         f'ncm experiment run --id SHR-001 --config "{launch / "teacher_dev.yaml"}" --budget "{launch / "teacher_budget.yaml"}"',
                          f'ncm experiment run --id ACL-001 --config "{launch / "pilot.yaml"}" --budget "{launch / "pilot_budget.yaml"}"']}

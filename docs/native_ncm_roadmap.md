@@ -11,6 +11,6 @@ with explicit data/compute budgets, compare quality and measured end-to-end gene
 cost against strong AR/diffusion/NCM controls, and assess distribution/quality changes.
 The frozen-target exact-verification guarantee does not automatically transfer.
 
-No pretend conversion experiment or codec checkpoint is included. This requires a
+No native conversion experiment or native text-codec checkpoint is included. The current auxiliary prediction-state codec is documented separately in autoencoder_architecture.md. This requires a
 new scientific plan, budget, quality endpoints and contribution audit after the
 present technical and financial-workflow questions are evaluated.

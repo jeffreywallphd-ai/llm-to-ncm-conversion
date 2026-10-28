@@ -49,3 +49,5 @@ cannot establish deployment speed. A null result or unsupported hypothesis remai
 the run history. No native NCM, semantic-concept, or universal hardware claim is implied.
 Claim reference: `IS-004-C1`; eligibility is selected in the study manifest, never inferred
 from file existence or a completed fixture run.
+
+Revision-2 status: later IS grouping, evidence-bundle and workflow repairs are pending. See docs/remediation_report.md and the ACL-005 stage specifications.

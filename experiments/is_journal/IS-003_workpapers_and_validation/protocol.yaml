@@ -37,7 +37,7 @@
   "splits": "official train/dev/test retained; full declared test for headline results; smoke subsets labeled",
   "uncertainty": "paired report/tree-group bootstrap per training seed; timing repetitions separately recorded",
   "result_status": "Not run; no empirical findings yet",
-  "implementation_status": "CPU reference and protocol implemented; real-model/optimized runs gated",
+  "implementation_status": "later journal workflow/workload integration pending; financial specifications preserved",
   "controls": {
     "thinking": false,
     "target_unchanged": true,

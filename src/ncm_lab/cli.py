@@ -18,6 +18,7 @@ def parser():
     prepare.add_argument("--dry-run", action="store_true", help="offline size/disk plan; do not download or prepare data")
     prepare.add_argument("--include-financial", action="store_true", help="also retrieve original FinQA/TAT-QA/DocFinQA train and dev releases")
     prepare.add_argument("--with-test-data", action="store_true", help="also retrieve test releases; test gold is never used to prepare training prompts")
+    prepare.add_argument('--include-external-baseline',action='store_true',help='also retrieve the pinned DCore checkpoint, within the preparation budget')
     data = subs.add_parser("data").add_subparsers(dest="action", required=True)
     for action in ("inspect", "fetch"):
         d = data.add_parser(action)
@@ -26,6 +27,11 @@ def parser():
             d.add_argument("--split", required=True)
             d.add_argument("--max-bytes", type=int)
     d = data.add_parser("check", help="validate tracked real training-sample provenance and separation")
+    lock = data.add_parser("lock", help="bind a consumed JSONL artifact to its source receipt")
+    for name in ("path","receipt","source-receipt"):
+        lock.add_argument("--"+name,type=Path,required=True)
+    for name in ("schema","split","family"):
+        lock.add_argument("--"+name,required=True)
     experiment = subs.add_parser("experiment").add_subparsers(dest="action", required=True)
     experiment.add_parser("list")
     for action in ("plan", "run"):
@@ -42,24 +48,97 @@ def parser():
     report = subs.add_parser("report").add_subparsers(dest="action", required=True)
     report.add_parser("build").add_argument("--study", required=True, choices=["acl", "is_journal"])
     pub = subs.add_parser("publication").add_subparsers(dest="action", required=True)
+    validate = pub.add_parser("validate-export")
+    validate.add_argument("--path", type=Path, required=True)
+    validate.add_argument("--resolver", type=Path)
+    validate.add_argument('--reanalyze',action='store_true',help='reanalyze raw JSON records with this trusted installation; execute no archive code')
     export = pub.add_parser("export")
     export.add_argument("--study", required=True, choices=["acl", "is_journal"])
     export.add_argument("--anonymize", action="store_true")
     export.add_argument("--output", type=Path, required=True)
+    methods = subs.add_parser("method").add_subparsers(dest="action", required=True)
+    methods.add_parser("list")
+    methods.add_parser("inspect").add_argument("--config", type=Path, required=True)
+    cost = methods.add_parser("select-cost")
+    cost.add_argument("--runs",nargs="+",required=True)
+    cost.add_argument("--output",type=Path,required=True)
+    cost.add_argument("--tolerance",type=float,required=True)
+    matrix = subs.add_parser("matrix").add_subparsers(dest="action", required=True)
+    mp = matrix.add_parser("plan")
+    mp.add_argument("--spec", type=Path, required=True)
+    mp.add_argument("--output", type=Path, required=True)
+    matrix.add_parser("run").add_argument("--plan", type=Path, required=True)
+    assess = results.add_parser("attest")
+    assess.add_argument("--run", required=True)
+    assess.add_argument("--claim-class", choices=["correctness", "performance", "full_test","representation","mechanism"], default="correctness")
+    selection = results.add_parser("select",help="select eligible immutable evidence for explicit study claims")
+    selection.add_argument("--run",required=True)
+    selection.add_argument("--study",choices=["acl","is_journal"],required=True)
+    selection.add_argument("--attestation",type=Path,required=True)
+    selection.add_argument("--claims",nargs="+",required=True)
+    codec_analysis = results.add_parser("codec-analysis")
+    codec_analysis.add_argument("--runs",nargs="+",required=True)
+    codec_analysis.add_argument("--output",type=Path,required=True)
+    codec_analysis.add_argument("--figures",action="store_true")
+    engineering = pub.add_parser("engineering-export")
+    engineering.add_argument("--run", required=True)
+    engineering.add_argument("--output", type=Path, required=True)
+    subs.add_parser("acceptance", help="bounded complete codec-to-drafter CPU fixture pipeline and portable export")
+    checkpoint = subs.add_parser("checkpoint").add_subparsers(dest="action", required=True)
+    validate_selection = checkpoint.add_parser("validate-selection")
+    validate_selection.add_argument("--path", type=Path, required=True)
+    validate_selection.add_argument("--development-data", type=Path)
     subs.add_parser("smoke", help="two-step CPU fixture integration, checkpoint resume, validation, and reports")
     return p
 
 
 def dispatch(args):
+    if args.command == "checkpoint":
+        from ncm_lab.training.selection import validate_selection
+        return {"valid": True, "selection": validate_selection(args.path,args.development_data)}
+    if args.command == "method":
+        from ncm_lab.models.factory import BASE, LATENT, resolve_method
+        from dataclasses import asdict
+        if args.action == "select-cost":
+            from ncm_lab.experiments.cost_selection import select_cost
+            from ncm_lab.reporting.reports import find_run
+            return select_cost([find_run(r) for r in args.runs],args.output,args.tolerance)
+        return sorted(BASE | LATENT) if args.action == "list" else asdict(resolve_method(read(args.config)))
+    if args.command == "matrix":
+        from ncm_lab.experiments.matrix import resolve_plan, launch_plan
+        if args.action == "run":
+            return launch_plan(args.plan)
+        plan = resolve_plan(args.spec, args.output)
+        return {"path":str(args.output), "sha256":plan["sha256"], "jobs":len(plan["jobs"]),
+                "blocked_jobs":sum(bool(j["blocked"]) for j in plan["jobs"]),
+                "aggregate_limits":plan["aggregate_limits"], "offline_only":True}
+    if args.command == "acceptance":
+        from ncm_lab.experiments.runner import run
+        from ncm_lab.reporting.reports import analyze
+        from ncm_lab.reporting.evidence import attest
+        from ncm_lab.reporting.portable import engineering_export, validate_export
+        result = run("ACL-005", root()/"configs/acceptance.yaml", root()/"configs/budgets/acceptance.yaml")
+        if result["status"] != "completed":
+            return result
+        analysis = analyze("ACL-005")
+        eligibility = attest(result["path"])
+        archive = root()/"publications/exports"/(result["run_id"]+"-engineering.zip")
+        exported = engineering_export(result["path"], archive)
+        return {**result, "analysis": analysis, "eligibility": eligibility,
+                "engineering_export": exported, "export_validation": validate_export(archive)}
     if args.command == "prepare":
         from ncm_lab.runtime.prepare import prepare
         return prepare(args.assets_root,args.budget,args.profile,args.dry_run,args.include_financial,
-                       args.with_test_data,progress=lambda message: print(message,file=sys.stderr,flush=True))
+                       args.with_test_data,progress=lambda message: print(message,file=sys.stderr,flush=True),
+                       include_external_baseline=args.include_external_baseline)
     if args.command == "doctor":
         from ncm_lab.runtime.doctor import doctor
         return doctor(args.profile)
     if args.command == "data":
         from ncm_lab.data.acquire import manifest, fetch
+        if args.action == "lock":
+            from ncm_lab.data.artifacts import lock_input
+            return lock_input(args.path,args.receipt,args.schema,args.split,args.family,args.source_receipt)
         if args.action == "inspect":
             return manifest(args.dataset)
         if args.action == "fetch":
@@ -90,6 +169,15 @@ def dispatch(args):
     if args.command == "results":
         from ncm_lab.reporting.reports import analyze, find_run
         from ncm_lab.runtime.provenance import validate_run
+        if args.action == "attest":
+            from ncm_lab.reporting.evidence import attest
+            return attest(find_run(args.run), args.claim_class)
+        if args.action == "select":
+            from ncm_lab.reporting.evidence import select_evidence
+            return select_evidence(args.study,find_run(args.run),args.attestation,args.claims)
+        if args.action == "codec-analysis":
+            from ncm_lab.evaluation.codec_analysis import analyze_codec_runs
+            return analyze_codec_runs([find_run(r) for r in args.runs],args.output,args.figures)
         if args.action == "analyze":
             return analyze(args.experiment)
         run = validate_run(find_run(args.run))
@@ -98,6 +186,13 @@ def dispatch(args):
         from ncm_lab.reporting.reports import build
         return build(args.study)
     if args.command == "publication":
+        if args.action == "validate-export":
+            from ncm_lab.reporting.portable import validate_export
+            return validate_export(args.path,args.resolver,args.reanalyze)
+        if args.action == "engineering-export":
+            from ncm_lab.reporting.portable import engineering_export
+            from ncm_lab.reporting.reports import find_run
+            return engineering_export(find_run(args.run), args.output)
         from ncm_lab.reporting.export import review_export
         return review_export(args.study, args.output, args.anonymize)
     if args.command == "smoke":

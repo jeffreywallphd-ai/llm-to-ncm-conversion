@@ -15,7 +15,8 @@ def test_every_protocol_and_documented_command_resolves_offline(monkeypatch):
     import urllib.request
     monkeypatch.setattr(urllib.request,"urlopen",lambda *a,**kw: pytest.fail("planning attempted network"))
     all_experiments = registry()
-    assert len(all_experiments) == 11
+    assert len(all_experiments) == 12
+    assert "ACL-005" in all_experiments
     for experiment_id in all_experiments:
         assert plan(experiment_id,"spark")["research_run_started"] is False
     for command in (["--help"],["data","--help"],["experiment","--help"],["results","--help"],["publication","--help"]):
@@ -71,3 +72,5 @@ def test_cpu_integration_immutable_runs_and_fixture_exclusion(tmp_path):
     (path/"predictions.jsonl").write_text("tampered")
     with pytest.raises(ValueError,match="changed"):
         validate_run(path)
+    from ncm_lab.reporting.reports import run_paths
+    assert path/'manifest.json' not in run_paths()

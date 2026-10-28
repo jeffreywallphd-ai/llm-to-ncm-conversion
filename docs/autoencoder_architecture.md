@@ -1,0 +1,17 @@
+# Frozen-target multiscale transfer
+
+The current first-paper architecture has an auxiliary continuous codec and causal latent conditioning. The target remains a frozen Qwen model with its original embedding, transformer, final normalization and vocabulary head. Native target conversion, target LoRA, discrete codebooks and a standalone latent generator remain future work.
+
+For response anchor a, teacher states h[a:a+15] predict tokens x[a+1:a+16]. The public final hidden state is already post-final-normalization. Teacher labels, validity masks, future lengths and codes never enter the deployed proposal interface. The response anchor starts at prompt_length, not prompt_length-1. Partial windows retain fifteen physical future queries and ignore unavailable labels; genuine terminal EOS is supervised.
+
+The nested encoder projects each teacher state to width r, pools ordered valid children into eight slots, then four. Unequal terminal intervals are explicit. Standalone decoders read only their own code: four slots pass through U4→8 and U8→15; eight slots use U8→15; fifteen use the output projection directly. At r=256 the standalone rates are 1024, 2048 and 3840 scalars; retaining all levels costs 6912 scalars. These are independent reconstructions, not cumulative residual codes.
+
+Codec fitting uses training-only state energy normalization and a declared development criterion: mean normalized reconstruction MSE plus 0.1 exact teacher-to-reconstruction head KL. Prediction-aware and reconstruction-only candidates have separate treatment identities. Vocabulary KL is evaluated in position chunks, with frozen head parameters and gradients into reconstructed states. The selected codec is frozen; training-only latent scale statistics are saved separately in its selection artifact.
+
+After drafter layers 2, 3 and 4, P4, P8 and P15 predict four/eight/fifteen codes. Finer predictions refine frozen-upsampler outputs of the student's own coarser predictions. Before layers 3, 4 and 5, zero-initialized tanh gates multiply nonzero bridge projections into the existing future-query stream. The original layer-2 skip is captured before latent injection and is independently controlled. The original final norm and shared frozen vocabulary head still produce tokens.
+
+Flat transfer retains fifteen queries in every layer, pools its own inference-visible query states for the heads, and lifts predicted conditioning back to fifteen queries. Gold response masks are used only to construct labels/losses. AUX_ONLY omits runtime injection and skips its dead heads during evaluation. LATENT_CE_ONLY uses newly initialized trainable upsamplers; CODEC_CE_ONLY uses the selected frozen upsamplers and zero latent-loss weight. Linear, independent-level and rate-matched eight-slot single-scale treatments use distinct codec dependencies.
+
+The incremental SDPA decoder prefills once, proposes without a target forward, verifies anchor plus proposals, and commits only accepted target KV/features. Correction/bonus remains an unprocessed next anchor. Features use upstream hidden_states[layer_id+1]. The offline future encoder is absent from CachedProposer and LatentAdapters; the acceptance run installs a failing encoder sentinel during generation.
+
+See src/ncm_lab/models/{codecs,latent_adapters,factory,hierarchy}.py and training/{codec,latent_supervision,records,loop,checkpoints}.py. CPU fixtures validate software contracts; released-model quality, stability, memory and speed remain unmeasured.

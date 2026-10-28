@@ -80,7 +80,8 @@ def prepare_prompts(oasst_path,gsm8k_path,output,budget,rows=None):
             for record in records:
                 stream.write(json.dumps(record,ensure_ascii=False)+"\n")
         paths[split] = {"path":str(dest),"records":len(records),"sha256":digest(dest)}
-    provenance = {"schema_version":1,"source_split":"official OASST train only",
+    provenance = {"schema_version":1,"source_split":"official OASST train only",'official_split':'train',
+        'derived_split_policy':{'version':'oasst_tree_hash_holdout_v1','dev_fraction':budget.dev_fraction},
         "source_sha256":digest(oasst_path),"gsm8k_prompt_source_sha256":digest(gsm8k_path),
         "derived_development_split":"deterministic whole-message-tree holdout",
         "outputs":paths,"filtered":skipped,"gold_in_prompts":False,

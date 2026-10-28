@@ -49,3 +49,7 @@ cannot establish deployment speed. A null result or unsupported hypothesis remai
 the run history. No native NCM, semantic-concept, or universal hardware claim is implied.
 Claim reference: `SHR-002-C1`; eligibility is selected in the study manifest, never inferred
 from file existence or a completed fixture run.
+
+Revision-2 status: shared factory, bounded stages, incremental policy/verifier and codec/transfer controls are implemented; released research execution is pending. See docs/remediation_report.md and the ACL-005 stage specifications.
+
+2026-10-28 wiring: `configs/matrix.yaml` selects this experiment's actual bounded study jobs and reused dependency closure. The full study is `experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml`; it requires measured calibration. Raw runs retain configurations, input/dependency receipts and failures. `ncm results analyze --experiment SHR-002` produces per-seed observation analysis and codec/cost tables; claim eligibility and explicit selection are separate. CPU fixtures remain ineligible. See `docs/remediation_report.md` for executed validation and external prerequisites.

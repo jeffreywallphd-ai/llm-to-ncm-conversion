@@ -16,7 +16,7 @@ before research-scale training; revise the contribution if an identical mechanis
 | [DCore](https://arxiv.org/abs/2610.24993v2) | Shared full-resolution drafter comparisons/context/objective | No progressive future-query schedule established by inspected recipe | Frozen compatible target; no required VQ codec | Recipe-dependent components | Controlled training/inference study and releases; acceptance-versus-cost fairness is their contribution |
 | [HiLP](https://arxiv.org/abs/2608.05806v1) | Higher-level future latent prediction | Auxiliary hierarchical latent rollout | LM pretraining changes; codec requirement needs full-code audit | Higher-level latent guidance | Preprint; latent prediction and speculative efficiency precede this project |
 | [MuLo-SD](https://arxiv.org/abs/2601.05149v2) | Low-resolution image-token proposals | Upsampling into high-resolution proposals | Image AR verifier, not language | Local spatial resampling | CVPR 2026 noted in source; token upsampling and multiresolution speculation are prior art |
-| This hypothesis | Unknown future states inside one drafter | Existing layers 4,4,8,15,15; anchor separate | Unchanged frozen Qwen; no codec | One lifted coarse-to-leaf low-rank skip | CPU implementation only; quality/runtime unmeasured |
+| This hypothesis | Unknown future states inside one drafter | Existing layers 4,4,8,15,15; anchor separate | Unchanged frozen Qwen; auxiliary continuous prediction-state codec | One lifted coarse-to-leaf low-rank skip | CPU implementation only; quality/runtime unmeasured |
 
 NCP's report does not use the literal label “NCPFlash” in the inspected text. The
 comparison above refers to its documented concept-conditioned speculative module,
@@ -36,7 +36,7 @@ the local valid-token normalization is a documented adaptation, not exact reprod
 |---|---|---|---|---|
 | AR | Qwen/Qwen3-8B at locked target SHA | Transformers correctness reference, one device | Apache-2.0 model card; verify terms at weight acquisition | tiny-config CPU validated; real checkpoint not cached; optimized timing missing |
 | FLAT_RELEASED | z-lab/Qwen3-8B-DFlash-b16 at locked SHA | Vendored DFlash layers; optimized SGLang/vLLM separately | MIT drafter/code | implemented_cpu_validated on tiny configurations; released-weight/GPU parity unverified |
-| STRONG_EXTERNAL candidate | ernie-research/DCore-DFlash-Qwen3-8B-Budget16 at locked SHA | DCore pinned SGLang 0.5.14 patch family; single-device envelope to verify | MIT source/card | shape-compatible metadata inspected; inference integration/reproduction not measured |
+| STRONG_EXTERNAL candidate | ernie-research/DCore-DFlash-Qwen3-8B-Budget16 at locked SHA | Pinned DCore source adapted to shared Transformers SDPA; published SGLang stack separate | MIT source; model-card weights license unspecified | direct-forward CPU parity tested; released-weight/GPU reproduction pending |
 | DFlash2 | Current blog uses Qwen3.8-27B family | Current production-engine integrations | Check each checkpoint's terms | no verified drop-in original Qwen3-8B pair/training reproduction; exclude rather than substitute target |
 | LongSpark | Qwen3-8B + Hehy/LongSpark-Qwen3-8B from its README | Two P2P GPUs in documented quickstart | MIT source; verify checkpoint | single-Spark adaptation absent; published multi-GPU speeds not comparable |
 | NCP concept-conditioned | NCP-ArchPreview target and associated drafter | Modified pretrained target, not frozen Qwen3-8B | release-specific, not audited for reuse | architectural prior art; incompatible primary target, not a zero-throughput result |
@@ -46,3 +46,10 @@ the full HiLP and MuLo implementation paths, current compatible optimized backen
 and DFlash2 training-release completeness before claiming a distinct mechanism.
 Unknown or unavailable evidence stays explicit. This preliminary audit is sufficient
 to avoid broad novelty claims, not to certify exhaustive literature coverage.
+
+
+## Frozen-target codec transfer review — 2026-10-27
+
+The earlier baseline-only hypothesis is superseded by research_plan.md. No novelty conclusion follows from implementation. NCM already combines multiscale coding and latent generation; NCP already conditions drafting on concept representations. The proposed distinction requires testing extraction from an unchanged ordinary target and the complete representation/prediction/runtime tradeoff. HiLP remains close prior art; full comparison must be refreshed before research-scale training.
+
+[DFlare v2](https://arxiv.org/html/2606.02091v2) learns per-draft-layer combinations of target layers and studies deeper drafting and more training data. It is a stronger conditioning comparison, currently unavailable as a verified compatible local adapter. [EAGLE-3, NeurIPS 2025](https://papers.neurips.cc/paper_files/paper/2025/hash/c7b5a35ea98b62512a869c19ea7b03cb-Abstract-Conference.html) removes feature-prediction constraints in favor of token prediction and multi-layer fusion. Its mechanism motivates checking whether latent reconstruction hurts token prediction. [Matryoshka SAEs, ICML 2025](https://proceedings.mlr.press/v267/bussmann25a.html) independently reconstruct from nested dictionaries; our slot-count hierarchy is a different bottleneck, not a general claim to invent nested reconstruction. These primary sources were inspected during remediation. Reported paper speedups are their results and have not been reproduced here.

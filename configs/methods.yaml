@@ -1,13 +1,42 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "authority": "ncm_lab.models.factory",
   "methods": {
     "AR": {
-      "description": "ordinary autoregressive target",
-      "adaptation": false
+      "schedule": [],
+      "skip": false,
+      "adaptation": false,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
     },
-    "FLAT_RELEASED": {
-      "description": "locked released five-layer DFlash, 15 future proposals plus anchor",
-      "adaptation": false
+    "EARLIER": {
+      "schedule": [
+        4,
+        8,
+        15,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "FIXED_BROADCAST": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
     },
     "FLAT_ADAPTED": {
       "schedule": [
@@ -18,9 +47,52 @@
         15
       ],
       "skip": false,
-      "adaptation": true
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
     },
-    "HIER_SKIP": {
+    "FLAT_COST": {
+      "schedule": [
+        15,
+        15,
+        15
+      ],
+      "skip": false,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "FLAT_MULTI_AE": {
+      "schedule": [
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "skip": false,
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "FLAT_RELEASED": {
+      "schedule": [
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "skip": false,
+      "adaptation": false,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_CODEC_CE_ONLY": {
       "schedule": [
         4,
         4,
@@ -29,7 +101,94 @@
         15
       ],
       "skip": true,
-      "adaptation": true
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_INDEPENDENT_AE": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_LATENT_CE_ONLY": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_LINEAR_CODEC": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_MULTI_AE": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_MULTI_AE_AUX_ONLY": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_MULTI_AE_NO_SKIP": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": false,
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
     },
     "HIER_NO_SKIP": {
       "schedule": [
@@ -40,16 +199,97 @@
         15
       ],
       "skip": false,
-      "adaptation": true
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
     },
-    "FLAT_COST": {
-      "description": "select active flat depth/cost tolerance on development profiling",
-      "selection_status": "pending"
+    "HIER_POOLED_CONTEXT": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "mean_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_SINGLE_AE": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": true,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "HIER_SKIP": {
+      "schedule": [
+        4,
+        4,
+        8,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "LATER": {
+      "schedule": [
+        4,
+        4,
+        4,
+        15,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
+    },
+    "LATE_NEAR_BUDGET": {
+      "schedule": [
+        8,
+        8,
+        8,
+        8,
+        15
+      ],
+      "skip": true,
+      "adaptation": true,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa"
     },
     "STRONG_EXTERNAL": {
+      "schedule": [
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "skip": false,
+      "adaptation": false,
+      "runtime_latent": false,
+      "context_policy": "all_confirmed_features",
+      "backend": "transformers_incremental_sdpa",
       "model_id": "ernie-research/DCore-DFlash-Qwen3-8B-Budget16",
       "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
-      "backend": "DCore pinned SGLang; parity unverified"
+      "validation": "pinned-source CPU parity; released-weight GPU parity pending"
     }
   }
 }

@@ -23,10 +23,14 @@
     15
   ],
   "skip": true,
-  "seed": 0,
+  "seed": 17,
   "require_gpu_parity": false,
-  "required_files": [
-    "results/generated/real_model_readiness.json"
+  "training_data": "data/processed/teacher_train.jsonl",
+  "development_data": "data/processed/teacher_dev.jsonl",
+  "input_receipts": [
+    "data/processed/teacher_train.input.json",
+    "data/processed/teacher_dev.input.json"
   ],
-  "training_data": "data/processed/oasst1_train_teacher.jsonl"
+  "research_scope": "locked_study",
+  "overlap_audit": "data/processed/overlap_audit.json"
 }

@@ -2,14 +2,16 @@
   "schema_version": 1,
   "dataset": "ifeval",
   "source_url": "https://github.com/google-research/google-research/tree/master/instruction_following_eval",
-  "revision": null,
+  "revision": "e6890f85757dd84e27ca6df2dd30651dafad28e0",
   "license": "Apache-2.0",
   "setup_download_budget_bytes": 0,
   "gold_separation": "explicit loader allowlist",
   "splits": {
     "test": {
-      "url": null,
-      "blocker": "pin official evaluator and data file revision before acquisition; no approximate compliance scorer"
+      "url": "https://raw.githubusercontent.com/google-research/google-research/e6890f85757dd84e27ca6df2dd30651dafad28e0/instruction_following_eval/data/input_data.jsonl",
+      "filename": "input_data.jsonl",
+      "size_bytes": 207111,
+      "git_blob_sha1": "cbe52f6eecf3986fdac745b4acba4da1408eb146"
     }
   },
   "reproduction_status": "not benchmark reproduced"

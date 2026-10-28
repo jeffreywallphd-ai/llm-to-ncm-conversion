@@ -122,3 +122,15 @@ bounded check retrieved 39,516,251 bytes of official OASST train parquet and
 4,166,206 bytes of GSM8K train data; preprocessing produced 108 train and 20 dev
 prompts with source/checksum receipts. These are acquisition/software checks, not
 model results. No multi-GB model weights were downloaded for this implementation.
+
+## Revision-2 implementation update — 2026-10-27
+
+Preparation now emits separate train and dev teacher launch configurations with whole-tree prompt receipts, response boundaries/policies, teacher-output references and external run roots. It retrieves assets only when explicitly invoked without --dry-run. The bounded CPU acceptance command retrieves no research assets. Codec fitting and transfer are separate bounded stage commands; successful acquisition does not assert construction, correctness, GPU or performance readiness.
+
+## Continued implementation — 2026-10-28
+
+Preparation also emits `codec_pilot_matrix.yaml`, linking initial released-flat parity, train/dev teacher generation, codec selection, latent transfer and adapted parity. `--include-external-baseline` adds the pinned DCore assets and a distinct `external_verification.yaml`; it does not relabel ordinary DFlash. All downloads still use finite acquisition budgets. No research weights were fetched during remediation.
+
+The generated calibration pilot consumes both teacher references and has no obsolete processed-data paths or arbitrary readiness-file gate. Full-suite overlap auditing is required for the locked study; the bounded calibration pilot alone cannot support a publication claim.
+
+Use the latest full validation counts and artifact receipts in [remediation_report.md](remediation_report.md); the earlier 72-test result above describes the original setup.

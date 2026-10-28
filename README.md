@@ -1,4 +1,4 @@
-# Progressive query expansion for speculative drafting
+# Multiscale representation transfer for speculative drafting
 
 This repository studies whether a drafter can start with fewer **unknown future
 query states**, expand them inside its existing transformer layers, and reduce
@@ -12,6 +12,10 @@ ablations and generalization on general language/reasoning/code tasks. The later
 calculations, workpapers, validation, repair and deployment policy. It requires
 new system-design evidence, beyond financial examples of the ACL decoder.
 See [study boundaries](publications/publication_relationship.md).
+
+The current first-paper extension trains an auxiliary continuous multiscale codec on frozen target prediction states, then transfers supervision into causal latent heads and gated bridges in the drafter. The encoder is offline; generation predicts its own codes. See [architecture](docs/autoencoder_architecture.md), [repair status](docs/implementation_status.md), and [handoff](docs/remediation_report.md).
+
+The complete CPU flow is available with `uv run --no-sync ncm acceptance`. Current validation: **127 passed, one CUDA test skipped**, including a clean installed-wheel check. The full first-paper plan has 779 finite jobs and requires real calibration before launch. GPU measurements, official benchmark reproduction and IS-only FIX-13/14 remain pending. See the [per-requirement checklist](docs/remediation_checklist.json) and [executed validation](docs/remediation_validation.json).
 
 ## Architecture
 
@@ -40,6 +44,7 @@ uv run --no-sync python -m pytest -q
 uv run --no-sync ruff check .
 uv run --no-sync ncm data check
 uv run --no-sync ncm smoke
+uv run --no-sync ncm acceptance
 ```
 
 On Windows the installed CLI is `.venv\Scripts\ncm.exe`; on Linux/macOS it is
@@ -63,6 +68,7 @@ Spark/CUDA parity, kernel compatibility and throughput remain unverified.
 | ACL-002 | [Main quality and speed](experiments/acl/ACL-002_main_quality_speed/README.md) |
 | ACL-003 | [Hierarchy and skip ablations](experiments/acl/ACL-003_hierarchy_and_skip_ablations/README.md) |
 | ACL-004 | [Generalization and robustness](experiments/acl/ACL-004_generalization_and_robustness/README.md) |
+| ACL-005 | [Multiscale codec and causal transfer](experiments/acl/ACL-005_multiscale_codec_and_transfer/README.md) |
 | IS-001 | [Financial answers](experiments/is_journal/IS-001_financial_answer_accuracy/README.md) |
 | IS-002 | [Full-filing workflow](experiments/is_journal/IS-002_full_filing_workflow/README.md) |
 | IS-003 | [Workpapers and validation](experiments/is_journal/IS-003_workpapers_and_validation/README.md) |
@@ -153,3 +159,16 @@ FinQA and TAT-QA code retains adjacent MIT notices. Dataset/model terms are
 separate. Cite upstream work from [verified bibliography](docs/references.bib)
 and exact revisions from [source lock](third_party/sources.lock.yaml). There is
 no project research paper to cite yet. Native conversion is [future work](docs/native_ncm_roadmap.md).
+
+## Bounded codec experiment
+
+`ncm acceptance` runs the connected tiny-model codec fitting, held-out selection, frozen transfer, interruption/resume, controls, greedy parity, analysis and engineering export. It downloads no research weights/data. These fixtures are never publication evidence.
+
+```sh
+ncm matrix plan --spec experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/pilot.yaml --output results/generated/cpu-plan.json
+ncm matrix run --plan results/generated/cpu-plan.json
+ncm method list
+ncm experiment plan --id ACL-005 --profile spark
+```
+
+The candidate research study uses separate codec/student seed pairs, explicit dependencies and finite aggregate caps. Its launcher requires measured calibration. Released weights, CUDA/Spark, official evaluation environments and the strong external adapter remain prerequisites. Later IS workflow repairs are explicitly pending. No empirical speed, quality, business, novelty or publication-readiness result is established.

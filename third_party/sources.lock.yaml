@@ -97,7 +97,9 @@
       "revision": "2e00731f8d0bff23dc4325161044d0ed8af94c1e",
       "files": {
         "LICENSE": "bf7f05f274d65931bdf14f060b6855f1c359b8424eb74fd3091d25de89d700c3",
-        "README.md": "7de8f5cec86e49b9a0f3f90bf112e797903bcf93bd458d78c854fec532b08ef1"
+        "README.md": "7de8f5cec86e49b9a0f3f90bf112e797903bcf93bd458d78c854fec532b08ef1",
+        "LongBench/metrics.py": "e22e2a2662e0f7e683137fa3541f64edb6a801e9138d16d2f3459a6ab9941323",
+        "LongBench/config/dataset2prompt.json": "56d22ad4f382169c2b8a11ff4c982a4a1bea096c8152b0f0b85b64686b157c30"
       }
     },
     "target": {
@@ -121,7 +123,8 @@
       "revision": "e2f43607fb2531341b09e41889f593c75456a3f2",
       "files": {
         "config.json": "211aaca6a6ca15ccc4136d2533cd859ff010fe909212b92a13798702e2829e97",
-        "README.md": "23c73719368da846a85eb5cc33f0fd77028c1895c2c7aec9b1cc54b530965c69"
+        "README.md": "23c73719368da846a85eb5cc33f0fd77028c1895c2c7aec9b1cc54b530965c69",
+        "dflash.py": "30074279bf0683ae4264b9997213fd91ebeba9f973000362aa9e2165585f48b9"
       }
     },
     "oasst1": {
@@ -143,6 +146,27 @@
         },
         "README.md": "d8d7a46d41a1a37fe4f0a5f637bf55c649310185329127d8a2204632e480be17"
       }
+    },
+    "ifeval": {
+      "url": "https://github.com/google-research/google-research",
+      "revision": "e6890f85757dd84e27ca6df2dd30651dafad28e0",
+      "files": {
+        "instruction_following_eval/evaluation_lib.py": "35decc06000718487f44d7deafa6d3f48a8ec0886281edf40162c0265b7d248c",
+        "instruction_following_eval/instructions.py": "60e086f5342a03ce8e18b64bbcccf86308f523c08aa826707a562150a52f3edf",
+        "instruction_following_eval/instructions_registry.py": "ec92d72c264f6d906978613085db262356174300370a3fffe6fefd5969ce9cfc",
+        "instruction_following_eval/instructions_util.py": "a73797261eee5bf447e279d82a2b700b1bdd3cb1193412dbab1270a85832bc6b",
+        "instruction_following_eval/README.md": "fef3c44408e4b39837af345095ccce7da798853fd60ea94a1de63afa9d3d67b3",
+        "instruction_following_eval/requirements.txt": "1b1716c9ac21b9cc2bd0d7354ed8f7b6982ccf35598529601a7c08508acec94a"
+      }
+    },
+    "longbench_data": {
+      "url": "https://huggingface.co/datasets/zai-org/LongBench",
+      "revision": "5e628be450b7e67fb7ae6e201bd6d8f7056f7672",
+      "files": {
+        "data.zip": "cb45b11a4133c6bc1d6a44b0f8e701335ff1e543195db1103472e575857f7f64"
+      },
+      "size_bytes": 113932529,
+      "selection": "original LongBench GovReport member, not LongBench v2"
     }
   }
 }
