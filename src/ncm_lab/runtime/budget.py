@@ -1,77 +1,135 @@
+"""Persistent aggregate charges survive failed runs, old checkpoints, and new run IDs."""
+
+from contextlib import contextmanager
 from dataclasses import dataclass, asdict
-import math
 from pathlib import Path
+import math
 import time
+from ncm_lab.runtime.io import read, atomic_json
 
 
-class BudgetExceeded(RuntimeError):
+class BudgetStop(RuntimeError):
     pass
 
 
 @dataclass(frozen=True)
 class Budget:
-    phase_budget_id: str
-    max_steps: int
-    max_wall_seconds: float
-    max_training_source_token_passes: int
-    max_supervised_future_positions: int
-    max_storage_bytes: int
-    max_download_bytes: int
-    max_phase_steps: int
-    max_phase_source_token_passes: int
-    max_phase_wall_seconds: float
-    max_phase_storage_bytes: int
-    max_phase_download_bytes: int
+    phase_id: str
+    max_wall_seconds: float = 120
+    max_steps: int = 200
+    max_source_tokens: int = 1000000
+    max_answer_positions: int = 1000000
+    max_canvas_positions: int = 10000000
+    max_storage_bytes: int = 512000000
+    max_phase_wall_seconds: float = 10800
+    max_phase_steps: int = 10000
+    max_phase_source_tokens: int = 100000000
+    max_phase_answer_positions: int = 100000000
+    max_phase_canvas_positions: int = 1000000000
+    max_phase_storage_bytes: int = 4000000000
 
     def __post_init__(self):
-        for key, val in asdict(self).items():
-            if key == "phase_budget_id":
-                if not val or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in val):
-                    raise ValueError("phase_budget_id must be a safe nonempty identifier")
-            elif not isinstance(val, (int, float)) or isinstance(val, bool) or not math.isfinite(val) or val < 0:
-                raise ValueError(f"{key} requires a finite nonnegative limit")
-        for key in ("max_steps", "max_wall_seconds", "max_storage_bytes", "max_phase_steps"):
-            if getattr(self, key) <= 0:
-                raise ValueError(f"{key} must be positive")
-        if self.max_phase_steps < self.max_steps or self.max_phase_source_token_passes < self.max_training_source_token_passes:
-            raise ValueError("phase budget must cover the per-run limits")
-        for phase, per_run in (("max_phase_wall_seconds", "max_wall_seconds"),
-                               ("max_phase_storage_bytes", "max_storage_bytes"),
-                               ("max_phase_download_bytes", "max_download_bytes")):
-            if getattr(self,phase) < getattr(self,per_run):
-                raise ValueError(f"{phase} must cover the per-run limit")
+        if not self.phase_id or any(
+            c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for c in self.phase_id
+        ):
+            raise ValueError("safe phase ID required")
+        for key, value in asdict(self).items():
+            if key == "phase_id":
+                continue
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value <= 0
+            ):
+                raise ValueError("positive finite budget required: " + key)
+        for field in (
+            "wall_seconds",
+            "steps",
+            "source_tokens",
+            "answer_positions",
+            "canvas_positions",
+            "storage_bytes",
+        ):
+            if getattr(self, "max_phase_" + field) < getattr(self, "max_" + field):
+                raise ValueError("phase cap below per-run limit")
 
 
 class Meter:
-    def __init__(self, budget: Budget, artifact_dir: Path):
-        self.budget, self.artifact_dir = budget, artifact_dir
-        self.accounting_dir = artifact_dir
-        self.started = time.monotonic()
-        self.steps = self.source_tokens = self.supervised_positions = 0
-        self.inherited_steps = self.inherited_source_tokens = self.inherited_supervised_positions = 0
+    def __init__(self, budget, run_dir, ledger_root):
+        self.budget = budget
+        self.run_dir = Path(run_dir)
+        self.started = time.perf_counter()
+        self.path = Path(ledger_root) / (budget.phase_id + ".json")
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.lock = self.path.with_suffix(".lock")
+        self.used = {"steps": 0, "source_tokens": 0, "answer_positions": 0, "canvas_positions": 0}
+        self.closed = False
+        with self.transaction() as state:
+            caps = {k: v for k, v in asdict(budget).items() if k.startswith("max_phase_")}
+            if state and state["caps"] != caps:
+                raise ValueError("aggregate budget caps cannot change under the same phase ID")
+            if not state:
+                state.update(caps=caps, wall=0.0, charges={k: 0 for k in self.used}, runs=[])
+            if state["wall"] + budget.max_wall_seconds > budget.max_phase_wall_seconds:
+                raise BudgetStop("aggregate wall reservation exhausted")
+            # An unhandled crash retains this complete conservative reservation.
+            state["wall"] += budget.max_wall_seconds
+            state["runs"].append(str(self.run_dir.resolve()))
 
-    @property
-    def new_steps(self):
-        return self.steps-self.inherited_steps
+    @contextmanager
+    def transaction(self):
+        try:
+            with self.lock.open("x"):
+                pass
+        except FileExistsError as exc:
+            raise ValueError("phase ledger locked; inspect interrupted writer before recovery") from exc
+        try:
+            state = read(self.path) if self.path.exists() else {}
+            yield state
+            atomic_json(self.path, state)
+        finally:
+            self.lock.unlink(missing_ok=True)
 
-    @property
-    def new_source_tokens(self):
-        return self.source_tokens-self.inherited_source_tokens
+    def check(self):
+        if time.perf_counter() - self.started >= self.budget.max_wall_seconds:
+            raise BudgetStop("per-run wall budget exhausted")
 
-    @property
-    def new_supervised_positions(self):
-        return self.supervised_positions-self.inherited_supervised_positions
+    def charge(self, source=0, answer=0, canvas=0, steps=0):
+        self.check()
+        additions = {
+            "source_tokens": source,
+            "answer_positions": answer,
+            "canvas_positions": canvas,
+            "steps": steps,
+        }
+        if any(isinstance(v, bool) or not isinstance(v, int) or v < 0 for v in additions.values()):
+            raise ValueError("nonnegative integer work charges required")
+        with self.transaction() as state:
+            for key, value in additions.items():
+                if self.used[key] + value > getattr(self.budget, "max_" + key) or state["charges"][
+                    key
+                ] + value > getattr(self.budget, "max_phase_" + key):
+                    raise BudgetStop("finite " + key + " budget exhausted")
+            for key, value in additions.items():
+                state["charges"][key] += value
+                self.used[key] += value
 
-    def check(self, source_tokens=0, supervised_positions=0, step=True):
-        b = self.budget
-        size = sum(p.stat().st_size for p in self.accounting_dir.rglob("*") if p.is_file())
-        if (step and self.steps >= b.max_steps or time.monotonic() - self.started >= b.max_wall_seconds
-                or self.source_tokens + source_tokens > b.max_training_source_token_passes
-                or self.supervised_positions + supervised_positions > b.max_supervised_future_positions
-                or size > b.max_storage_bytes):
-            raise BudgetExceeded("finite step/time/token/storage budget reached")
+    def check_disk(self, additional=0):
+        self.check()
 
-    def record(self, source_tokens, supervised_positions):
-        self.steps += 1
-        self.source_tokens += source_tokens
-        self.supervised_positions += supervised_positions
+        def size(folder):
+            return sum(p.stat().st_size for p in Path(folder).rglob("*") if p.is_file())
+
+        if size(self.run_dir) + additional > self.budget.max_storage_bytes:
+            raise BudgetStop("per-run storage budget exhausted")
+        state = read(self.path)
+        if sum(size(p) for p in set(state["runs"])) + additional > self.budget.max_phase_storage_bytes:
+            raise BudgetStop("aggregate retained storage budget exhausted")
+
+    def close(self):
+        if not self.closed:
+            elapsed = time.perf_counter() - self.started
+            with self.transaction() as state:
+                state["wall"] += elapsed - self.budget.max_wall_seconds
+            self.closed = True

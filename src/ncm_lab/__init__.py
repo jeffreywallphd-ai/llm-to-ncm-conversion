@@ -1,2 +1,3 @@
-"""NCM-inspired speculative drafting; no native target conversion."""
-__version__ = "0.1.0"
+"""Native embedded hierarchy research software. See the GPL-3.0 repository license."""
+
+__version__ = "0.2.0"

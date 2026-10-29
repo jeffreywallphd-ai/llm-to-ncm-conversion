@@ -1,210 +1,119 @@
-# Multiscale representation transfer for speculative drafting
+# Embedded Qwen hierarchy
 
-This repository studies whether a drafter can start with fewer **unknown future
-query states**, expand them inside its existing transformer layers, and reduce
-generation cost while a frozen autoregressive target verifies every token.
-It implements NCM-inspired hierarchical speculative drafting. It does **not**
-convert Qwen into a native Next-Concept Modeling generator. The target is unchanged.
+This repository implements a proposed native parallel-answer generator initialized
+from pinned Qwen3-8B weights. Its quality, retained pretrained capabilities,
+full-8B training feasibility, throughput, and speed improvement are **not measured**.
+Small CPU diagnostics establish software behavior, not competitive model quality.
 
-The [ACL study](publications/acl/README.md) tests the architecture, controls,
-ablations and generalization on general language/reasoning/code tasks. The later
-[IS journal study](publications/is_journal/README.md) tests financial evidence,
-calculations, workpapers, validation, repair and deployment policy. It requires
-new system-design evidence, beyond financial examples of the ACL decoder.
-See [study boundaries](publications/publication_relationship.md).
+The previous speculative drafter and its studies are preserved on
+[archive/hierarchical-drafter](https://github.com/jeffreywallphd-ai/llm-to-ncm-conversion/tree/archive/hierarchical-drafter),
+at `c5e5329172e63026995a440aa0591a5e15804ab4`.
+See [migration](docs/migration.md). Main now has no external drafter, known answer
+anchor, AR verifier, acceptance loop, or autoregressive correction.
 
-The current first-paper extension trains an auxiliary continuous multiscale codec on frozen target prediction states, then transfers supervision into causal latent heads and gated bridges in the drafter. The encoder is offline; generation predicts its own codes. See [architecture](docs/autoencoder_architecture.md), [repair status](docs/implementation_status.md), and [handoff](docs/remediation_report.md).
+## Architecture and training
 
-The complete CPU flow is available with `uv run --no-sync ncm acceptance`. Current validation: **127 passed, one CUDA test skipped**, including a clean installed-wheel check. The full first-paper plan has 779 finite jobs and requires real calibration before launch. GPU measurements, official benchmark reproduction and IS-only FIX-13/14 remain pending. See the [per-requirement checklist](docs/remediation_checklist.json) and [executed validation](docs/remediation_validation.json).
+The original 36 Qwen blocks execute once per answer canvas. Blocks 1–8 process
+the prompt and four learned answer queries. Each of blocks 9–24 is followed by
+two successive hierarchy updates, giving 32 updates from four to 1024 answer
+positions. Blocks 25–36 refine the full 1024-position stream. Original transformer
+residuals remain intact; every hierarchy update also preserves hidden/compact
+residual paths. The compact stream is 384 wide in the real configuration.
 
-## Architecture
+A shared continuous codec is trained offline on frozen Qwen final-normalized
+prediction states. It supplies cumulative targets after each update pair: sixteen
+auxiliary losses. The generator receives only the prompt and its padding mask.
+Teacher states, reference tokens, answer lengths, validity masks, and codec targets
+stay outside its forward API. The optional module warmup is followed by full
+original-backbone fine tuning, including embeddings, final norm, and vocabulary
+head. No LoRA is used.
 
-| Layer | Flat future states | Progressive future states | Total with known anchor |
-|---|---:|---:|---:|
-| 1 | 15 | 4 | 5 |
-| 2 | 15 | 4 | 5 |
-| 3 | 15 | 8 | 9 |
-| 4 | 15 | 15 | 16 |
-| 5 | 15 | 15 | 16 |
+Inference loads only the generator export and tokenizer. It predicts all canvas
+positions in one traversal, returns through the first configured EOS, and reports
+truncation when EOS is absent. Fixed capacity does not imply successful long-answer
+learning. See [architecture](docs/architecture.md) and [data contracts](docs/data_contracts.md).
 
-The known bonus-token anchor is separate and is not predicted. Expansion copies
-parents and adds learned child offsets. A zero-gated, active low-rank projection
-lifts layer 2 into layer 5. The 51 versus 80 query-position-layer updates are a
-work proxy, **not a speed prediction**. See [architecture](docs/architecture.md).
-
-## Install and verify on CPU
-
-Python 3.12 and `uv` are recommended. The CPU environment is isolated from any
-working GPU installation. From this checkout:
+## Install and bounded validation
 
 ```sh
-uv sync --locked --extra cpu --extra scoring --extra prepare --group dev
+uv sync --locked --python 3.12 --extra cpu --extra prepare --group dev
 uv run --no-sync ncm doctor --profile cpu
 uv run --no-sync python -m pytest -q
 uv run --no-sync ruff check .
-uv run --no-sync ncm data check
-uv run --no-sync ncm smoke
-uv run --no-sync ncm acceptance
+uv run --no-sync ncm validate --config configs/validation/cpu_native.yaml
 ```
 
-On Windows the installed CLI is `.venv\Scripts\ncm.exe`; on Linux/macOS it is
-`.venv/bin/ncm`. The smoke workflow runs two tiny trainable-model steps with
-checkpoint resume, released training-data checks, prediction scoring, immutable
-run validation and separate reports. It downloads no weights or data.
+Installation, help, and preparation planning do not download research models or
+start training. Validation uses tiny Qwen production classes and explicitly
+labeled fixtures. It performs codec/generator training, save/reload/resume,
+fixed-batch learning diagnostics, and fresh-process generation, with finite stage
+and aggregate budgets. Failed attempts and their charges are preserved.
 
-See [setup](docs/setup.md), [student quickstart](docs/student_quickstart.md), and
-[Spark setup](docs/spark_setup.md). Setup was validated on Windows x86-64 with
-CPU PyTorch. The detected GPU is an RTX 4060 (8188 MiB); no DGX Spark was available.
-Spark/CUDA parity, kernel compatibility and throughput remain unverified.
+<!-- BEGIN NATIVE VALIDATION -->
+| Check | Actual result | Provenance / limit |
+|---|---|---|
+| `python -m pytest` / installed wheel | 51 passed, 1 CUDA skip in each | CPU software fixtures; includes 1024-slot geometry |
+| `ruff check .` | Passed | Native source/tests |
+| Connected validation `20261029T113627Z-62a290a040` | Completed, save/resume and fresh process export | CPU; data `0966c13f6a461872a737de7e59f8a9b213ed4f15154fd5fcd5c28e6493b210aa` |
+| 40-step codec `20261029T113647Z-8068ba5639` | Loss 1.0300 → 0.8714 | Same fixed batch; no generalization claim |
+| 40-step generator `20261029T113652Z-3e5dcd0e7b` | Loss 3.9327 → 2.6797 | Same fixed batch; no generalization claim |
+| Fresh prompt-only generation | Immediate EOS; empty decoded text, all 16 fixture slots computed | One traversal; poor early output, no repair |
+| Real-data codec / full Qwen3-8B / speed | Not executed / not measured | Missing full weights and suitable training hardware/storage |
 
-## Experiment index
+Exact artifacts, failures, loss components and environment: [native validation](docs/native_validation.json).
+<!-- END NATIVE VALIDATION -->
 
-| ID | Protocol |
+## Six workflows
+
+| Stage | Purpose |
 |---|---|
-| SHR-001 | [Environment and integrity](experiments/shared/SHR-001_environment_and_integrity/README.md) |
-| SHR-002 | [Target and verification](experiments/shared/SHR-002_target_and_verification/README.md) |
-| SHR-003 | [Flat and strong baselines](experiments/shared/SHR-003_flat_drafter_baseline/README.md) |
-| ACL-001 | [Component profiling and pilot](experiments/acl/ACL-001_component_profile_and_pilot/README.md) |
-| ACL-002 | [Main quality and speed](experiments/acl/ACL-002_main_quality_speed/README.md) |
-| ACL-003 | [Hierarchy and skip ablations](experiments/acl/ACL-003_hierarchy_and_skip_ablations/README.md) |
-| ACL-004 | [Generalization and robustness](experiments/acl/ACL-004_generalization_and_robustness/README.md) |
-| ACL-005 | [Multiscale codec and causal transfer](experiments/acl/ACL-005_multiscale_codec_and_transfer/README.md) |
-| IS-001 | [Financial answers](experiments/is_journal/IS-001_financial_answer_accuracy/README.md) |
-| IS-002 | [Full-filing workflow](experiments/is_journal/IS-002_full_filing_workflow/README.md) |
-| IS-003 | [Workpapers and validation](experiments/is_journal/IS-003_workpapers_and_validation/README.md) |
-| IS-004 | [Operating frontier](experiments/is_journal/IS-004_operating_frontier/README.md) |
+| [01 data](workflows/01_data/README.md) | Verified source preparation, whole-tree split, separate prompt/reference tokens |
+| [02 teacher features](workflows/02_teacher_features/README.md) | Frozen post-normalization prediction states, without full-vocabulary logits |
+| [03 codec](workflows/03_codec/README.md) | Shared encoder/decoder training, held-out selection, frozen representation export |
+| [04 latent targets](workflows/04_latent_targets/README.md) | Frozen fine-code cache; separate from generator training |
+| [05 generator](workflows/05_generator/README.md) | Prompt-only embedded model, optional warmup, full fine tuning and recovery |
+| [06 generation](workflows/06_generation/README.md) | Standalone export and bounded parallel generation |
 
-## Data and scoring
-
-[Manifests](data/manifests) pin sources and preserve original gold. Tiny licensed
-FinQA/TAT-QA **training-split** samples have source/hash receipts. Financial gold
-is never fabricated. FinQA uses the pinned official execution/program evaluator
-behind a bounded DSL validator; TAT-QA uses the pinned official normalization,
-EM/F1 and scale implementation. DocFinQA scorer parity remains blocked.
-
-Model prompts use explicit allowed fields. Gold answers/programs/evidence,
-future target states, and oracle routing features cannot enter prompts or repair.
-FinQA/DocFinQA share a benchmark family. Official splits do not establish unseen
-company generalization. HumanEval+ requires verified isolated execution.
-See [data provenance](docs/data_provenance.md) and [evaluation](docs/evaluation_protocol.md).
-
-## Plan, run, analyze, reproduce
-
-One command can retrieve and prepare the first pilot's pinned models and data:
+An authorized real pilot starts with an acquisition preview and explicit retrieval:
 
 ```sh
-ncm prepare --profile spark
+ncm doctor --profile spark
+ncm prepare --config configs/validation/real_pilot.yaml --plan-only
+ncm prepare --config configs/validation/real_pilot.yaml
+ncm data prepare --config configs/data/real_pilot.yaml
+ncm teacher extract --config configs/validation/teacher_features_pilot.yaml
+ncm codec train --config configs/validation/codec_pilot.yaml
+ncm targets build --config configs/validation/latent_targets_pilot.yaml
+ncm generator train --config configs/validation/generator_pilot.yaml
+ncm generator train --config configs/validation/generator_pilot.yaml --resume /ABS/CHECKPOINT/current.json
+ncm generate --checkpoint /ABS/EXPORT/manifest.json --prompt-file /ABS/prompt.txt
 ```
 
-This downloads 18.54 GB from an empty cache and needs about 20.82 GB free for
-preparation. Use `--assets-root PATH` for another disk, or `--dry-run` for an offline
-preview. It checks hashes, prepares train/dev prompts, and prints ready-to-use launch
-configs. Teacher generation and training remain separate bounded commands.
-See [preparation](docs/prepare.md) for budgets, recovery, installation and optional
-financial datasets. The current development drive lacks space for the full assets.
+Named `runs/handoffs/*.json` receipts connect stages by exact manifest hashes.
+There is no historical-run scan or arbitrary latest checkpoint selection. Resume
+uses a complete native recovery checkpoint; an inference export cannot resume
+training. See [training](docs/training.md) for timing, storage, and precision rules.
 
-```sh
-ncm experiment list
-ncm experiment plan --id ACL-001 --profile spark
-ncm experiment run --id ACL-001 --config configs/cpu_profile.yaml --budget configs/budgets/cpu_profile.yaml
-ncm results analyze --experiment ACL-001 --runs RUN_ID
-ncm report build --study acl
-ncm report build --study is_journal
-ncm publication export --study acl --anonymize --output publications/exports/acl-review.zip
-```
+Intended larger budgets remain separate: [10M codec positions](configs/codec/initial_10m_answer_tokens.yaml)
+and [100M processed generator tokens](configs/generator/initial_100m_processed_tokens.yaml).
+They are not automatic validation. The source-pool target is up to 100M unique
+prepared tokens; current source availability and unique-data shortfalls are recorded.
+Repetition increases exposures, never unique-data counts.
 
-The CPU profile is an artificial-tensor diagnostic. Research configurations check
-cached models, data and correctness prerequisites and record blockers. They do not
-download artifacts implicitly. Every run needs finite per-run **and phase** budgets.
-Validate a returned ID with `ncm results validate --run RUN_ID`. Use immutable
-configurations, artifact hashes and parent runs to reproduce results. See
-[workflow](docs/experiment_workflow.md) and [compute plan](docs/compute_plan.md).
+## Current limitations and extension
 
-## Key findings
+The available development environment has CPU PyTorch, no usable CUDA training
+runtime, no cached full Qwen3-8B assets, and no DGX Spark. Real head/kernel,
+memory, optimizer, checkpoint restoration, quality, and speed require the separate
+[Spark feasibility procedure](docs/spark_setup.md). Hardware detection is not
+full-training validation. Early native answers may be poor and have no guaranteed
+relation to the original AR distribution.
 
-<!-- BEGIN MEASURED RESULTS -->
+Formal studies will be added later under [experiments](experiments/README.md),
+consuming immutable native runs while importing shared `src/ncm_lab` components.
+No ACL/IS design, ablation sweep, significance program, financial benchmark, or
+publication claim is included in this migration.
 
-No empirical findings yet.
-<!-- END MEASURED RESULTS -->
-
-Engineering validation: CPU tests exercise real upstream DFlash blocks, variable
-tensor lengths, feature leakage, autograd, exact finite-model verification,
-actual Transformers cache rollback, official training-example scoring, and
-checkpoint/report integration. These establish software behavior, not real-model
-quality or deployment speed. See [implementation status](docs/implementation_status.md).
-
-Untested hypotheses: proposal-quality retention, runtime advantage, useful skips,
-financial-workflow benefits, routing gains and generalization.
-
-## Limitations and blockers
-
-Released Qwen3-8B target/drafter weights are not cached here. No real-model GPU
-parity, training, baseline reproduction or research timing was run. Optimized
-hierarchy integration into SGLang/vLLM, genuine isolated code execution, the full
-official general-task evaluation stack, and journal serving/load integration need
-additional validation. No publication-ready or novelty claim is made. Human
-experiment owners/reviewers and author roles remain unassigned.
-
-## Repository map and citation
-
-`src/ncm_lab/` separates contracts, data, models, decoding, training, evaluation,
-business workflow, runtime, experiments and reporting. `configs/` holds finite
-execution settings; `experiments/` holds protocols and ignored raw runs;
-`results/index.json` points to derived summaries. `publications/` holds distinct
-study/claim manifests. `third_party/` holds exact sources and configurations.
-Notebooks are optional; authoritative work uses the package CLI.
-
-Project code retains the original [GPL-3.0 license](LICENSE). Vendored DFlash,
-FinQA and TAT-QA code retains adjacent MIT notices. Dataset/model terms are
-separate. Cite upstream work from [verified bibliography](docs/references.bib)
-and exact revisions from [source lock](third_party/sources.lock.yaml). There is
-no project research paper to cite yet. Native conversion is [future work](docs/native_ncm_roadmap.md).
-
-## Bounded codec experiment
-
-`ncm acceptance` runs the connected tiny-model codec fitting, held-out selection, frozen transfer, interruption/resume, controls, greedy parity, analysis and engineering export. It downloads no research weights/data. These fixtures are never publication evidence.
-
-```sh
-ncm matrix plan --spec experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/pilot.yaml --output results/generated/cpu-plan.json
-ncm matrix run --plan results/generated/cpu-plan.json
-ncm method list
-ncm experiment plan --id ACL-005 --profile spark
-```
-
-The candidate research study uses separate codec/student seed pairs, explicit dependencies and finite aggregate caps. Its launcher requires measured calibration. Released weights, CUDA/Spark, official evaluation environments and the strong external adapter remain prerequisites. Later IS workflow repairs are explicitly pending. No empirical speed, quality, business, novelty or publication-readiness result is established.
-
-## First-paper corrections V3
-
-The [correction report](docs/corrections_v3_report.md) and
-[checklist](docs/corrections_v3_checklist.json) describe the current software
-contracts and verification. The earlier remediation reports are historical.
-The unchanged AR target supplies post-final-normalization prediction states;
-independently reconstructable codecs supervise causal student predictors, whose
-predicted codes condition hierarchical speculative drafting. The target verifies
-every proposal. This remains speculative drafting rather than native NCM conversion.
-
-The compact [study declaration](experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml)
-and [locked contrasts](publications/acl/contrasts.yaml) generate the full study and
-experiment subsets. Selected tiers are 250,000 and 1,000,000 distinct eligible
-response-label positions; 4M and 16M are optional and cannot be filled by repetition.
-Each decisive adapted procedure uses independent codec/student pairs 17/17, 29/29,
-and 43/43. Timing repeats stay within a pair. The four-cell hierarchy/transfer
-comparison disables the original skip throughout; the practical skip comparison
-and capacity, auxiliary, codec-CE, reconstruction, linear, independent, and single
-scale controls have explicit final-test paths. Focused mechanism controls use GSM8K;
-the main reference comparison covers the four designated tasks. ACL-004 analyzes
-length strata of shared LongBench observations and provides no independent
-cross-model or load evidence.
-
-```sh
-ncm matrix plan --spec experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml --output results/generated/study-v3-plan.json
-# After authorized execution, analyze only the exact recorded role bindings:
-ncm results analyze --experiment ACL-003 --bindings MATRIX_OUTPUT/analysis-bindings.json
-```
-
-Planning validates configurations and finite caps without loading models or
-starting research. Real execution still requires measured calibration, cached
-pinned weights, complete teacher/source contracts, official input/scorer receipts,
-and verified external isolation for HumanEval+. Use the [bounded Spark pilot](docs/corrections_v3_report.md)
-before authorizing a full study. Research effects, GPU compatibility, and speed are
-**not measured**; research selections remain empty.
+The project retains [GPL-3.0](LICENSE). Former vendored code/notices are preserved
+on the archive branch; no DFlash/DCore/financial runtime is carried into the native
+package. Downloaded Qwen/OASST assets retain their separately recorded license terms.

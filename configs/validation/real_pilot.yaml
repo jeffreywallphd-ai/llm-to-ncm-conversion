@@ -1,0 +1,33 @@
+{
+  "schema": "native_stage_v1",
+  "stage": "prepare",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": "configs/budgets/real_pilot.yaml",
+  "device": "cpu",
+  "dtype": "float32",
+  "preparation": {
+    "asset_lock": "configs/data/assets.lock.json",
+    "assets_root": "runs/assets",
+    "budget": {
+      "schema_version": 1,
+      "phase_budget_id": "native-assets-v1",
+      "max_download_bytes": 20000000000,
+      "max_storage_bytes": 30000000000,
+      "max_wall_seconds": 7200,
+      "max_phase_wall_seconds": 21600,
+      "reserve_free_bytes": 1000000000,
+      "max_processed_bytes": 1000000000,
+      "max_prompt_examples": 256,
+      "max_prompt_chars": 32768,
+      "dev_fraction": 0.15
+    },
+    "stages": {
+      "data prepare": "configs/data/real_pilot.yaml",
+      "teacher extract": "configs/validation/teacher_features_pilot.yaml",
+      "codec train": "configs/validation/codec_pilot.yaml",
+      "targets build": "configs/validation/latent_targets_pilot.yaml",
+      "generator train": "configs/validation/generator_pilot.yaml"
+    }
+  }
+}

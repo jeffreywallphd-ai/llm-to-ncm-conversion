@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ncm-lab"
-version = "0.1.0"
-description = "Reproducible progressive-query speculative drafting research"
+version = "0.2.0"
+description = "Native embedded Qwen hierarchy and bounded continuous-codec training"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 license = "GPL-3.0-only"
@@ -15,10 +15,6 @@ dependencies = ["PyYAML==6.0.3"]
 cpu = ["torch==2.13.0", "transformers==5.15.0"]
 upstream = ["transformers==5.15.0"]
 prepare = ["pyarrow==23.0.0"]
-scoring = ["numpy==2.4.1", "scipy==1.17.0", "pandas==3.0.0", "sympy==1.14.0", "tqdm==4.70.0"]
-analysis = [
-    "matplotlib==3.10.7",
-]
 
 [dependency-groups]
 dev = ["pytest==9.0.2", "ruff==0.14.14"]
@@ -28,13 +24,7 @@ ncm = "ncm_lab.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-"ncm_lab.vendor" = ["*.txt", "*.json"]
-"ncm_lab.vendor.dflash" = ["LICENSE.txt"]
-"ncm_lab.vendor.dcore" = ["LICENSE.txt"]
-"ncm_lab.vendor.finqa" = ["LICENSE.txt"]
-"ncm_lab.vendor.tatqa" = ["LICENSE.txt"]
+namespaces = false
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu", extra = "cpu" }]
@@ -47,11 +37,10 @@ explicit = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ""
-markers = ["integration: bounded CPU integration", "cuda: optional GPU parity", "isolation: requires a verified code sandbox"]
+markers = ["integration: bounded native production-stage integration", "cuda: optional tiny native CUDA kernel validation"]
 
 [tool.ruff]
 line-length = 110
-exclude = ["src/ncm_lab/vendor"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]

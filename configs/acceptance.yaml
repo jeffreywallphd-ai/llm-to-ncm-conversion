@@ -1,9 +1,0 @@
-{
-  "experiment_id": "ACL-005",
-  "executor": "acceptance",
-  "profile": "cpu",
-  "device": "cpu",
-  "precision": "float32",
-  "result_origin": "test_fixture",
-  "seed": 7
-}

@@ -1,0 +1,1525 @@
+{
+  "schema": "native_migration_validation_v1",
+  "date": "2026-10-29",
+  "implementation_sha256": "03e5e5aca982361b543c71b5e7754f0e42aae10e590f739ae122abe45ad25b49",
+  "archive": {
+    "branch": "archive/hierarchical-drafter",
+    "sha": "c5e5329172e63026995a440aa0591a5e15804ab4",
+    "origin_verified": true,
+    "publication": "explicit user approval"
+  },
+  "tests": {
+    "command": "python -m pytest -q --basetemp=.cache/native-migration/pytest-final-2",
+    "passed": 51,
+    "skipped": 1,
+    "seconds": 17.51,
+    "skip": "CUDA unavailable in CPU PyTorch"
+  },
+  "lint": {
+    "command": "ruff check .",
+    "outcome": "passed"
+  },
+  "environment": {
+    "profile": "cpu",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "architecture": "AMD64",
+    "python": "3.12.14",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.15.0",
+    "cuda_build": null,
+    "cuda_detected": false,
+    "devices": [],
+    "host_available_bytes": 1205858304,
+    "attention": "explicit-mask SDPA; actual kernel fallback requires measurement",
+    "optimizer": "tiled AdamW, FP32 moments, parameter-dtype gradients, no FP32 master weights",
+    "kernel_validation": "not executed by detection",
+    "full_8b_training_validation": "not executed",
+    "measured_throughput": null,
+    "shared_memory_policy": "Spark host/device capacity is one physical pool; never add them"
+  },
+  "physical_gpu": {
+    "source": "nvidia-smi",
+    "name": "NVIDIA GeForce RTX 4060",
+    "memory_mib": 8188,
+    "usable_by_installed_torch": false
+  },
+  "connected_validation": {
+    "run_id": "20261029T113627Z-62a290a040",
+    "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T113627Z-62a290a040",
+    "status": "completed",
+    "stages": [
+      {
+        "run_id": "20261029T113634Z-d1fb3269e1",
+        "stage": "teacher",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T113634Z-d1fb3269e1",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T113637Z-a6dac79462",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113637Z-a6dac79462",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T113638Z-788dbec959",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113638Z-788dbec959",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T113640Z-c5024d8c11",
+        "stage": "targets",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T113640Z-c5024d8c11",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T113642Z-504c1356a0",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113642Z-504c1356a0",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T113645Z-9fd277a719",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113645Z-9fd277a719",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T113647Z-8068ba5639",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113647Z-8068ba5639",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T113652Z-3e5dcd0e7b",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113652Z-3e5dcd0e7b",
+        "status": "completed"
+      }
+    ],
+    "micro_overfit": [
+      {
+        "stage": "codec",
+        "run_id": "20261029T113647Z-8068ba5639",
+        "status": "completed",
+        "first": {
+          "mse_full": 1.0393556356430054,
+          "mse_cutoff": 1.0199273824691772,
+          "head_kl": 0.0031236198265105486,
+          "loss": 1.0299538373947144,
+          "cutoff": 3,
+          "head_positions": 24,
+          "step": 1,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 0.3879472662062123,
+          "step_seconds": 0.0635476999450475,
+          "processed_source_tokens": 24,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 24,
+          "allocated_canvas_positions": 128
+        },
+        "last": {
+          "mse_full": 0.8695013523101807,
+          "mse_cutoff": 0.8726545572280884,
+          "head_kl": 0.0027436965610831976,
+          "loss": 0.8713523149490356,
+          "cutoff": 26,
+          "head_positions": 24,
+          "step": 40,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 0.37191868282115487,
+          "step_seconds": 0.0314648998901248,
+          "processed_source_tokens": 960,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 960,
+          "allocated_canvas_positions": 5120,
+          "dev_loss": 0.8918746709823608
+        },
+        "observed_loss_decrease": true,
+        "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+      },
+      {
+        "stage": "generator",
+        "run_id": "20261029T113652Z-3e5dcd0e7b",
+        "status": "completed",
+        "first": {
+          "loss": 3.932727098464966,
+          "text_loss": 3.5066890716552734,
+          "latent_loss": 4.260380744934082,
+          "groups": [
+            4.14223051071167,
+            5.014113903045654,
+            5.245002269744873,
+            5.721570014953613,
+            3.8612937927246094,
+            3.914933204650879,
+            3.883798837661743,
+            3.5881054401397705,
+            4.8101487159729,
+            4.9234700202941895,
+            4.242092132568359,
+            2.988112211227417,
+            3.4680893421173096,
+            4.1508049964904785,
+            3.7869129180908203,
+            4.425410747528076
+          ],
+          "group_valid_bins": [
+            8,
+            8,
+            8,
+            8,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "backbone_answer_positions": 2832,
+          "step": 1,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 2.584894788074169,
+          "step_seconds": 0.19723520008847117,
+          "processed_source_tokens": 40,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 24,
+          "allocated_canvas_positions": 128
+        },
+        "last": {
+          "loss": 2.6797189712524414,
+          "text_loss": 2.5829217433929443,
+          "latent_loss": 0.9679713249206543,
+          "groups": [
+            1.9948086738586426,
+            1.3923262357711792,
+            0.9811084270477295,
+            0.8706848621368408,
+            0.9000244140625,
+            0.8675457239151001,
+            0.8638268709182739,
+            0.8654595613479614,
+            0.8390131592750549,
+            0.8497724533081055,
+            0.837985634803772,
+            0.8457431793212891,
+            0.842017650604248,
+            0.8616405129432678,
+            0.8360399603843689,
+            0.8395440578460693
+          ],
+          "group_valid_bins": [
+            8,
+            8,
+            8,
+            8,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "backbone_answer_positions": 2832,
+          "step": 40,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 1.4214622542004418,
+          "step_seconds": 0.35475429985672235,
+          "processed_source_tokens": 1600,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 960,
+          "allocated_canvas_positions": 5120,
+          "dev_loss": 2.6457784175872803
+        },
+        "observed_loss_decrease": true,
+        "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+      }
+    ],
+    "fresh_process_generation": {
+      "run_id": "20261029T113712Z-ef1644f373",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T113712Z-ef1644f373",
+      "status": "completed",
+      "tokens": [
+        2
+      ],
+      "eos_found": true,
+      "truncated": false,
+      "allocated_answer_positions": 16,
+      "computed_answer_positions": 16,
+      "backbone_traversals": 1,
+      "logical_block_trace": [
+        {
+          "block": 1,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 2,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 3,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 4,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 5,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 6,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 7,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 8,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 9,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 10,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 11,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 12,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 13,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 14,
+          "answer_positions": 6,
+          "sequence_positions": 8
+        },
+        {
+          "block": 15,
+          "answer_positions": 7,
+          "sequence_positions": 9
+        },
+        {
+          "block": 16,
+          "answer_positions": 7,
+          "sequence_positions": 9
+        },
+        {
+          "block": 17,
+          "answer_positions": 8,
+          "sequence_positions": 10
+        },
+        {
+          "block": 18,
+          "answer_positions": 9,
+          "sequence_positions": 11
+        },
+        {
+          "block": 19,
+          "answer_positions": 9,
+          "sequence_positions": 11
+        },
+        {
+          "block": 20,
+          "answer_positions": 10,
+          "sequence_positions": 12
+        },
+        {
+          "block": 21,
+          "answer_positions": 11,
+          "sequence_positions": 13
+        },
+        {
+          "block": 22,
+          "answer_positions": 12,
+          "sequence_positions": 14
+        },
+        {
+          "block": 23,
+          "answer_positions": 13,
+          "sequence_positions": 15
+        },
+        {
+          "block": 24,
+          "answer_positions": 15,
+          "sequence_positions": 17
+        },
+        {
+          "block": 25,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 26,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 27,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 28,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 29,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 30,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 31,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 32,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 33,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 34,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 35,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 36,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        }
+      ],
+      "forward_and_head_seconds": 0.04965039994567633,
+      "decoding": "parallel argmax; no AR repair or verification",
+      "text": "",
+      "export_identity": "ad707d12a38565f0d554c7783023987fa0e85735e5ff1d3d967be103677214d7",
+      "elapsed_seconds": 7.20985409989953,
+      "charged_work": {
+        "steps": 1,
+        "source_tokens": 2,
+        "answer_positions": 0,
+        "canvas_positions": 16
+      },
+      "origin": "software_fixture",
+      "memory": {
+        "host_available_bytes": 570064896,
+        "process_rss_bytes": 358961152,
+        "process_lifetime_peak_rss_bytes": 359026688,
+        "scope": "observed process memory; Spark host/device capacities must not be summed"
+      }
+    },
+    "data_identity": "0966c13f6a461872a737de7e59f8a9b213ed4f15154fd5fcd5c28e6493b210aa",
+    "automatic_large_training": false,
+    "real_data_codec": "not executed",
+    "real_8b_full_finetuning": "not executed",
+    "quality_or_speed_claim": false,
+    "elapsed_seconds": 52.80132329999469,
+    "charged_work": {
+      "steps": 0,
+      "source_tokens": 0,
+      "answer_positions": 0,
+      "canvas_positions": 0
+    },
+    "origin": "software_fixture",
+    "memory": {
+      "host_available_bytes": 850055168,
+      "process_rss_bytes": 373350400,
+      "process_lifetime_peak_rss_bytes": 381587456,
+      "scope": "observed process memory; Spark host/device capacities must not be summed"
+    }
+  },
+  "stages": [
+    {
+      "run_id": "20261029T113634Z-d1fb3269e1",
+      "stage": "teacher",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T113634Z-d1fb3269e1",
+      "status": "completed",
+      "run_manifest_sha256": "65bf43fec3adffc8d21b77bf0e271ae44d838ead122a3ed80e6ceb5bc360eeb6",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T113634Z-d1fb3269e1\\artifacts\\features\\manifest.json",
+        "stats": {
+          "examples": 12,
+          "unique_source_tokens": 60,
+          "unique_answer_positions": 36,
+          "padding_positions": 156,
+          "source_types": {
+            "software_fixture": 12
+          },
+          "answer_length_histogram": {
+            "4": 12
+          }
+        },
+        "teacher_frozen": true,
+        "hidden_size": 16,
+        "status": "completed",
+        "elapsed_seconds": 2.698302499949932,
+        "charged_work": {
+          "steps": 12,
+          "source_tokens": 48,
+          "answer_positions": 36,
+          "canvas_positions": 0
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 887382016,
+          "process_rss_bytes": 352153600,
+          "process_lifetime_peak_rss_bytes": 353214464,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    },
+    {
+      "run_id": "20261029T113637Z-a6dac79462",
+      "stage": "codec",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113637Z-a6dac79462",
+      "status": "completed",
+      "run_manifest_sha256": "9a30a61abe2b5ce5943ee661a21834103cd476d778897ad1b8ab13b0ef1079bb",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113637Z-a6dac79462\\artifacts\\codec\\manifest.json",
+        "identity": "0204966d96ca1da35539edd5aaaff9a2217d72e76f6b1b1ddec1e58497cdb1f9",
+        "optimizer_steps": 2,
+        "parameter_count": 1120,
+        "trainable_parameter_count_at_end": 0,
+        "optimizer_covered_parameter_count": 1120,
+        "optimizer_state_tensor_bytes": 8960,
+        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "processed_source_tokens": 12,
+        "answer_position_exposures": 12,
+        "allocated_canvas_positions": 64,
+        "backbone_answer_positions": 0,
+        "unique_available_answer_positions": 24,
+        "best_dev_loss": 1.0156725645065308,
+        "stop_reason": null,
+        "status": "completed",
+        "peak_allocated_bytes": null,
+        "peak_reserved_bytes": null,
+        "restoration_peak_allocated_bytes": null,
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113637Z-a6dac79462\\checkpoints\\current.json",
+        "selected_checkpoint": {
+          "schema": "native_checkpoint_pointer_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113637Z-a6dac79462\\checkpoints\\version-8bfa1ceabcfc4bf3a1582a3f8684f55e\\manifest.json",
+          "sha256": "c5f6f7cca6469d8346a6beae1d7d606d050338e9fb50aa21698bd7f27653f410"
+        },
+        "first_step_included_in_wall_budget": true,
+        "latent_statistics": {
+          "valid_bins": {
+            "1": 8,
+            "3": 8,
+            "5": 8,
+            "7": 8,
+            "9": 16,
+            "11": 16,
+            "13": 16,
+            "15": 16,
+            "17": 16,
+            "19": 16,
+            "21": 16,
+            "23": 24,
+            "25": 24,
+            "27": 24,
+            "29": 24,
+            "31": 24
+          },
+          "positive_scale_floor": 0.001,
+          "coordinate_system": "raw encoder codes; scales used only in losses",
+          "mean_channel_variance": {
+            "1": 0.01219659867815705,
+            "3": 0.01219659867815705,
+            "5": 0.01219659867815705,
+            "7": 0.01219659867815705,
+            "9": 0.019736029486868645,
+            "11": 0.019736029486868645,
+            "13": 0.019736029486868645,
+            "15": 0.019736029486868645,
+            "17": 0.01450017788728396,
+            "19": 0.01450017788728396,
+            "21": 0.01450017788728396,
+            "23": 0.021342478346425657,
+            "25": 0.021342478346425657,
+            "27": 0.021342478346425657,
+            "29": 0.021342478346425657,
+            "31": 0.021342478346425657
+          }
+        },
+        "normalization": {
+          "variance": 0.983779112195826,
+          "mean": -0.12373097685394896,
+          "elements": 384,
+          "source": "training only",
+          "training_indices_sha256": "29101ebf1ead685029508789eee51c4d4fff65524064d8e32a48efded7036982"
+        },
+        "head_frozen": true,
+        "elapsed_seconds": 1.667343799956143,
+        "charged_work": {
+          "steps": 2,
+          "source_tokens": 24,
+          "answer_positions": 24,
+          "canvas_positions": 128
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 970493952,
+          "process_rss_bytes": 356159488,
+          "process_lifetime_peak_rss_bytes": 357240832,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    },
+    {
+      "run_id": "20261029T113638Z-788dbec959",
+      "stage": "codec",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113638Z-788dbec959",
+      "status": "completed",
+      "run_manifest_sha256": "2301821ccbf903241312c985b0bc227e0adb5e68050f6047f37a67de3a4b4a27",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113638Z-788dbec959\\artifacts\\codec\\manifest.json",
+        "identity": "0204966d96ca1da35539edd5aaaff9a2217d72e76f6b1b1ddec1e58497cdb1f9",
+        "optimizer_steps": 3,
+        "parameter_count": 1120,
+        "trainable_parameter_count_at_end": 0,
+        "optimizer_covered_parameter_count": 1120,
+        "optimizer_state_tensor_bytes": 8960,
+        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "processed_source_tokens": 18,
+        "answer_position_exposures": 18,
+        "allocated_canvas_positions": 96,
+        "backbone_answer_positions": 0,
+        "unique_available_answer_positions": 24,
+        "best_dev_loss": 1.0122306942939758,
+        "stop_reason": null,
+        "status": "completed",
+        "peak_allocated_bytes": null,
+        "peak_reserved_bytes": null,
+        "restoration_peak_allocated_bytes": null,
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113638Z-788dbec959\\checkpoints\\current.json",
+        "selected_checkpoint": {
+          "schema": "native_checkpoint_pointer_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113638Z-788dbec959\\checkpoints\\version-1157bdda9128479d9a2d8345b2a5a56a\\manifest.json",
+          "sha256": "9758d47b92e45b622fb424ec5130e1d5f1c0a48efd3f777de9633057fb287525"
+        },
+        "first_step_included_in_wall_budget": true,
+        "latent_statistics": {
+          "valid_bins": {
+            "1": 8,
+            "3": 8,
+            "5": 8,
+            "7": 8,
+            "9": 16,
+            "11": 16,
+            "13": 16,
+            "15": 16,
+            "17": 16,
+            "19": 16,
+            "21": 16,
+            "23": 24,
+            "25": 24,
+            "27": 24,
+            "29": 24,
+            "31": 24
+          },
+          "positive_scale_floor": 0.001,
+          "coordinate_system": "raw encoder codes; scales used only in losses",
+          "mean_channel_variance": {
+            "1": 0.012317824637399185,
+            "3": 0.012317824637399185,
+            "5": 0.012317824637399185,
+            "7": 0.012317824637399185,
+            "9": 0.019892036260507402,
+            "11": 0.019892036260507402,
+            "13": 0.019892036260507402,
+            "15": 0.019892036260507402,
+            "17": 0.014565292676259866,
+            "19": 0.014565292676259866,
+            "21": 0.014565292676259866,
+            "23": 0.021453321038527373,
+            "25": 0.021453321038527373,
+            "27": 0.021453321038527373,
+            "29": 0.021453321038527373,
+            "31": 0.021453321038527373
+          }
+        },
+        "normalization": {
+          "variance": 0.983779112195826,
+          "mean": -0.12373097685394896,
+          "elements": 384,
+          "source": "training only",
+          "training_indices_sha256": "29101ebf1ead685029508789eee51c4d4fff65524064d8e32a48efded7036982"
+        },
+        "head_frozen": true,
+        "elapsed_seconds": 1.0830105000641197,
+        "charged_work": {
+          "steps": 1,
+          "source_tokens": 12,
+          "answer_positions": 12,
+          "canvas_positions": 64
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 952905728,
+          "process_rss_bytes": 356560896,
+          "process_lifetime_peak_rss_bytes": 357883904,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    },
+    {
+      "run_id": "20261029T113640Z-c5024d8c11",
+      "stage": "targets",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T113640Z-c5024d8c11",
+      "status": "completed",
+      "run_manifest_sha256": "d0905c204a137f966b4f29f8f9e60c6b18e64eecacada11013df85e66465a805",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T113640Z-c5024d8c11\\artifacts\\targets\\manifest.json",
+        "stats": {
+          "examples": 12,
+          "unique_source_tokens": 60,
+          "unique_answer_positions": 36,
+          "padding_positions": 156,
+          "source_types": {
+            "software_fixture": 12
+          },
+          "answer_length_histogram": {
+            "4": 12
+          }
+        },
+        "codec_sha256": "a351f62580062f4442f0322b9dfa43fe288056b209ae665cb1c10538e477f60a",
+        "inference_dependency": false,
+        "status": "completed",
+        "elapsed_seconds": 2.8770742998458445,
+        "charged_work": {
+          "steps": 12,
+          "source_tokens": 0,
+          "answer_positions": 36,
+          "canvas_positions": 0
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 918040576,
+          "process_rss_bytes": 356593664,
+          "process_lifetime_peak_rss_bytes": 357883904,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    },
+    {
+      "run_id": "20261029T113642Z-504c1356a0",
+      "stage": "generator",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113642Z-504c1356a0",
+      "status": "completed",
+      "run_manifest_sha256": "332552fe2a9b70b62ff771afdc8aebfd709ccc61a3c2577ccc51aae8ae24249e",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113642Z-504c1356a0\\artifacts\\generator\\manifest.json",
+        "identity": "ad707d12a38565f0d554c7783023987fa0e85735e5ff1d3d967be103677214d7",
+        "optimizer_steps": 2,
+        "parameter_count": 95664,
+        "trainable_parameter_count_at_end": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "processed_source_tokens": 20,
+        "answer_position_exposures": 12,
+        "allocated_canvas_positions": 64,
+        "backbone_answer_positions": 1416,
+        "unique_available_answer_positions": 24,
+        "best_dev_loss": 3.650624990463257,
+        "stop_reason": null,
+        "status": "completed",
+        "peak_allocated_bytes": null,
+        "peak_reserved_bytes": null,
+        "restoration_peak_allocated_bytes": null,
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113642Z-504c1356a0\\checkpoints\\current.json",
+        "selected_checkpoint": {
+          "schema": "native_checkpoint_pointer_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113642Z-504c1356a0\\checkpoints\\version-ea24f51662ff459ab5f478d8c2365340\\manifest.json",
+          "sha256": "3d4309be4f19dd914d10f93a6bc619094df6f9c05c126b3cd4118e3e707218ee"
+        },
+        "first_step_included_in_wall_budget": true,
+        "representative_weights_changed": {
+          "backbone.model.embed_tokens.weight": true,
+          "backbone.model.layers.0.self_attn.q_proj.weight": true,
+          "backbone.model.layers.8.mlp.down_proj.weight": true,
+          "backbone.model.layers.35.self_attn.o_proj.weight": true,
+          "backbone.model.norm.weight": true,
+          "backbone.lm_head.weight": true,
+          "queries": true,
+          "refinements.0.down.weight": true,
+          "refinements.15.up.weight": true,
+          "gates": true
+        },
+        "warmup_in_total_token_budget": true,
+        "elapsed_seconds": 2.345891100121662,
+        "charged_work": {
+          "steps": 2,
+          "source_tokens": 40,
+          "answer_positions": 24,
+          "canvas_positions": 128
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 871792640,
+          "process_rss_bytes": 373518336,
+          "process_lifetime_peak_rss_bytes": 379314176,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    },
+    {
+      "run_id": "20261029T113645Z-9fd277a719",
+      "stage": "generator",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113645Z-9fd277a719",
+      "status": "completed",
+      "run_manifest_sha256": "119ed05c001778d8ee91e1a1866248dd05c25ffc1374490bda8650ef4440f0e5",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113645Z-9fd277a719\\artifacts\\generator\\manifest.json",
+        "identity": "ad707d12a38565f0d554c7783023987fa0e85735e5ff1d3d967be103677214d7",
+        "optimizer_steps": 3,
+        "parameter_count": 95664,
+        "trainable_parameter_count_at_end": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "processed_source_tokens": 30,
+        "answer_position_exposures": 18,
+        "allocated_canvas_positions": 96,
+        "backbone_answer_positions": 2124,
+        "unique_available_answer_positions": 24,
+        "best_dev_loss": 3.5807870626449585,
+        "stop_reason": null,
+        "status": "completed",
+        "peak_allocated_bytes": null,
+        "peak_reserved_bytes": null,
+        "restoration_peak_allocated_bytes": null,
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113645Z-9fd277a719\\checkpoints\\current.json",
+        "selected_checkpoint": {
+          "schema": "native_checkpoint_pointer_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113645Z-9fd277a719\\checkpoints\\version-b6a137503138415c96b03473d1f75324\\manifest.json",
+          "sha256": "1f2010bc1fcef078dd3b4e829bc05d1913fecca6fa5b54e5ca5c279f6d614c47"
+        },
+        "first_step_included_in_wall_budget": true,
+        "representative_weights_changed": {
+          "backbone.model.embed_tokens.weight": true,
+          "backbone.model.layers.0.self_attn.q_proj.weight": true,
+          "backbone.model.layers.8.mlp.down_proj.weight": true,
+          "backbone.model.layers.35.self_attn.o_proj.weight": true,
+          "backbone.model.norm.weight": true,
+          "backbone.lm_head.weight": true,
+          "queries": true,
+          "refinements.0.down.weight": true,
+          "refinements.15.up.weight": true,
+          "gates": true
+        },
+        "warmup_in_total_token_budget": true,
+        "elapsed_seconds": 2.5470741998869926,
+        "charged_work": {
+          "steps": 1,
+          "source_tokens": 20,
+          "answer_positions": 12,
+          "canvas_positions": 64
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 795660288,
+          "process_rss_bytes": 374136832,
+          "process_lifetime_peak_rss_bytes": 379322368,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    },
+    {
+      "run_id": "20261029T113647Z-8068ba5639",
+      "stage": "codec",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113647Z-8068ba5639",
+      "status": "completed",
+      "run_manifest_sha256": "6ecd38681da12012fe6bd8d0ee2449bb5031fcfd69c7fe13fd7043348f3720a7",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113647Z-8068ba5639\\artifacts\\codec\\manifest.json",
+        "identity": "06a7b6ff685d142fdd559b860142cd64c905a3ecf5e19418c76275e75405580c",
+        "optimizer_steps": 40,
+        "parameter_count": 1120,
+        "trainable_parameter_count_at_end": 0,
+        "optimizer_covered_parameter_count": 1120,
+        "optimizer_state_tensor_bytes": 8960,
+        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "processed_source_tokens": 960,
+        "answer_position_exposures": 960,
+        "allocated_canvas_positions": 5120,
+        "backbone_answer_positions": 0,
+        "unique_available_answer_positions": 24,
+        "best_dev_loss": 0.8918746709823608,
+        "stop_reason": null,
+        "status": "completed",
+        "peak_allocated_bytes": null,
+        "peak_reserved_bytes": null,
+        "restoration_peak_allocated_bytes": null,
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113647Z-8068ba5639\\checkpoints\\current.json",
+        "selected_checkpoint": {
+          "schema": "native_checkpoint_pointer_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T113647Z-8068ba5639\\checkpoints\\version-eb5fe1d57560402f8d6ddfd7eeab9cb9\\manifest.json",
+          "sha256": "b16d8d6aaf47b9311f0e41e86c102332366a97c681bce0c5968e2510d1ec62b7"
+        },
+        "first_step_included_in_wall_budget": true,
+        "latent_statistics": {
+          "valid_bins": {
+            "1": 8,
+            "3": 8,
+            "5": 8,
+            "7": 8,
+            "9": 16,
+            "11": 16,
+            "13": 16,
+            "15": 16,
+            "17": 16,
+            "19": 16,
+            "21": 16,
+            "23": 24,
+            "25": 24,
+            "27": 24,
+            "29": 24,
+            "31": 24
+          },
+          "positive_scale_floor": 0.001,
+          "coordinate_system": "raw encoder codes; scales used only in losses",
+          "mean_channel_variance": {
+            "1": 0.0515317009038298,
+            "3": 0.0515317009038298,
+            "5": 0.0515317009038298,
+            "7": 0.0515317009038298,
+            "9": 0.07140580679168385,
+            "11": 0.07140580679168385,
+            "13": 0.07140580679168385,
+            "15": 0.07140580679168385,
+            "17": 0.05209274766719458,
+            "19": 0.05209274766719458,
+            "21": 0.05209274766719458,
+            "23": 0.076656556126,
+            "25": 0.076656556126,
+            "27": 0.076656556126,
+            "29": 0.076656556126,
+            "31": 0.076656556126
+          }
+        },
+        "normalization": {
+          "variance": 0.983779112195826,
+          "mean": -0.12373097685394896,
+          "elements": 384,
+          "source": "training only",
+          "training_indices_sha256": "29101ebf1ead685029508789eee51c4d4fff65524064d8e32a48efded7036982"
+        },
+        "head_frozen": true,
+        "elapsed_seconds": 4.646286599803716,
+        "charged_work": {
+          "steps": 40,
+          "source_tokens": 984,
+          "answer_positions": 984,
+          "canvas_positions": 5248
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 745353216,
+          "process_rss_bytes": 373424128,
+          "process_lifetime_peak_rss_bytes": 379322368,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    },
+    {
+      "run_id": "20261029T113652Z-3e5dcd0e7b",
+      "stage": "generator",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113652Z-3e5dcd0e7b",
+      "status": "completed",
+      "run_manifest_sha256": "19ff63c5da41f3ab0598c1c965cc9cb3343ca663613a43f957936770917202e2",
+      "summary": {
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113652Z-3e5dcd0e7b\\artifacts\\generator\\manifest.json",
+        "identity": "688a20a1876d3cefcaf939b4482b8c14c853a827cb085587e62a3a2f27de2d36",
+        "optimizer_steps": 40,
+        "parameter_count": 95664,
+        "trainable_parameter_count_at_end": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "processed_source_tokens": 1600,
+        "answer_position_exposures": 960,
+        "allocated_canvas_positions": 5120,
+        "backbone_answer_positions": 113280,
+        "unique_available_answer_positions": 24,
+        "best_dev_loss": 2.6457784175872803,
+        "stop_reason": null,
+        "status": "completed",
+        "peak_allocated_bytes": null,
+        "peak_reserved_bytes": null,
+        "restoration_peak_allocated_bytes": null,
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113652Z-3e5dcd0e7b\\checkpoints\\current.json",
+        "selected_checkpoint": {
+          "schema": "native_checkpoint_pointer_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T113652Z-3e5dcd0e7b\\checkpoints\\version-67712a37d77d4764aca8f017b879bc48\\manifest.json",
+          "sha256": "d7e73f534c54343dbc5969a05479a0967ebe308e6d51cd065e84b7d2b1600f47"
+        },
+        "first_step_included_in_wall_budget": true,
+        "representative_weights_changed": {
+          "backbone.model.embed_tokens.weight": true,
+          "backbone.model.layers.0.self_attn.q_proj.weight": true,
+          "backbone.model.layers.8.mlp.down_proj.weight": true,
+          "backbone.model.layers.35.self_attn.o_proj.weight": true,
+          "backbone.model.norm.weight": true,
+          "backbone.lm_head.weight": true,
+          "queries": true,
+          "refinements.0.down.weight": true,
+          "refinements.15.up.weight": true,
+          "gates": true
+        },
+        "warmup_in_total_token_budget": true,
+        "elapsed_seconds": 17.309045699890703,
+        "charged_work": {
+          "steps": 40,
+          "source_tokens": 1640,
+          "answer_positions": 984,
+          "canvas_positions": 5248
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 985059328,
+          "process_rss_bytes": 373334016,
+          "process_lifetime_peak_rss_bytes": 381587456,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      }
+    }
+  ],
+  "package": {
+    "wheel_sha256": "c68889cb31d5893796f8e9de0bbc619fdbec545446a67e91b8ff18736c5b7b49",
+    "python_modules_verified": 39,
+    "source_bytes_match": true,
+    "obsolete_runtime_absent": true,
+    "GPL_license_present": true,
+    "installed_tests": {
+      "passed": 51,
+      "skipped": 1,
+      "seconds": 20.2
+    },
+    "connected_validation": {
+      "run_id": "20261029T113709Z-1390099b91",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\validation\\20261029T113709Z-1390099b91",
+      "status": "completed",
+      "stages": [
+        {
+          "run_id": "20261029T113716Z-b746f5dbd1",
+          "stage": "teacher",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\teacher\\20261029T113716Z-b746f5dbd1",
+          "status": "completed"
+        },
+        {
+          "run_id": "20261029T113717Z-e116916d4e",
+          "stage": "codec",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\codec\\20261029T113717Z-e116916d4e",
+          "status": "completed"
+        },
+        {
+          "run_id": "20261029T113717Z-0821752e81",
+          "stage": "codec",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\codec\\20261029T113717Z-0821752e81",
+          "status": "completed"
+        },
+        {
+          "run_id": "20261029T113718Z-7f6885a7a8",
+          "stage": "targets",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\targets\\20261029T113718Z-7f6885a7a8",
+          "status": "completed"
+        },
+        {
+          "run_id": "20261029T113719Z-c3425842f6",
+          "stage": "generator",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\generator\\20261029T113719Z-c3425842f6",
+          "status": "completed"
+        },
+        {
+          "run_id": "20261029T113721Z-7c47b10f01",
+          "stage": "generator",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\generator\\20261029T113721Z-7c47b10f01",
+          "status": "completed"
+        },
+        {
+          "run_id": "20261029T113722Z-10b99602db",
+          "stage": "codec",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\codec\\20261029T113722Z-10b99602db",
+          "status": "completed"
+        },
+        {
+          "run_id": "20261029T113726Z-190b4af3a6",
+          "stage": "generator",
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\generator\\20261029T113726Z-190b4af3a6",
+          "status": "completed"
+        }
+      ],
+      "micro_overfit": [
+        {
+          "stage": "codec",
+          "run_id": "20261029T113722Z-10b99602db",
+          "status": "completed",
+          "first": {
+            "mse_full": 1.0393556356430054,
+            "mse_cutoff": 1.0199273824691772,
+            "head_kl": 0.0031236198265105486,
+            "loss": 1.0299538373947144,
+            "cutoff": 3,
+            "head_positions": 24,
+            "step": 1,
+            "microbatches": 1,
+            "phase": "full",
+            "gradient_norm": 0.3879472662062123,
+            "step_seconds": 0.06359930010512471,
+            "processed_source_tokens": 24,
+            "unique_available_answer_positions": 24,
+            "answer_position_exposures": 24,
+            "allocated_canvas_positions": 128
+          },
+          "last": {
+            "mse_full": 0.8695013523101807,
+            "mse_cutoff": 0.8726545572280884,
+            "head_kl": 0.0027436965610831976,
+            "loss": 0.8713523149490356,
+            "cutoff": 26,
+            "head_positions": 24,
+            "step": 40,
+            "microbatches": 1,
+            "phase": "full",
+            "gradient_norm": 0.37191868282115487,
+            "step_seconds": 0.042512400075793266,
+            "processed_source_tokens": 960,
+            "unique_available_answer_positions": 24,
+            "answer_position_exposures": 960,
+            "allocated_canvas_positions": 5120,
+            "dev_loss": 0.8918746709823608
+          },
+          "observed_loss_decrease": true,
+          "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+        },
+        {
+          "stage": "generator",
+          "run_id": "20261029T113726Z-190b4af3a6",
+          "status": "completed",
+          "first": {
+            "loss": 3.932727098464966,
+            "text_loss": 3.5066890716552734,
+            "latent_loss": 4.260380744934082,
+            "groups": [
+              4.14223051071167,
+              5.014113903045654,
+              5.245002269744873,
+              5.721570014953613,
+              3.8612937927246094,
+              3.914933204650879,
+              3.883798837661743,
+              3.5881054401397705,
+              4.8101487159729,
+              4.9234700202941895,
+              4.242092132568359,
+              2.988112211227417,
+              3.4680893421173096,
+              4.1508049964904785,
+              3.7869129180908203,
+              4.425410747528076
+            ],
+            "group_valid_bins": [
+              8,
+              8,
+              8,
+              8,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              24,
+              24,
+              24,
+              24,
+              24
+            ],
+            "backbone_answer_positions": 2832,
+            "step": 1,
+            "microbatches": 1,
+            "phase": "full",
+            "gradient_norm": 2.584894788074169,
+            "step_seconds": 0.2565017999149859,
+            "processed_source_tokens": 40,
+            "unique_available_answer_positions": 24,
+            "answer_position_exposures": 24,
+            "allocated_canvas_positions": 128
+          },
+          "last": {
+            "loss": 2.6797189712524414,
+            "text_loss": 2.5829217433929443,
+            "latent_loss": 0.9679713249206543,
+            "groups": [
+              1.9948086738586426,
+              1.3923262357711792,
+              0.9811084270477295,
+              0.8706848621368408,
+              0.9000244140625,
+              0.8675457239151001,
+              0.8638268709182739,
+              0.8654595613479614,
+              0.8390131592750549,
+              0.8497724533081055,
+              0.837985634803772,
+              0.8457431793212891,
+              0.842017650604248,
+              0.8616405129432678,
+              0.8360399603843689,
+              0.8395440578460693
+            ],
+            "group_valid_bins": [
+              8,
+              8,
+              8,
+              8,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              24,
+              24,
+              24,
+              24,
+              24
+            ],
+            "backbone_answer_positions": 2832,
+            "step": 40,
+            "microbatches": 1,
+            "phase": "full",
+            "gradient_norm": 1.4214622542004418,
+            "step_seconds": 0.293052300112322,
+            "processed_source_tokens": 1600,
+            "unique_available_answer_positions": 24,
+            "answer_position_exposures": 960,
+            "allocated_canvas_positions": 5120,
+            "dev_loss": 2.6457784175872803
+          },
+          "observed_loss_decrease": true,
+          "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+        }
+      ],
+      "fresh_process_generation": {
+        "run_id": "20261029T113742Z-9704ee192b",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-migration\\package-project\\runs\\generation\\20261029T113742Z-9704ee192b",
+        "status": "completed",
+        "tokens": [
+          2
+        ],
+        "eos_found": true,
+        "truncated": false,
+        "allocated_answer_positions": 16,
+        "computed_answer_positions": 16,
+        "backbone_traversals": 1,
+        "logical_block_trace": [
+          {
+            "block": 1,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 2,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 3,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 4,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 5,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 6,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 7,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 8,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 9,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 10,
+            "answer_positions": 4,
+            "sequence_positions": 6
+          },
+          {
+            "block": 11,
+            "answer_positions": 5,
+            "sequence_positions": 7
+          },
+          {
+            "block": 12,
+            "answer_positions": 5,
+            "sequence_positions": 7
+          },
+          {
+            "block": 13,
+            "answer_positions": 5,
+            "sequence_positions": 7
+          },
+          {
+            "block": 14,
+            "answer_positions": 6,
+            "sequence_positions": 8
+          },
+          {
+            "block": 15,
+            "answer_positions": 7,
+            "sequence_positions": 9
+          },
+          {
+            "block": 16,
+            "answer_positions": 7,
+            "sequence_positions": 9
+          },
+          {
+            "block": 17,
+            "answer_positions": 8,
+            "sequence_positions": 10
+          },
+          {
+            "block": 18,
+            "answer_positions": 9,
+            "sequence_positions": 11
+          },
+          {
+            "block": 19,
+            "answer_positions": 9,
+            "sequence_positions": 11
+          },
+          {
+            "block": 20,
+            "answer_positions": 10,
+            "sequence_positions": 12
+          },
+          {
+            "block": 21,
+            "answer_positions": 11,
+            "sequence_positions": 13
+          },
+          {
+            "block": 22,
+            "answer_positions": 12,
+            "sequence_positions": 14
+          },
+          {
+            "block": 23,
+            "answer_positions": 13,
+            "sequence_positions": 15
+          },
+          {
+            "block": 24,
+            "answer_positions": 15,
+            "sequence_positions": 17
+          },
+          {
+            "block": 25,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 26,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 27,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 28,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 29,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 30,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 31,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 32,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 33,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 34,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 35,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          },
+          {
+            "block": 36,
+            "answer_positions": 16,
+            "sequence_positions": 18
+          }
+        ],
+        "forward_and_head_seconds": 0.03254129993729293,
+        "decoding": "parallel argmax; no AR repair or verification",
+        "text": "",
+        "export_identity": "b3f290a01c687fc99ce7787d305dc51dfa6dbc998921a5f77c66f2abfa3182e1",
+        "elapsed_seconds": 6.236216499935836,
+        "charged_work": {
+          "steps": 1,
+          "source_tokens": 2,
+          "answer_positions": 0,
+          "canvas_positions": 16
+        },
+        "origin": "software_fixture",
+        "memory": {
+          "host_available_bytes": 905674752,
+          "process_rss_bytes": 358158336,
+          "process_lifetime_peak_rss_bytes": 358223872,
+          "scope": "observed process memory; Spark host/device capacities must not be summed"
+        }
+      },
+      "data_identity": "0966c13f6a461872a737de7e59f8a9b213ed4f15154fd5fcd5c28e6493b210aa",
+      "automatic_large_training": false,
+      "real_data_codec": "not executed",
+      "real_8b_full_finetuning": "not executed",
+      "quality_or_speed_claim": false,
+      "elapsed_seconds": 40.15948739997111,
+      "charged_work": {
+        "steps": 0,
+        "source_tokens": 0,
+        "answer_positions": 0,
+        "canvas_positions": 0
+      },
+      "origin": "software_fixture",
+      "memory": {
+        "host_available_bytes": 1178857472,
+        "process_rss_bytes": 374276096,
+        "process_lifetime_peak_rss_bytes": 381636608,
+        "scope": "observed process memory; Spark host/device capacities must not be summed"
+      }
+    }
+  },
+  "full_geometry": "Tiny hidden width, all 36 blocks/32 updates and physically allocated 1024 final slots tested",
+  "preserved_attempts": [
+    {
+      "run_id": "20261029T110009Z-e3424c101c",
+      "status": "failed fresh generation",
+      "reason": "BatchEncoding interpreted as token list; shared tokenizer input_ids interface corrected",
+      "provenance_limit": "Old parent has no terminal manifest; children and full phase reservation retained"
+    },
+    {
+      "run_id": "20261029T112411Z-d8f78f72e8",
+      "status": "completed earlier implementation"
+    },
+    {
+      "file": ".cache/native-migration/pytest-sandbox-temp-failure.txt",
+      "status": "22 passed, 1 skipped, 29 setup errors",
+      "reason": "Sandbox temporary directory inaccessible; subsequent unique basetemp inside workspace"
+    },
+    {
+      "file": ".cache/native-migration/pytest-partial-accumulation-failure.txt",
+      "status": "1 failed, 50 passed, 1 skipped",
+      "reason": "Partial accumulation numerical mismatch; divide by actual group count before backward"
+    }
+  ],
+  "real_data_codec": "not executed: no full pinned Qwen weights/usable CUDA runtime",
+  "real_8b_full_training_recovery": "not executed: no Spark; 8 GiB GPU and local disk insufficient for configured full state",
+  "real_prompt_generation": "not executed; fixture generation only",
+  "quality_throughput_speedup": "not measured",
+  "large_runs_downloads_publication_started": false
+}

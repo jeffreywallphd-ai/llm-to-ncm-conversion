@@ -1,0 +1,15 @@
+{
+  "phase_id": "native-real-pilot-v1",
+  "max_wall_seconds": 1200,
+  "max_steps": 1000,
+  "max_source_tokens": 1000000,
+  "max_answer_positions": 200000,
+  "max_canvas_positions": 1000000,
+  "max_storage_bytes": 600000000000,
+  "max_phase_wall_seconds": 10800,
+  "max_phase_steps": 10000,
+  "max_phase_source_tokens": 10000000,
+  "max_phase_answer_positions": 2000000,
+  "max_phase_canvas_positions": 10000000,
+  "max_phase_storage_bytes": 2000000000000
+}

@@ -1,11 +1,9 @@
 {
   "profile": "cpu",
-  "devices": 0,
-  "architecture": "portable",
-  "precision": "float32",
-  "usable_memory_bytes": null,
-  "compatibility": "detect with doctor; GPU parity and throughput not validated",
-  "remote_resources_required": false,
-  "unified_memory": "detect, never sum host and GPU totals",
-  "precision_must_be_probed": true
+  "device": "cpu",
+  "torch_installation": "preserve working CUDA build on GPU hosts",
+  "shared_physical_memory": false,
+  "nominal_spark_bytes": null,
+  "training_validation": "not executed",
+  "precision_policy": "BF16 weights/gradients, FP32 Adam moments, no master copy; measurement required"
 }

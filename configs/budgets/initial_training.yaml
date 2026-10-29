@@ -1,0 +1,15 @@
+{
+  "phase_id": "native-initial-training-v1",
+  "max_wall_seconds": 604800,
+  "max_steps": 1000000,
+  "max_source_tokens": 110000000,
+  "max_answer_positions": 110000000,
+  "max_canvas_positions": 100000000000,
+  "max_storage_bytes": 1000000000000,
+  "max_phase_wall_seconds": 1800000,
+  "max_phase_steps": 3000000,
+  "max_phase_source_tokens": 600000000,
+  "max_phase_answer_positions": 300000000,
+  "max_phase_canvas_positions": 300000000000,
+  "max_phase_storage_bytes": 3000000000000
+}

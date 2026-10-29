@@ -1,28 +1,18 @@
-# Current status: V3 supersedes the implementation claims below
+# Native implementation status
 
-The following table records the pre-correction state at `8452835`; its broad “complete” labels did not establish the V3 scientific contracts. Current implementation, CPU checks, pending released-model/GPU validation, and unmeasured research evidence are documented in [corrections_v3_report.md](corrections_v3_report.md), [checklist](corrections_v3_checklist.json), and [validation receipt](corrections_v3_validation.json). IS-only FIX-13/14 remain deferred.
+| Milestone | Implementation | Actual evidence |
+|---|---|---|
+| 36 original blocks, 32 updates, 1024 canvas, 384-wide real spec | implemented | Tiny-width full geometry test; no real-8B claim |
+| Frozen teacher alignment and shared progressive codec | implemented | Native CPU gradients/alignment/cache checks |
+| Sixteen cumulative losses and full-backbone tuning | implemented | Tiny production-class optimizer updates |
+| Complete sharded recovery and independent export | implemented | CPU deterministic recovery, corruption and interruption checks |
+| Bounded fixed-batch codec/generator learning | implemented | See native_validation.json; fixture only |
+| Pinned real-data codec fit | implemented path | Not executed: full Qwen assets/CUDA unavailable |
+| Real 8B optimizer/recovery feasibility | implemented probe | Not executed: CUDA/Spark/assets/storage prerequisites |
+| Downstream quality, throughput, speed improvement | unestablished | Not measured |
 
-# Implementation and evidence status — 2026-10-28
-
-Starting commit: c60a8a1849410e7266dcdca494362bf108eecceb (main). Implementation branch: codex/multiscale-latent-remediation. The validation receipt records the pre-commit snapshot; Git history records the current commit. The auxiliary codec and causal transfer are part of the first technical study.
-
-| Capability | Implementation | Validation | Research evidence |
-|---|---|---|---|
-| Shared factory, actual query hierarchy/skip, homogeneous frozen target/head | complete | CPU FP32/BF16 forward/backward/step | none |
-| Common multi-EOS greedy policy, incremental target KV/features and rollback | complete Transformers SDPA path | CPU differential/production tests | none |
-| Response-only training, deterministic sampling/resume, development selection | complete | Student and codec recovery tested | none |
-| Nested/linear/independent/single/channel/pooling codecs and causal bridges | complete | CPU fit/select/freeze/reload/transfer | none |
-| Teacher, codec, cache, transfer, diagnostics, development, parity and evaluation stages | complete | Saved-artifact production DAG | none |
-| Gold-free overlap audit and whole-tree/source split receipts | complete | CPU content/split/leakage checks | none |
-| Bounded methods/matrices, cost selection and failure handling | complete | CPU execution and 779-job offline plan | none |
-| Per-seed official metrics, paired analysis, mechanism/cost tables and figures | complete reference analysis | Fixture observations only | none |
-| Evidence assessment, selection and portable dependency export | complete | Nonempty engineering archive validated outside checkout | none |
-| Pinned DCore external drafter adapter | complete pinned-source adapter | CPU direct-forward parity | none |
-| Released Qwen/DFlash/DCore on CUDA or Spark | implemented path awaiting execution | Not executed | none |
-| Official IFEval/LongBench APIs | implemented; source versions/hashes pinned | Official runtime/data not provisioned | none |
-| HumanEval+ execution | blocked pending verified external isolation | No host generated-Python execution | none |
-| IS-specific FIX-13/14 financial grouping/bundle/workflow changes | explicitly deferred | Existing tests retained; reviewed defects remain | none |
-
-The complete first-paper software flow works on tiny CPU models. GPU/kernel compatibility, training memory, convergence, benchmark reproduction and speed need separate measurements. Selected measured-research export replay also awaits genuine eligible runs. DFlare remains close prior art, without an adapter; the selected implemented external control is DCore. Native target modification and a standalone NCM generator remain future work.
-
-See [per-requirement checklist](remediation_checklist.json), [handoff](remediation_report.md), [validation receipt](remediation_validation.json), and [exact architecture](autoencoder_architecture.md).
+The current receipt and six workflow READMEs identify actual native run IDs and
+limitations. This is an executable initial research implementation, not proof that
+parallel generation retains the pretrained model's quality. Source/target quotas
+can be unavailable. No financial, business, generalization, novelty, or publication
+claim is made. Formal studies remain future extensions.

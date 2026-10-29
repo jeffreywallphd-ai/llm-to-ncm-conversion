@@ -1,0 +1,9 @@
+{
+  "schema": "native_contributions_v1",
+  "date": "2026-10-29",
+  "human_request": "User supplied embedded hierarchy migration and bounded initial-training requirements; approved publishing the preservation branch",
+  "ai_assistance": "Codex implementation, source/API inspection, bounded CPU diagnostics, tests, packaging and documentation",
+  "human_experiment_execution": null,
+  "independent_human_review": null,
+  "authorship_assignments": []
+}

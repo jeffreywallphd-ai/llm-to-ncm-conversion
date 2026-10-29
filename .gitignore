@@ -12,6 +12,7 @@ data/processed/
 experiments/**/runs/
 results/generated/
 publications/exports/
+runs/
 *.pt
 *.safetensors
 .env

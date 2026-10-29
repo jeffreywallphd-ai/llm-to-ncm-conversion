@@ -1,88 +1,68 @@
-# Architecture and alignment contract
+# Native embedded architecture
 
-Scope: NCM-inspired hierarchical speculative drafting, not native NCM conversion.
-Qwen3-8B remains a frozen conventional autoregressive target; thinking is disabled.
-The exact target/draft/tokenizer revisions are in `configs/models/qwen3_8b_dflash.yaml`.
-The inspected released drafter has five layers, width 4096, 32 attention heads,
-8 KV heads, head dimension 128, and target taps [1,9,17,25,33]. Those values are
-read from loaded configurations and checked; they are not assumptions for new models.
+The default configuration is `configs/architecture/embedded_1024.yaml`, with a
+384-wide continuous stream, four initial queries, 36 original Qwen blocks, and
+32 sequential hierarchy updates. It is an initial engineering design, not an
+established optimum or evidence of a semantic concept hierarchy.
 
-The upstream model snapshot is unchanged. `ProgressiveDrafter` reuses its feature
-projection, normalization, Qwen3 blocks, rotary interface and final vocabulary head.
-A flat wrapper is checked against a direct upstream call with identical tiny weights.
-This is implemented CPU parity, not reproduction of a released checkpoint benchmark.
+```mermaid
+flowchart LR
+  P[Prompt and padding mask] --> E[Original blocks 1–8: four answer queries]
+  E --> M[Blocks 9–24: two successive refinements per block]
+  M --> F[Blocks 25–36: 1024 answer positions]
+  F --> N[Final norm once]
+  N --> H[Chunked original vocabulary head]
+  M -. sixteen cumulative-code losses, training only .-> T[Frozen offline targets]
+```
 
-## Anchor and nested queries
+The 32 resolutions are:
 
-At anchor position a, token x_a is known; target KV contains positions <a.
-`sample_from_anchor=false`, `anchor_slots=1`, `proposal_horizon=15` and full slots=16.
-The anchor embedding is available, but its target hidden state is not yet available.
-Clean target taps may come only from same-document positions <a. A coarse query's
-representative position never sets the prefix cutoff. Tap i means hidden_states[i+1]
-in the selected upstream helper (embedding output is hidden_states[0]).
+```text
+4,5,6,7,8,10,12,14,17,20,24,29,34,41,49,59,
+70,84,100,120,143,171,205,245,293,350,419,501,599,716,856,1024
+```
 
-Groups at resolution four are [1..4],[5..8],[9..12],[13..15]; at eight they are
-[1,2],[3,4],[5,6],[7,8],[9,10],[11,12],[13,14],[15]; at fifteen they are singletons.
-The anchor is never pooled. Each partition covers future offsets once, in order.
-Parent maps are explicit registered buffers. Representative rotary position is
-a+floor((first+last)/2); singleton positions restore a+1..a+15 exactly. The target's
-positions are unchanged. This coarse encoding is an architectural choice to ablate.
+They are `round(4*256**(i/31))`, i=0..31. The initial queries do not count as a
+33rd update. One-based block 9 (zero-based index 8) is followed by updates 1/2;
+block 24 (index 23) by updates 31/32. The next original block consumes the updated
+stream. Actual hidden tensors grow physically; there is no concealed full-canvas
+answer stream in early blocks. Tiny tests also execute the complete 32/1024 geometry.
 
-Layers receive actual total query lengths [5,5,9,16,16], versus [16]*5 for flat.
-The restricted work proxy decreases from 80 to 51 updates (36.25%). This omits
-prefix work, head, verification, memory traffic and kernel utilization; no latency
-prediction follows. Profiling returns timings without claiming a speedup.
+For each update, deterministic interval-overlap resize produces `h_base,z_base`.
+A group-specific down projection, position projection, level embedding, and small
+latent MLP predict a refinement. With a nonzero gate initially 0.1:
 
-## Main path, expansion, skip and gradients
+```text
+z_next = z_base + gate * delta
+h_next = h_base + up(gate * delta)
+```
 
-Coarse initialization uses the frozen mask embedding plus a zero-initialized trainable
-span offset; the known anchor uses its frozen token embedding. No gold future token
-embedding enters the draft. Synthetic queries interact noncausally within their own
-block and attend to the allowed clean prefix. Batch rows isolate anchor blocks.
-The initial reference trains one source document per target call; packed target
-extraction across documents is not enabled. Supplied feature blocks still apply
-per-document and per-anchor visibility, including legitimate later-anchor prefixes.
+The down/up projections and refinement network are shared within a two-update
+group; all 32 operations still execute. Projection outputs and gates are not both
+zero-initialized. Original attention and MLP residual paths are unchanged. Longer
+skips are disabled; enabling them is rejected pending an explicit implementation.
 
-After layers 2 and 3, expansion gathers each child's parent and adds zero-initialized
-trainable child offsets. No full-resolution hidden transformer branch is computed.
-Layer-2 output is lifted to leaves and projected by normally initialized low-rank
-factors before layer 5, multiplied by tanh(g) with g=0 initially. The gate receives
-a learning signal first; factors receive gradients once the gate moves. Zero gate
-does not make the hierarchy equivalent to flat. Optional bridges are disabled.
+At n positions, slot j covers `[floor(j*C/n),floor((j+1)*C/n))`. Resize weights are
+normalized interval overlaps and use at most O(source+destination) edges, not a
+hidden full-width C-position copy. RoPE answer positions are the integer interval
+center `floor((left+right-1)/2)` plus valid prompt length. Prompt positions are the
+cumulative valid-token indices. Geometry features encode canvas position, span,
+level, and prompt length; they never encode true answer length.
 
-Target parameters and extracted features are frozen/detached. Feature projection,
-blocks, expansion and skips remain trainable. Embeddings/head are frozen, while the
-head operation remains autograd-tracked so loss gradients reach drafter states.
-Trainable and total parameter counts are recorded separately.
+Every original block receives an explicit additive SDPA mask: prompt queries see
+only causal valid prompt tokens; answer queries see all valid prompt tokens and
+current answer states; prompt-to-answer attention is blocked. Padded prompt query
+rows are fully masked and then zeroed. The whole sequence is never silently marked
+causal. Actual SDPA kernel fallback/memory requires hardware measurement.
 
-The inspected DCore CE recipe uses exponential positional decay, gamma=7 and no
-anchor prediction. Here L=sum_valid exp(-j/7) CE(q_j,y_j)/N_valid, j=0..14.
-Unlike upstream batch reduction this normalizes by supervised positions. This
-declared reference adaptation is applied identically to paired flat/hierarchy
-controls; it is not claimed as exact upstream training reproduction. Distillation
-and auxiliary objectives are not silently added. Loss labels are future-only.
+`forward(prompt_input_ids,prompt_attention_mask,return_aux=False)` returns normalized
+answer states and optionally sixteen cumulative codes. Labels and targets are not
+accepted. Final CE aligns slot t to answer token t without a stock AR shift.
+Vocabulary projection is chunked/checkpointed for exact training CE and chunked
+argmax for inference. Backward activation recomputation is separate from the
+single logical inference traversal. Ordinary autoregressive KV reuse is disabled.
 
-## Verification example
-
-The target first emits x_a once. A cycle verifies [x_a,q_(a+1),...,q_(a+15)].
-If k proposals match the target greedy choices, retain target state through a+k,
-crop the rejected suffix, and carry correction x_(a+k+1) as the next anchor. If
-all pass, carry the target bonus token. Cache length is old_length+1+k, where
-old_length=a. The old anchor is not another newly emitted token in that cycle.
-Synthetic draft states are never committed to target KV.
-
-The single-request Transformers reference implements actual KV cropping. Its
-proposal adapter recomputes permitted features, so it is for correctness and
-not optimized speed claims. Padding is rejected there; callers batch as separate
-unpadded requests. Empty prompts require explicit BOS. EOS, output limits and
-tokenized stop sequences terminate without suppressing short outputs.
-
-The finite-probability reference also supports deterministic-latent independent
-categorical proposals with actual q: acceptance min(1,p/q), positive residual
-max(p-q,0) at first rejection and target bonus after full acceptance. Its finite
-distribution tests do not certify arbitrary model sampling, latent marginalization,
-history-dependent processors or GPU sampling. The initial research protocol is greedy.
-
-## Revision-2 implementation update — 2026-10-27
-
-The current first-paper extension is the auxiliary frozen-target codec and causal latent transfer described in autoencoder_architecture.md. It is implemented in shared model/training modules; native target conversion remains future work. Production inference uses incremental confirmed-prefix target features and predicted codes only.
+Offline codec targets are one shared encoder representation pooled at each scale.
+Residual targets telescope under the same resize rule; the generator losses compare
+cumulative codes after even updates. No target code is injected into later groups.
+Only deployed Qwen/query/refinement weights and the tokenizer enter inference.

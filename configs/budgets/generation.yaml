@@ -1,0 +1,15 @@
+{
+  "phase_id": "native-generation-v1",
+  "max_wall_seconds": 120,
+  "max_steps": 1,
+  "max_source_tokens": 512,
+  "max_answer_positions": 1024,
+  "max_canvas_positions": 1024,
+  "max_storage_bytes": 10000000,
+  "max_phase_wall_seconds": 10800,
+  "max_phase_steps": 10000,
+  "max_phase_source_tokens": 100000000,
+  "max_phase_answer_positions": 100000000,
+  "max_phase_canvas_positions": 1000000000,
+  "max_phase_storage_bytes": 1000000000
+}

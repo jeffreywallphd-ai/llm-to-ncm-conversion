@@ -1,0 +1,23 @@
+{
+  "schema": "native_stage_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": "configs/budgets/initial_training.yaml",
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "training": {
+    "steps": 1000000,
+    "epochs": 1000,
+    "max_processed_tokens": 100000000,
+    "warmup_processed_tokens": 1000000,
+    "validation_interval": 100,
+    "checkpoint_interval": 100
+  },
+  "stage": "generator",
+  "inputs": {
+    "targets": "runs/handoffs/targets.json"
+  },
+  "output_ref": "runs/handoffs/generator.json",
+  "notes": "Future intended budget, excluded from automatic validation. Unique-data shortfalls are explicit.",
+  "hardware_profile": "spark"
+}

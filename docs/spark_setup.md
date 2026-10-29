@@ -1,39 +1,53 @@
-# Single DGX Spark setup and compatibility
+# Spark/CUDA feasibility and continuation
 
-The intended primary machine is one Spark. No Spark was connected during setup.
-NVIDIA documents an ARM CPU and unified CPU/GPU memory; inspect the actual machine
-instead of using advertised capacity or FP4 peak throughput for BF16 planning.
-See https://docs.nvidia.com/dgx/dgx-spark/hardware.html (checked 2026-10-25).
+The intended Spark profile has 128 GB shared physical memory. It is not the current
+development machine. Keep an already validated CUDA PyTorch installation; install
+the package without requesting the CPU extra:
 
-Use a separate environment or vendor-supported container. Keep its existing CUDA
-PyTorch build: **do not run the CPU-extra sync inside that environment**. Install
-the project with `pip install -e '.[upstream,scoring,prepare]'` only after checking that the
-pinned Transformers/scoring requirements are compatible with the existing torch.
-This extra does not request or replace PyTorch. `requirements/gpu-tooling.txt`
-pins application tooling; `configs/hardware/spark.yaml` records unresolved runtime
-details. Record the actual image digest and Python/driver/CUDA/torch/kernel versions.
-There is no validated Spark container digest yet; guessing one would be misleading.
+```sh
+pip install -e '.[upstream,prepare]'
+ncm doctor --profile spark
+ncm prepare --config configs/validation/real_pilot.yaml --plan-only
+```
 
-Run `ncm doctor --profile spark`. Check ARM wheels, usable unified memory, BF16,
-SDPA, compilation support, model cache, disk and isolation. The doctor cannot certify
-an engine just because a CUDA device or Docker executable is present. It reports
-unknown measurements explicitly. Add a generic second device using the CUDA profile.
+Tested CPU dependencies are pinned in pyproject/uv.lock. ARM64/Blackwell SDPA and
+the tiled optimizer remain unvalidated here. The stage configs identify Spark;
+ordinary CUDA hosts can select their CUDA profile. Host offload is not an additional
+independent memory pool on Spark. Available unified/device capacity must not be added.
 
-`ncm prepare --profile spark` now retrieves pinned pilot weights/data, verifies
-integrity, prepares train/dev prompts and produces launch configurations. Give it
-an asset directory with enough disk space. See [prepare.md](prepare.md) for its
-finite acquisition budgets. It does not alter the working CUDA/PyTorch environment.
+For 8.2B parameters, BF16 weights and gradients plus two FP32 Adam moments are
+about 98.4 decimal GB before activations/new modules/OS overhead. No FP32 master
+copy is used; adding one would add about 32.8 GB. These are stated calculations,
+not a successful optimizer step or proof of fit. Preflight estimates the configured
+model and checks lower-bound memory plus retained/new checkpoint disk demand.
 
-After explicit model/download budgets and data preparation, run SHR-002 parity using
-the exact target/draft/tokenizer, precision and backend. Cover rejection/EOS/length
-cases before timing. The eager reference supports correctness, not deployment speed.
-DCore's pinned SGLang stack and custom hierarchy engine integration remain unverified.
-Do not compare a published multi-GPU LongSpark number with a single Spark measurement.
+Acquire assets only when explicitly authorized, then run the bounded six-stage
+pilot commands from the root README. Teacher extraction and target preparation
+run in separate processes from generator fine tuning. Full-width 10M teacher
+states alone are 81.92 GB; fine-code storage is 7.68 GB before metadata. Checkpoint
+retention can require roughly four recovery-state versions at publication peak;
+the current development disk cannot validate a full 8B recovery cycle.
 
-The first training phase caps each matched method at 100 steps, 1800 seconds and
-1M source-token passes; its aggregate caps cover three methods. Runtime duration,
-throughput and memory estimates remain unknown until calibration is measured.
+The exact full-training feasibility command is:
 
-## Revision-2 implementation update — 2026-10-27
+```sh
+ncm profile train --config configs/validation/spark_8b_profile.yaml
+```
 
-The implemented efficient reference path uses Transformers incremental KV/features and SDPA; no SGLang/vLLM-specific hierarchy adapter is claimed. Run exact cache-only SHR-002 verification with the generated verification config and full effective EOS policy before research timing. Qwen3-8B/DFlash and Spark/CUDA validation remain unexecuted on this Windows CPU PyTorch host. Preserve a separate CUDA environment.
+Its finite cap is 3,600 seconds and three full optimizer steps, microbatch one,
+the actual 36-block/32-update/1024-canvas configuration, BF16 parameters/gradients,
+FP32 moments, activation checkpointing, and chunked exact vocabulary CE. It saves
+after two steps, releases model/optimizer/loss references, restores one destination
+from restricted shards, and takes the next bounded step. Warmup is disabled.
+
+Record allocated/reserved device peaks, restoration peak, host/process memory,
+first versus later step times, source/answer throughput, actual sequence/canvas
+positions, loss components, representative weight changes, moment sizes, and
+checkpoint timings/disk. First-step initialization and validation/I/O remain
+charged. A reduced-width test or warmup-only update cannot satisfy this milestone.
+No execution time estimate should use advertised FP4 inference FLOPs.
+
+Real-data codec training, real-8B full fine tuning/recovery, compatible kernel
+behavior, memory feasibility, downstream quality, and speed are **not executed or
+not measured** in this environment. If preflight or runtime fails, retain the
+failed run and report the actual blocker; do not freeze the backbone to claim fit.

@@ -1,0 +1,569 @@
+"""Connected bounded native codec/generator training, held-out selection and recovery."""
+
+from pathlib import Path
+import gc
+import math
+import random
+import time
+import torch
+from ncm_lab.codec.model import ContinuousCodec
+from ncm_lab.config.architecture import Architecture
+from ncm_lab.data.artifacts import Dataset, Cursor
+from ncm_lab.data.records import collate, ALIGNMENT
+from ncm_lab.embedded.geometry import masked_pool
+from ncm_lab.runtime.io import canonical_hash, write_json, digest, implementation_hash, atomic_json
+from ncm_lab.runtime.budget import BudgetStop
+from ncm_lab.teacher.model import load_generator, load_frozen_head, model_identity
+from ncm_lab.training.optimizer import TiledAdamW
+from ncm_lab.training.losses import chunked_ce, auxiliary_loss, codec_loss
+from ncm_lab.training.checkpoints import (
+    CheckpointReader,
+    INFERENCE,
+    save_checkpoint,
+    recovery_payload,
+    native_identity,
+    restore_rng,
+)
+
+
+def padded_tensors(dataset, indices, canvas, device, dtype):
+    rows = [dataset[i] for i in indices]
+    examples = [row[0] for row in rows]
+    if any(row[1] is None for row in rows):
+        raise ValueError("missing precomputed targets; online teacher fallback is forbidden")
+    width = rows[0][1].shape[-1]
+    data = torch.zeros(len(rows), canvas, width, device=device, dtype=dtype)
+    for i, (_, tensor) in enumerate(rows):
+        data[i, : tensor.shape[0]] = tensor.to(device=device, dtype=dtype)
+    ids, prompt_mask, labels, valid = collate(examples, canvas, device)
+    return examples, ids, prompt_mask, labels, valid, data
+
+
+def state_normalization(dataset, indices, meter):
+    count = 0
+    total = 0.0
+    squares = 0.0
+    for index in indices:
+        meter.check()
+        _, tensor = dataset[index]
+        values = tensor.double()
+        count += values.numel()
+        total += float(values.sum())
+        squares += float(values.square().sum())
+    if not count:
+        raise ValueError("empty training normalization source")
+    return {
+        "variance": max(1e-6, squares / count - (total / count) ** 2),
+        "mean": total / count,
+        "elements": count,
+        "source": "training only",
+        "training_indices_sha256": canonical_hash(indices),
+    }
+
+
+@torch.no_grad()
+def latent_scales(codec, dataset, indices, meter):
+    totals = {}
+    squares = {}
+    counts = {}
+    device = next(codec.parameters()).device
+    dtype = next(codec.parameters()).dtype
+    for index in indices:
+        meter.check()
+        _, _, _, _, valid, states = padded_tensors(dataset, [index], codec.architecture.canvas, device, dtype)
+        fine = codec.fine_codes(states)
+        for level in range(1, len(codec.architecture.resolutions), 2):
+            pooled, mask = masked_pool(fine, valid, codec.architecture.resolutions[level])
+            data = pooled[mask].double()
+            totals[level] = totals.get(level, 0) + data.sum(0)
+            squares[level] = squares.get(level, 0) + data.square().sum(0)
+            counts[level] = counts.get(level, 0) + data.shape[0]
+    scales = {
+        str(k): (squares[k] / counts[k] - (totals[k] / counts[k]).square())
+        .clamp_min(0)
+        .sqrt()
+        .clamp_min(1e-3)
+        .float()
+        .tolist()
+        for k in totals
+    }
+    return scales, {
+        "valid_bins": counts,
+        "positive_scale_floor": 1e-3,
+        "coordinate_system": "raw encoder codes; scales used only in losses",
+        "mean_channel_variance": {
+            str(k): float((squares[k] / counts[k] - (totals[k] / counts[k]).square()).mean()) for k in totals
+        },
+    }
+
+
+def architecture_from_metadata(metadata, device):
+    # Allocate exactly one complete destination. No model/state-sized Python bytes copy.
+    from ncm_lab.embedded.model import from_metadata
+
+    return from_metadata(metadata, device)
+
+
+def gradient_norm(model):
+    total = 0.0
+    for p in model.parameters():
+        if p.grad is None:
+            continue
+        flat = p.grad.detach().view(-1)
+        for start in range(0, flat.numel(), 1048576):
+            values = flat[start : start + 1048576].float()
+            if not bool(torch.isfinite(values).all()):
+                raise ValueError("nonfinite native gradient")
+            total += float(values.square().sum())
+    return math.sqrt(total)
+
+
+def _representatives(model):
+    names = [
+        "backbone.model.embed_tokens.weight",
+        "backbone.model.layers.0.self_attn.q_proj.weight",
+        "backbone.model.layers.8.mlp.down_proj.weight",
+        "backbone.model.layers.35.self_attn.o_proj.weight",
+        "backbone.model.norm.weight",
+        "backbone.lm_head.weight",
+        "queries",
+        "refinements.0.down.weight",
+        "refinements.15.up.weight",
+        "gates",
+    ]
+    parameters = dict(model.named_parameters())
+    result = {}
+    for name in names:
+        if name not in parameters:
+            continue
+        p = parameters[name]
+        selected = p[1] if "embed_tokens" in name else p
+        result[name] = selected.detach().flatten()[:8].clone()
+    return result
+
+
+def prune(folder, selected):
+    """Retain two newest recovery versions plus selected; interrupted writes survive."""
+    import shutil
+
+    folder = Path(folder).resolve()
+    candidates = sorted(folder.glob("version-*"), key=lambda p: p.stat().st_mtime, reverse=True)
+    protected = {p.resolve() for p in candidates[:2]}
+    if selected:
+        protected.add(Path(selected["manifest"]).parent.resolve())
+    for path in candidates[2:]:
+        resolved = path.resolve()
+        if resolved in protected:
+            continue
+        if path.is_symlink() or resolved.parent != folder:
+            raise ValueError("unsafe checkpoint retention path")
+        shutil.rmtree(resolved)
+
+
+def fit(run, value, bound, *, resume=None, stop_after=None):
+    options = value["training"]
+    architecture = Architecture(**value["architecture"])
+    torch.manual_seed(options["seed"])
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(options["seed"])
+    generator = value["stage"] in {"generator", "profile"}
+    key = "targets" if generator else "features"
+    dataset = Dataset(bound[key]["manifest"], "native_targets_v1" if generator else "native_features_v1")
+    source = dataset.manifest["identity"]
+    if source.get("state_alignment") != ALIGNMENT:
+        raise ValueError("native prediction-state alignment mismatch")
+    if source["model"] != model_identity(value["model"]):
+        raise ValueError("training teacher/model identity mismatch")
+    if source.get("canvas", source.get("architecture", {}).get("canvas")) != architecture.canvas:
+        raise ValueError("training canvas differs from native source cache")
+    train = dataset.indices("train")
+    dev = dataset.indices("dev")
+    if not train or not dev:
+        raise ValueError("held-out native train/dev data required")
+    if generator and source["architecture"] != architecture.to_dict():
+        raise ValueError("latent target architecture changed; rebuild explicitly")
+    unique_answers = sum(len(dataset.metadata(i)["example"]["answer_ids"]) for i in train)
+    if unique_answers < options["minimum_unique_answer_positions"]:
+        raise ValueError("requested unique answer pool unavailable; repetition cannot fill it")
+    normalization = (
+        source.get("normalization") if generator else state_normalization(dataset, train, run.meter)
+    )
+    dtype = getattr(torch, value["dtype"])
+    device = value["device"]
+    reader = CheckpointReader(resume, check=run.meter.check) if resume else None
+    previous_metadata = reader.materialize(reader.field("metadata")) if reader else None
+    head = None
+    if generator:
+        model = (
+            architecture_from_metadata(previous_metadata, device)
+            if reader
+            else load_generator(value["model"], value["architecture"], device, dtype)
+        )
+    else:
+        hidden = dataset.manifest["extra"]["hidden_size"]
+        model = ContinuousCodec(hidden, architecture).to(device=device, dtype=dtype)
+        head = load_frozen_head(value["model"], device, dtype)
+    optimizer = TiledAdamW(
+        model.named_parameters(),
+        options["learning_rate"],
+        options["new_learning_rate"] if generator else options["learning_rate"],
+        options["weight_decay"],
+    )
+    metadata = {
+        "component": "generator" if generator else "codec",
+        "architecture": architecture.to_dict(),
+        "model": model_identity(value["model"]),
+        "backbone_config": model.backbone.config.to_dict() if generator else None,
+        "dataset_sha256": dataset.sha256,
+        "source": source,
+        "dtype": value["dtype"],
+        "normalization": normalization,
+        "training_contract": {
+            k: v
+            for k, v in options.items()
+            if k
+            not in {
+                "steps",
+                "epochs",
+                "validation_interval",
+                "checkpoint_interval",
+                "recovery_probe",
+                "max_validation_examples",
+            }
+        },
+        "phase_id": value["budget"]["phase_id"],
+        "implementation_sha256": implementation_hash(),
+        "runtime": {
+            "torch": str(torch.__version__),
+            "device": device,
+            "attention": "explicit-mask SDPA; no AR KV reuse",
+        },
+    }
+    if generator:
+        metadata["backbone_config"].pop("_name_or_path", None)
+    identity = native_identity(metadata)
+    sampler = random.Random(options["seed"])
+    state = {
+        "optimizer_steps": 0,
+        "processed_source_tokens": 0,
+        "answer_position_exposures": 0,
+        "allocated_canvas_positions": 0,
+        "backbone_answer_positions": 0,
+        "phase": "warmup" if generator and options["warmup_processed_tokens"] else "full",
+        "best_dev_loss": None,
+        "selected": None,
+    }
+    if reader:
+        if reader.manifest["identity"] != identity:
+            raise ValueError("native recovery config/data/codec/optimizer identity mismatch")
+        reader.load_model(model)
+        reader.load_optimizer(optimizer)
+        state = reader.materialize(reader.field("training"))
+        restore_rng(reader.materialize(reader.field("rng")), sampler)
+        if state.get("selected_this_step"):
+            state["selected"] = {
+                "schema": "native_checkpoint_pointer_v1",
+                "manifest": str(reader.path),
+                "sha256": digest(reader.path),
+            }
+        reader = None
+    cursor = Cursor(train, sampler, state.get("cursor"))
+    if generator:
+        model.set_phase(state["phase"])
+    model.train()
+    initial_representatives = _representatives(model) if generator else {}
+    write_json(
+        run.path / "parameter_groups.json",
+        {
+            "groups": optimizer.groups,
+            "parameters": {
+                n: {"elements": p.numel(), "trainable": p.requires_grad, "dtype": str(p.dtype)}
+                for n, p in model.named_parameters()
+            },
+            "policy": "FP32 first/second moments; no master weights; warmup retains autograd through frozen original blocks",
+        },
+        exclusive=True,
+    )
+    if device == "cuda":
+        torch.cuda.reset_peak_memory_stats()
+    restored_peak = None
+    before_restore_peak = None
+    stop_reason = None
+
+    def objective(indices, training=True):
+        examples, ids, mask, labels, valid, tensor = padded_tensors(
+            dataset, indices, architecture.canvas, device, dtype
+        )
+        source_positions = sum(
+            len(e.prompt_ids) + len(e.answer_ids) if generator else len(e.answer_ids) for e in examples
+        )
+        # Forward work is charged even when the later update fails or is interrupted.
+        run.meter.charge(
+            source=source_positions, answer=int(valid.sum()), canvas=len(examples) * architecture.canvas
+        )
+        if generator:
+            output = model(ids, mask, return_aux=True)
+            text = chunked_ce(
+                model.backbone.lm_head, output.answer_states, labels, valid, options["head_chunk"]
+            )
+            latent, groups, counts = auxiliary_loss(
+                output.cumulative_codes, tensor, valid, architecture.resolutions, source["scales"]
+            )
+            loss = text + options["auxiliary_weight"] * latent
+            metrics = {
+                "loss": float(loss.detach()),
+                "text_loss": float(text.detach()),
+                "latent_loss": float(latent.detach()),
+                "groups": [float(x.detach()) for x in groups],
+                "group_valid_bins": counts,
+                "backbone_answer_positions": sum(t["answer_positions"] for t in output.trace) * len(examples),
+            }
+        else:
+            loss, metrics = codec_loss(
+                model,
+                head,
+                tensor,
+                valid,
+                normalization["variance"],
+                sampler if training else random.Random(0),
+                options["prediction_weight"],
+                options["head_positions"],
+                options["head_chunk"],
+            )
+        return loss, metrics, source_positions, int(valid.sum())
+
+    def evaluate():
+        prior = model.training
+        model.eval()
+        rows = []
+        with torch.no_grad():
+            for index in dev[: options["max_validation_examples"]]:
+                _, metrics, _, _ = objective([index], False)
+                rows.append(metrics)
+        model.train(prior)
+        return sum(row["loss"] for row in rows) / len(rows)
+
+    try:
+        while (
+            state["optimizer_steps"] < options["steps"]
+            and cursor.epoch < options["epochs"]
+            and not (cursor.position == len(cursor.order) and cursor.epoch + 1 >= options["epochs"])
+        ):
+            if state["processed_source_tokens"] >= options["max_processed_tokens"]:
+                raise BudgetStop("declared processed-token endpoint reached")
+            optimizer.zero_grad()
+            step_started = time.perf_counter()
+            aggregate = []
+            remaining = (options["epochs"] - cursor.epoch) * len(cursor.order) - cursor.position
+            microbatches = min(
+                options["accumulation"], (remaining + options["batch_size"] - 1) // options["batch_size"]
+            )
+            run.meter.charge(steps=1)
+            for _ in range(microbatches):
+                indices = cursor.take(options["batch_size"], options["epochs"])
+                if not indices:
+                    break
+                loss, metrics, source_count, answer_count = objective(indices)
+                if not bool(torch.isfinite(loss)):
+                    raise ValueError("nonfinite native training loss")
+                (loss / microbatches).backward()
+                state["processed_source_tokens"] += source_count
+                state["answer_position_exposures"] += answer_count
+                state["allocated_canvas_positions"] += len(indices) * architecture.canvas
+                state["backbone_answer_positions"] += metrics.get("backbone_answer_positions", 0)
+                aggregate.append(metrics)
+            norm = gradient_norm(model)
+            limit = options.get("gradient_clip", 1.0)
+            if norm > limit:
+                for parameter in model.parameters():
+                    if parameter.grad is not None:
+                        parameter.grad.mul_(limit / (norm + 1e-12))
+            optimizer.step()
+            state["optimizer_steps"] += 1
+            if (
+                generator
+                and state["phase"] == "warmup"
+                and state["processed_source_tokens"] >= options["warmup_processed_tokens"]
+            ):
+                state["phase"] = "full"
+                model.set_phase("full")
+                run.event("full_backbone_unfrozen", step=state["optimizer_steps"])
+            metrics = {
+                **aggregate[-1],
+                "step": state["optimizer_steps"],
+                "microbatches": len(aggregate),
+                "phase": state["phase"],
+                "gradient_norm": norm,
+                "step_seconds": time.perf_counter() - step_started,
+                "processed_source_tokens": state["processed_source_tokens"],
+                "unique_available_answer_positions": unique_answers,
+                "answer_position_exposures": state["answer_position_exposures"],
+                "allocated_canvas_positions": state["allocated_canvas_positions"],
+            }
+            selection = None
+            if state["optimizer_steps"] % options["validation_interval"] == 0:
+                metrics["dev_loss"] = evaluate()
+                selection = metrics["dev_loss"]
+            run.metric(metrics)
+            if (
+                state["optimizer_steps"] % options["checkpoint_interval"] == 0
+                or selection is not None
+                or state["optimizer_steps"] == options["steps"]
+            ):
+                state["cursor"] = cursor.state()
+                chosen = selection is not None and (
+                    state["best_dev_loss"] is None or selection < state["best_dev_loss"]
+                )
+                state["selected_this_step"] = chosen
+                if chosen:
+                    state["best_dev_loss"] = selection
+                saved = save_checkpoint(
+                    run.path / "checkpoints",
+                    recovery_payload(model, optimizer, identity, metadata, state, sampler),
+                    meter=run.meter,
+                    shard_bytes=options["shard_bytes"],
+                )
+                if chosen:
+                    state["selected"] = saved
+                    atomic_json(run.path / "checkpoints/selected.json", saved)
+                prune(run.path / "checkpoints", state["selected"])
+            if generator and options["recovery_probe"] and state["optimizer_steps"] == 2:
+                if device == "cuda":
+                    before_restore_peak = torch.cuda.max_memory_allocated()
+                # The completed loss graph still owns leaf parameters after backward.
+                # Release it before constructing the fresh recovery destination.
+                del loss
+                del model, optimizer
+                gc.collect()
+                if device == "cuda":
+                    torch.cuda.empty_cache()
+                    torch.cuda.reset_peak_memory_stats()
+                reader = CheckpointReader(saved["manifest"], identity=identity, check=run.meter.check)
+                model = architecture_from_metadata(metadata, device)
+                reader.load_model(model)
+                optimizer = TiledAdamW(
+                    model.named_parameters(),
+                    options["learning_rate"],
+                    options["new_learning_rate"],
+                    options["weight_decay"],
+                )
+                reader.load_optimizer(optimizer)
+                restore_rng(reader.materialize(reader.field("rng")), sampler)
+                reader = None
+                model.set_phase(state["phase"])
+                model.train()
+                restored_peak = torch.cuda.max_memory_allocated() if device == "cuda" else None
+                run.event("recovery_probe_restored", step=2, peak_allocated_bytes=restored_peak)
+            if stop_after is not None and state["optimizer_steps"] >= stop_after:
+                break
+    except BudgetStop as exc:
+        stop_reason = str(exc)
+    if not state["selected"]:
+        raise ValueError("no completed held-out selection; recovery remains diagnostic only")
+    # Export the held-out selected state without holding a second model/optimizer copy.
+    selected_reader = CheckpointReader(
+        state["selected"]["manifest"], identity=identity, check=run.meter.check
+    )
+    selected_reader.load_model(model)
+    selected_reader = None
+    if generator:
+        from ncm_lab.inference.export import export_generator
+
+        artifact = export_generator(
+            model,
+            metadata,
+            run.path / "artifacts/generator",
+            run.meter,
+            options["shard_bytes"],
+            value["model"],
+        )
+        changed = {
+            n: bool(
+                (
+                    initial_representatives[n]
+                    != (
+                        dict(model.named_parameters())[n][1]
+                        if "embed_tokens" in n
+                        else dict(model.named_parameters())[n]
+                    )
+                    .detach()
+                    .flatten()[:8]
+                ).any()
+            )
+            for n in initial_representatives
+        }
+        diagnostics = {"representative_weights_changed": changed, "warmup_in_total_token_budget": True}
+    else:
+        model.eval().requires_grad_(False)
+        scales, scale_statistics = latent_scales(model, dataset, train, run.meter)
+        folder = run.path / "artifacts/codec"
+        folder.mkdir(parents=True, exist_ok=True)
+        weights = save_checkpoint(
+            folder / "weights",
+            {"identity": identity, "metadata": metadata, "model": model.state_dict(keep_vars=True)},
+            kind=INFERENCE,
+            meter=run.meter,
+            shard_bytes=options["shard_bytes"],
+        )
+        artifact = folder / "manifest.json"
+        write_json(
+            artifact,
+            {
+                "schema": "native_codec_v1",
+                "identity": identity,
+                "spec": model.spec,
+                "weights_manifest": str(Path(weights["manifest"]).relative_to(folder)),
+                "weights_manifest_sha256": weights["sha256"],
+                "normalization": normalization,
+                "scales": scales,
+                "latent_statistics": scale_statistics,
+                "source": source,
+                "selection": {
+                    "criterion": "held-out normalized reconstruction plus head consistency",
+                    "best_dev_loss": state["best_dev_loss"],
+                    "recovery": state["selected"],
+                },
+                "frozen": True,
+            },
+            exclusive=True,
+        )
+        diagnostics = {
+            "latent_statistics": scale_statistics,
+            "normalization": normalization,
+            "head_frozen": not any(p.requires_grad for p in head.parameters()),
+        }
+    run.publish(artifact)
+    peak = torch.cuda.max_memory_allocated() if device == "cuda" else None
+    if before_restore_peak is not None:
+        peak = max(peak, before_restore_peak)
+    reserved = torch.cuda.max_memory_reserved() if device == "cuda" else None
+    return {
+        "artifact": str(artifact),
+        "identity": identity,
+        "optimizer_steps": state["optimizer_steps"],
+        "parameter_count": sum(p.numel() for p in model.parameters()),
+        "trainable_parameter_count_at_end": sum(p.numel() for p in model.parameters() if p.requires_grad),
+        "optimizer_covered_parameter_count": sum(p.numel() for p in optimizer.parameters.values()),
+        "optimizer_state_tensor_bytes": sum(
+            v.numel() * v.element_size()
+            for s in optimizer.state.values()
+            for v in s.values()
+            if isinstance(v, torch.Tensor)
+        ),
+        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "processed_source_tokens": state["processed_source_tokens"],
+        "answer_position_exposures": state["answer_position_exposures"],
+        "allocated_canvas_positions": state["allocated_canvas_positions"],
+        "backbone_answer_positions": state["backbone_answer_positions"],
+        "unique_available_answer_positions": unique_answers,
+        "best_dev_loss": state["best_dev_loss"],
+        "stop_reason": stop_reason,
+        "status": "budget_stopped" if stop_reason else "completed",
+        "peak_allocated_bytes": peak,
+        "peak_reserved_bytes": reserved,
+        "restoration_peak_allocated_bytes": restored_peak,
+        "checkpoint": str(run.path / "checkpoints/current.json"),
+        "selected_checkpoint": state["selected"],
+        "first_step_included_in_wall_budget": True,
+        **diagnostics,
+    }

@@ -1,0 +1,12 @@
+{
+  "model_id": "Qwen/Qwen3-8B",
+  "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+  "tokenizer_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+  "thinking": false,
+  "fixture": false,
+  "path": "runs/assets/target/b968826d9c46dd6066d109eabc6255188de91218",
+  "eos_ids": [
+    151645,
+    151643
+  ]
+}

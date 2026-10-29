@@ -1,0 +1,22 @@
+{
+  "schema": "native_stage_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": "configs/budgets/real_pilot.yaml",
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "training": {
+    "steps": 2,
+    "batch_size": 1,
+    "validation_interval": 1,
+    "checkpoint_interval": 1,
+    "head_positions": 32,
+    "head_chunk": 8
+  },
+  "stage": "teacher",
+  "inputs": {
+    "data": "runs/handoffs/data.json"
+  },
+  "output_ref": "runs/handoffs/features.json",
+  "hardware_profile": "spark"
+}

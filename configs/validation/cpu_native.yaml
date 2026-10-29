@@ -1,0 +1,15 @@
+{
+  "schema": "native_stage_v1",
+  "stage": "validation",
+  "model": "configs/models/tiny_qwen.yaml",
+  "architecture": "configs/architecture/tiny_native.yaml",
+  "budget": "configs/budgets/cpu_native.yaml",
+  "device": "cpu",
+  "dtype": "float32",
+  "training": {
+    "steps": 2
+  },
+  "data": {
+    "micro_overfit_steps": 40
+  }
+}

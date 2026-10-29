@@ -1,5 +1,0 @@
-{
-  "schema_version": 3,
-  "parent_spec": "experiments/acl/ACL-005_multiscale_codec_and_transfer/configs/study.yaml",
-  "select_experiment": "ACL-004"
-}

@@ -1,0 +1,37 @@
+{
+  "schema": "native_stage_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": {
+    "phase_id": "native-real-pilot-v1",
+    "max_wall_seconds": 3600,
+    "max_steps": 1000,
+    "max_source_tokens": 1000000,
+    "max_answer_positions": 200000,
+    "max_canvas_positions": 1000000,
+    "max_storage_bytes": 600000000000,
+    "max_phase_wall_seconds": 10800,
+    "max_phase_steps": 10000,
+    "max_phase_source_tokens": 10000000,
+    "max_phase_answer_positions": 2000000,
+    "max_phase_canvas_positions": 10000000,
+    "max_phase_storage_bytes": 2000000000000
+  },
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "training": {
+    "steps": 3,
+    "batch_size": 1,
+    "validation_interval": 1,
+    "checkpoint_interval": 1,
+    "head_positions": 32,
+    "head_chunk": 8,
+    "recovery_probe": true
+  },
+  "stage": "profile",
+  "inputs": {
+    "targets": "runs/handoffs/targets.json"
+  },
+  "output_ref": "runs/handoffs/generator.json",
+  "hardware_profile": "spark"
+}
