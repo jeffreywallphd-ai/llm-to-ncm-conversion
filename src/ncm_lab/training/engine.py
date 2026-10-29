@@ -499,6 +499,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             limit = options.get("gradient_clip", 1.0)
             report.clip_(limit)
             optimizer.step(report)
+            del report  # Its parameter/gradient ownership must end before recovery allocation.
             state["optimizer_steps"] += 1
             state["last_executed_phase"] = executed_phase
             phase_boundary = (

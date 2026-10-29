@@ -1,5 +1,6 @@
 import copy
 import json
+import weakref
 from pathlib import Path
 import torch
 import pytest
@@ -7,6 +8,7 @@ from ncm_lab.runtime.runner import execute
 from ncm_lab.training.checkpoints import CheckpointReader
 from ncm_lab.training.engine import architecture_from_metadata, make_optimizer
 from ncm_lab.teacher.stages import load_codec
+from ncm_lab.training.optimizer import TiledAdamW
 
 
 def terminal(path):
@@ -126,3 +128,138 @@ def test_executed_phase_counts_and_forced_boundary_interval(native_artifacts, ac
             full_records[0]["metrics"]["gradients/backbone_block_01/combined_l2"]["status"]
             == "finite_nonzero"
         )
+
+
+def assert_same_recovery_state(left, right):
+    if isinstance(left, torch.Tensor):
+        assert isinstance(right, torch.Tensor) and torch.equal(left, right)
+    elif isinstance(left, dict):
+        assert left.keys() == right.keys()
+        for key in left:
+            assert_same_recovery_state(left[key], right[key])
+    elif isinstance(left, (list, tuple)):
+        assert type(left) is type(right) and len(left) == len(right)
+        for a, b in zip(left, right):
+            assert_same_recovery_state(a, b)
+    else:
+        assert left == right
+
+
+@pytest.mark.parametrize("dtype", ["bfloat16", "float32"])
+def test_in_process_recovery_releases_old_tensors_and_matches_uninterrupted(
+    native_artifacts, monkeypatch, tmp_path, dtype
+):
+    import ncm_lab.training.engine as engine
+
+    cfg = copy.deepcopy(native_artifacts["configs"]["generator"])
+    cfg.update(stage="profile", dtype=dtype, output_ref=None)
+    cfg["training"].update(steps=3, batch_size=1, warmup_processed_tokens=0, recovery_probe=False)
+    uninterrupted = execute(cfg)
+    assert uninterrupted["status"] == "completed", uninterrupted
+
+    # Shared fixture preparation and the reference run finish before observation.
+    # Keep only weak references and numeric metadata about the old allocation.
+    references = {key: [] for key in ("parameters", "gradients", "moments")}
+    captured = {key: {"tensors": 0, "elements": 0, "bytes": 0} for key in references}
+    observations = {
+        "dtype": dtype,
+        "captured": captured,
+        "before_allocation": None,
+        "replacement_forwards": [],
+        "exact_continuation": False,
+    }
+    handles = []
+    original_step = TiledAdamW.step  # Unbound functions do not own an optimizer/model.
+    original_constructor = engine.architecture_from_metadata
+
+    def capture(key, tensor):
+        references[key].append(weakref.ref(tensor))
+        captured[key]["tensors"] += 1
+        captured[key]["elements"] += tensor.numel()
+        captured[key]["bytes"] += tensor.numel() * tensor.element_size()
+
+    def observe_step(optimizer, gradient_report=None):
+        result = original_step(optimizer, gradient_report)
+        if not references["parameters"] and max(s["step"] for s in optimizer.state.values()) == 2:
+            for parameter in optimizer.parameters.values():
+                assert parameter.requires_grad and parameter.grad is not None
+                capture("parameters", parameter)
+                capture("gradients", parameter.grad)
+            for state in optimizer.state.values():
+                for field in ("exp_avg", "exp_avg_sq"):
+                    assert state[field].dtype == torch.float32
+                    capture("moments", state[field])
+            assert captured["parameters"]["tensors"] == len(optimizer.parameters)
+        return result
+
+    def alive():
+        return {key: sum(reference() is not None for reference in refs) for key, refs in references.items()}
+
+    def observe_forward(module, inputs):
+        snapshot = alive()
+        observations["replacement_forwards"].append(snapshot)
+        assert not any(snapshot.values()), ("old tensors survived into replacement forward", snapshot)
+
+    def observe_allocation(metadata, device):
+        assert all(info["tensors"] > 0 and info["bytes"] > 0 for info in captured.values())
+        snapshot = alive()
+        observations["before_allocation"] = snapshot
+        # No clearing, GC, tensor copies, or other repair in this observer.
+        assert not any(snapshot.values()), ("old tensors alive before replacement allocation", snapshot)
+        replacement = original_constructor(metadata, device)
+        handles.append(replacement.register_forward_pre_hook(observe_forward))
+        return replacement
+
+    cfg["training"]["recovery_probe"] = True
+    try:
+        with monkeypatch.context() as instrumentation:
+            instrumentation.setattr(TiledAdamW, "step", observe_step)
+            instrumentation.setattr(engine, "architecture_from_metadata", observe_allocation)
+            probe = execute(cfg)
+        observations["probe"] = {key: probe[key] for key in ("run_id", "path", "status")}
+        observations["uninterrupted"] = {key: uninterrupted[key] for key in ("run_id", "path", "status")}
+        assert probe["status"] == "completed" and probe["optimizer_steps"] == 3, (probe, observations)
+        assert observations["before_allocation"] is not None and observations["replacement_forwards"]
+        assert captured["parameters"]["tensors"] == captured["gradients"]["tensors"]
+        assert captured["moments"]["tensors"] == 2 * captured["parameters"]["tensors"]
+        assert captured["parameters"]["elements"] == probe["parameter_count"]
+        events = [
+            json.loads(line) for line in (Path(probe["path"]) / "events.jsonl").read_text().splitlines()
+        ]
+        assert any(e["status"] == "recovery_probe_restored" and e["step"] == 2 for e in events)
+
+        # Compare terminal recovery state, never a potentially earlier selected export.
+        left, left_optimizer, left_state, left_rng = terminal(uninterrupted["checkpoint"])
+        right, right_optimizer, right_state, right_rng = terminal(probe["checkpoint"])
+        assert_same_recovery_state(left.state_dict(), right.state_dict())
+        assert_same_recovery_state(left_optimizer.state_dict(), right_optimizer.state_dict())
+        assert_same_recovery_state(left_rng, right_rng)
+        for key in (
+            "optimizer_steps",
+            "processed_source_tokens",
+            "answer_position_exposures",
+            "allocated_canvas_positions",
+            "backbone_answer_positions",
+            "phase",
+            "last_executed_phase",
+            "cursor",
+            "best_dev_loss",
+            "selected_this_step",
+        ):
+            assert_same_recovery_state(left_state[key], right_state[key])
+
+        def last_metric(result):
+            return json.loads((Path(result["path"]) / "metrics.jsonl").read_text().splitlines()[-1])
+
+        expected, actual = last_metric(uninterrupted), last_metric(probe)
+        assert expected["step"] == actual["step"] == 3 and expected["loss"] == actual["loss"]
+        observations.update(
+            exact_continuation=True,
+            third_step_loss=actual["loss"],
+            optimizer_rounding_draws=right_optimizer.rounding_draws,
+        )
+    finally:
+        for handle in handles:
+            handle.remove()
+        # Test evidence is separate from immutable production run artifacts.
+        (tmp_path / "lifetime_observations.json").write_text(json.dumps(observations, indent=2) + "\n")

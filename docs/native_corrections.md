@@ -151,3 +151,40 @@ uses different optimizer-state precision/shared randomness; this repository does
 claim to reproduce that optimizer or its performance, import its frameworks, or
 increase learning rates to conceal lost updates. No third-party optimizer source was
 copied; existing project/license notices are preserved.
+
+## Recovery tensor-lifetime follow-up — 2026-10-29
+
+Revision `792ba52` retained the completed `GradientReport` in the training frame.
+Its active parameter list strongly owned the old weights and their gradients even
+after the probe deleted `loss`, `model` and `optimizer`. Garbage collection and
+`empty_cache()` cannot release tensors that still have a live owner.
+
+The narrow repair in `training/engine.py` is `del report` immediately after the
+successful `optimizer.step(report)`. Finiteness validation, stale-report checks,
+diagnostics, clipping and the validated update still finish first. The existing
+loss deletion and one-destination restoration remain intact. The report API,
+optimizer precision/state schema, model topology, RNG behavior and failure semantics
+are unchanged. An optimizer error still fails the attempt.
+
+The new production integration test captures only weak references after the
+successful second full-training step. Before calling the replacement constructor,
+it asserts that old parameters, gradients and FP32 moments are all gone; it checks
+again on the replacement model's forward. The observer neither clears references
+nor runs garbage collection. Counts and bytes are derived from the fixture.
+
+Against the original behavior, the BF16 test failed before replacement allocation:
+578 parameters and 578 gradients remained live; old moments were already released.
+With the fix, all three live counts are zero before allocation and during every
+observed replacement forward, in BF16 and FP32. Both three-step probes complete.
+Terminal recovery checkpoints match uninterrupted runs exactly for weights,
+moments, steps, private optimizer RNG/draw count, sampler/cursor, recorded global
+RNG and third-step loss, allowing intentional run/attempt provenance differences.
+
+Numerical continuation alone did not prove release; this ownership check adds that
+missing invariant. It does not require process RSS or cached/reserved memory to
+return to zero and does not establish full-8B/Spark feasibility. Recovery remains
+bound to the implementation hash, so pre-fix checkpoints are not automatically
+compatible with changed source. Prior receipts and the failed pre-fix run are
+preserved. See the separate
+[dated lifetime validation receipt](recovery_lifetime_validation_2026-10-29.json)
+for commands, run IDs, counts, bytes, failures/skips and current gates.

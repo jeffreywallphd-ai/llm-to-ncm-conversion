@@ -1,0 +1,459 @@
+{
+  "schema": "recovery_lifetime_validation_v1",
+  "date": "2026-10-29",
+  "reviewed_base": "792ba52c55af58ad28f858a92a6c3100c82b754e",
+  "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+  "archive_preserved": {
+    "branch": "archive/hierarchical-drafter",
+    "sha": "c5e5329172e63026995a440aa0591a5e15804ab4"
+  },
+  "change": {
+    "file": "src/ncm_lab/training/engine.py",
+    "ownership_end": "del report immediately after successful optimizer.step(report)",
+    "production_lines_added": 1,
+    "cause": "Completed GradientReport.parameters strongly owned old parameters and their gradients after model/optimizer/loss cleanup.",
+    "additional_confirmed_aliases": [],
+    "optimizer_policy_unchanged": "fp32_moments_bf16_stochastic_v1",
+    "optimizer_schema_unchanged": "fp32_adamw_bf16_sr_v2",
+    "recovery_compatibility": "Implementation hash remains enforced; pre-fix checkpoints are not automatically resumable with changed source."
+  },
+  "commands": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/integration/test_optimizer_recovery.py::test_in_process_recovery_releases_old_tensors_and_matches_uninterrupted[bfloat16] --basetemp=.cache/recovery-lifetime/before-fix",
+      "exit_status": 1,
+      "failed": 1,
+      "seconds": 10.75,
+      "timeout_seconds": 180,
+      "interpretation": "Expected failure against original production behavior, before applying the fix.",
+      "log": ".cache/recovery-lifetime/before-fix.txt",
+      "log_sha256": "f17929120ba28f2ae524f8d789080956d4f44ac1bcb631797b66497707de0e31"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/integration/test_optimizer_recovery.py --basetemp=.cache/recovery-lifetime/focused-fixed",
+      "exit_status": 0,
+      "passed": 8,
+      "seconds": 45.05,
+      "timeout_seconds": 180,
+      "log": ".cache/recovery-lifetime/focused-fixed.txt",
+      "log_sha256": "7246b73d6789f48b75c917fad1e8e017d97fe32a354014c0a4c832884098b3f6"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/recovery-lifetime/full-tests",
+      "exit_status": 0,
+      "passed": 116,
+      "skipped": 1,
+      "seconds": 122.66,
+      "timeout_seconds": 600,
+      "log": ".cache/recovery-lifetime/full-tests.txt",
+      "log_sha256": "02f931d564bb6dd18847c8ed74d655c67898c80fac4679737a6780d883c3dca0",
+      "execution": "Normal permitted localhost sockets; HTTP assertions retained."
+    },
+    {
+      "command": ".venv/Scripts/ruff.exe check .",
+      "exit_status": 0
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab monitor smoke --config configs/monitoring/smoke.yaml",
+      "exit_status": 0,
+      "timeout_seconds": 150,
+      "run": {
+        "run_id": "20261029T192655Z-64f9646db9",
+        "path": "runs/validation/20261029T192655Z-64f9646db9",
+        "status": "completed",
+        "manifest_sha256": "5c41211a8c3d33903f55e09fbc980e9c54437fed8f8787dec60f00376aacfdb9",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "1ba32c6507271bb2d3e964259ebea1b0c259cb96be1982d73ffd6c403eb3cb3f",
+        "summary_sha256": "bdf13fb1912199d66ee1b32b05a991327be0490707692b6ddd23b0a07725d1b8"
+      },
+      "output": ".cache/recovery-lifetime/smoke.json",
+      "output_sha256": "08827ceb227cb297082b772215d777e0e105cd1912b1f887c5ca24e791a8654d",
+      "seconds": 35.72739139990881
+    }
+  ],
+  "before_fix": [
+    {
+      "dtype": "bfloat16",
+      "captured": {
+        "parameters": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "gradients": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "moments": {
+          "tensors": 1156,
+          "elements": 191328,
+          "bytes": 765312
+        }
+      },
+      "before_allocation": {
+        "parameters": 578,
+        "gradients": 578,
+        "moments": 0
+      },
+      "replacement_forwards": [],
+      "exact_continuation": false,
+      "probe": {
+        "run_id": "20261029T192234Z-9fb58b4292",
+        "path": ".cache/recovery-lifetime/before-fix/native-production0/runs/profile/20261029T192234Z-9fb58b4292",
+        "status": "failed",
+        "manifest_sha256": "8e399c4a607ab455ce10c7134169130c392e8dd2393bc61091fd086e439210ca",
+        "implementation_sha256": "cc746c6441600b247c72df8bc7983ef8d8f5209b1859a209699e6ec9c12ed24e",
+        "resolved_config_sha256": "d314809868ce8c0237a017a5b0538ecc7d36a475525766731b1018432c3dc9cd",
+        "summary_sha256": "70ec35d90e3cc161e29136e163c14236aa34da6c7afe0e79c6c873be0691fe4c"
+      },
+      "uninterrupted": {
+        "run_id": "20261029T192231Z-0c8970a8af",
+        "path": ".cache/recovery-lifetime/before-fix/native-production0/runs/profile/20261029T192231Z-0c8970a8af",
+        "status": "completed",
+        "manifest_sha256": "c4b30e84f799a22fac30029db0a71b5ae31d24451f026a37ddcf166fe420966b",
+        "implementation_sha256": "cc746c6441600b247c72df8bc7983ef8d8f5209b1859a209699e6ec9c12ed24e",
+        "resolved_config_sha256": "252bcab986c749f121b7dc73f50111cef43c858ac5b63eadea3b247ab8f13ff1",
+        "summary_sha256": "1d3bb15ca5592d5b470f60f665d8e4131eb8172267d30c07fe76f0a7440174db"
+      },
+      "observation_file": ".cache/recovery-lifetime/before-fix/test_in_process_recovery_relea0/lifetime_observations.json",
+      "observation_sha256": "b868dd5bd2e592fdb34013b5ccc9d7d84e0310fd744ed564616293085be0953f"
+    }
+  ],
+  "focused_fixed": [
+    {
+      "dtype": "bfloat16",
+      "captured": {
+        "parameters": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "gradients": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "moments": {
+          "tensors": 1156,
+          "elements": 191328,
+          "bytes": 765312
+        }
+      },
+      "before_allocation": {
+        "parameters": 0,
+        "gradients": 0,
+        "moments": 0
+      },
+      "replacement_forwards": [
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        }
+      ],
+      "exact_continuation": true,
+      "probe": {
+        "run_id": "20261029T192339Z-1420de7c81",
+        "path": ".cache/recovery-lifetime/focused-fixed/native-production0/runs/profile/20261029T192339Z-1420de7c81",
+        "status": "completed",
+        "manifest_sha256": "ca077fab552c5f7779c395698eb37b904085bacdab8488a83563c9f2b12756b7",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "cbb3d084529c55d01bdb271ec267dc3cbe957a3b0faf1a18835b84b4214eb2ea",
+        "summary_sha256": "69d54a16c402e15964cc8402c4568dffa1a7ec57b2994517fdaef11b9bff74ad"
+      },
+      "uninterrupted": {
+        "run_id": "20261029T192335Z-ac060af887",
+        "path": ".cache/recovery-lifetime/focused-fixed/native-production0/runs/profile/20261029T192335Z-ac060af887",
+        "status": "completed",
+        "manifest_sha256": "2ecfc8e600aa35f71bd64ef926555c1f9953368fc3099ad5e6ef0251d676ba0c",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "02c79154ebfc4a53292db102ddbda6ca791f7f01df4ccbe63a0a97d1316a739b",
+        "summary_sha256": "33d501f6113ff5e743048ba948cca363264e6e8fa1b40aeb4971af6256ef28f5"
+      },
+      "third_step_loss": 3.8125383853912354,
+      "optimizer_rounding_draws": 286992,
+      "observation_file": ".cache/recovery-lifetime/focused-fixed/test_in_process_recovery_relea0/lifetime_observations.json",
+      "observation_sha256": "fbf2d1247df441d11dabef7c598badeae98185238cc8f1e30289b8385224d624"
+    },
+    {
+      "dtype": "float32",
+      "captured": {
+        "parameters": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 382656
+        },
+        "gradients": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 382656
+        },
+        "moments": {
+          "tensors": 1156,
+          "elements": 191328,
+          "bytes": 765312
+        }
+      },
+      "before_allocation": {
+        "parameters": 0,
+        "gradients": 0,
+        "moments": 0
+      },
+      "replacement_forwards": [
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        }
+      ],
+      "exact_continuation": true,
+      "probe": {
+        "run_id": "20261029T192347Z-d5289f6807",
+        "path": ".cache/recovery-lifetime/focused-fixed/native-production0/runs/profile/20261029T192347Z-d5289f6807",
+        "status": "completed",
+        "manifest_sha256": "11b7c4e5d2b185c31362019ff612ebb7f0d182d55d70daa94482443777215c93",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "00fa67cbf0cdb1d3adc3e56a7d4a0ff123a9a257449ca38d354d522c37475fe6",
+        "summary_sha256": "86d6c9e20f11b36ca5194a90c37264236fd402c7a2219b599a2886a5d693737c"
+      },
+      "uninterrupted": {
+        "run_id": "20261029T192343Z-3e9c8fc203",
+        "path": ".cache/recovery-lifetime/focused-fixed/native-production0/runs/profile/20261029T192343Z-3e9c8fc203",
+        "status": "completed",
+        "manifest_sha256": "46171437d7e4c897805fad0c623dfe573d6e123537e07882740975656fed2669",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "bdd081d2292a6baf0531fef21357734494acce4ca97086b20e008e244f0ddc09",
+        "summary_sha256": "0d866bfdf8519514b3520a4f70c75dad6aad9fa668befc409791c3dac8638a08"
+      },
+      "third_step_loss": 3.810925245285034,
+      "optimizer_rounding_draws": 0,
+      "observation_file": ".cache/recovery-lifetime/focused-fixed/test_in_process_recovery_relea1/lifetime_observations.json",
+      "observation_sha256": "4caf3b6738a8fe9366f5f57e3867a5c2eb3682bd684017698da5c08006ef7cc4"
+    }
+  ],
+  "final_suite_fixed": [
+    {
+      "dtype": "bfloat16",
+      "captured": {
+        "parameters": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "gradients": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "moments": {
+          "tensors": 1156,
+          "elements": 191328,
+          "bytes": 765312
+        }
+      },
+      "before_allocation": {
+        "parameters": 0,
+        "gradients": 0,
+        "moments": 0
+      },
+      "replacement_forwards": [
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        }
+      ],
+      "exact_continuation": true,
+      "probe": {
+        "run_id": "20261029T192632Z-f38f2d49e9",
+        "path": ".cache/recovery-lifetime/full-tests/native-production5/runs/profile/20261029T192632Z-f38f2d49e9",
+        "status": "completed",
+        "manifest_sha256": "8ddb1c0667f783dbcfa8cd7489dcdc23b71e249735485a576f1ea5a509578b6f",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "7dd2b45917f9e0f2eb556bea7362320a24437db25789c28c4324029148f6a548",
+        "summary_sha256": "1f8fd3ef724fe1914c95b500f09fcb8cc3f0ec2785da95323e2fe30738e5b6f1"
+      },
+      "uninterrupted": {
+        "run_id": "20261029T192628Z-84bea7b875",
+        "path": ".cache/recovery-lifetime/full-tests/native-production5/runs/profile/20261029T192628Z-84bea7b875",
+        "status": "completed",
+        "manifest_sha256": "64151c8fc629bd8179decfef0ef6daf91708c0f38dcc4cf80c261b7d84ddccbe",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "f9eb5e7465d865769400691863679a4de6906757bd8154db4b2163acc78e87d9",
+        "summary_sha256": "c8cef2b4696fcc1cb4260f33a56d3bd3e2c728bf52542c299c81656b2174ed99"
+      },
+      "third_step_loss": 3.8125383853912354,
+      "optimizer_rounding_draws": 286992,
+      "observation_file": ".cache/recovery-lifetime/full-tests/test_in_process_recovery_relea0/lifetime_observations.json",
+      "observation_sha256": "f9f6247b8a818abb9530522669577abcb3b50c485ecfc4beceb70854e58bb669"
+    },
+    {
+      "dtype": "float32",
+      "captured": {
+        "parameters": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 382656
+        },
+        "gradients": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 382656
+        },
+        "moments": {
+          "tensors": 1156,
+          "elements": 191328,
+          "bytes": 765312
+        }
+      },
+      "before_allocation": {
+        "parameters": 0,
+        "gradients": 0,
+        "moments": 0
+      },
+      "replacement_forwards": [
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        }
+      ],
+      "exact_continuation": true,
+      "probe": {
+        "run_id": "20261029T192639Z-c6585ad28f",
+        "path": ".cache/recovery-lifetime/full-tests/native-production5/runs/profile/20261029T192639Z-c6585ad28f",
+        "status": "completed",
+        "manifest_sha256": "f54f0b23e8cb3c628ab53639b14844a6c7d81dc8ac6656cec5ec936e47cacde1",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "d2f36443abe4da5bdcda2b2d5fe5fbd81fb8ab61ce8b01fbf082d11cd11457b3",
+        "summary_sha256": "5a02b05f29391e232f96e8c832a904116df8ac26054d6d5735daae5589261ff1"
+      },
+      "uninterrupted": {
+        "run_id": "20261029T192636Z-0ffabf8b45",
+        "path": ".cache/recovery-lifetime/full-tests/native-production5/runs/profile/20261029T192636Z-0ffabf8b45",
+        "status": "completed",
+        "manifest_sha256": "a01098b7b0d54e4af3bbb188b1ba1dd8ce386e93bad273424b1dcf1d2553671b",
+        "implementation_sha256": "df59d39c57285d20509fce625da99250c3c407529b0f32af6dc8dcc3828037c9",
+        "resolved_config_sha256": "cb51781c5c3dfca13ab178dcf9624f2a4f1c0511e5ae9bc472a46cabfe2260c9",
+        "summary_sha256": "59618d2dc48a411cabaff02af6cc8773d8748a0e417cff9f7fb9a2795bd3ec96"
+      },
+      "third_step_loss": 3.810925245285034,
+      "optimizer_rounding_draws": 0,
+      "observation_file": ".cache/recovery-lifetime/full-tests/test_in_process_recovery_relea1/lifetime_observations.json",
+      "observation_sha256": "a501fdb59d50bd20409308a465aad7817c9bc92587e4aedbe2b9eb2f003f0328"
+    }
+  ],
+  "expected_failure": {
+    "preserved": true,
+    "production_error": "AssertionError: ('old tensors alive before replacement allocation', {'gradients': 578, 'moments': 0, 'parameters': 578})",
+    "test_observer_did_not_repair_implementation": true
+  },
+  "exact_continuation_contract": [
+    "Terminal recovery checkpoint, not held-out-selected inference export",
+    "All model state tensors exactly equal under deterministic same-CPU assumptions",
+    "Full optimizer state: FP32 moments, per-parameter steps, groups, policy, private RNG and draw count",
+    "Recorded global RNG and sampler state",
+    "Cursor, executed/current phase, source/answer/canvas counters and selection score",
+    "Third-step loss exactly equal; run/attempt/selected-path provenance may differ"
+  ],
+  "validation_envelope": {
+    "test_exit": 0,
+    "smoke_exit": 0,
+    "combined_wall_seconds": 168.9122719001025,
+    "aggregate_validation_ceiling_seconds": 900,
+    "previous_checks_conservative_charge_seconds": 120,
+    "test_timeout_seconds": 600,
+    "smoke_timeout_seconds": 150,
+    "conservatively_charged_actual_seconds": 288.9122719001025,
+    "reserved_ceiling_seconds": 870,
+    "prior_checks_observed_pytest_seconds": [
+      10.75,
+      45.05
+    ],
+    "native_fixture_budgets": "Existing finite per-run/aggregate phase work, wall-time and storage caps retained."
+  },
+  "environment": {
+    "profile": "cpu",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "architecture": "AMD64",
+    "python": "3.12.14",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.15.0",
+    "cuda_build": null,
+    "cuda_detected": false,
+    "devices": [],
+    "host_available_bytes": 696422400,
+    "attention": "explicit-mask SDPA; actual kernel fallback requires measurement",
+    "optimizer": "fp32_moments_bf16_stochastic_v1: tiled FP32 arithmetic/moments, private RNG, one stochastic BF16 write-back, no persistent master",
+    "kernel_validation": "not executed by detection",
+    "full_8b_training_validation": "not executed",
+    "measured_throughput": null,
+    "shared_memory_policy": "Spark host/device capacity is one physical pool; never add them",
+    "validation_dependencies": {
+      "pytest": "9.0.2",
+      "ruff": "0.14.14",
+      "tensorboard": "2.20.0",
+      "Pillow": "12.1.0",
+      "setuptools": "80.10.2"
+    }
+  },
+  "skip": {
+    "test": "tests/cuda/test_native_cuda.py::test_tiny_native_cuda_kernel_forward_backward",
+    "reason": "CUDA is not available; no real-8B validation implied"
+  },
+  "scope": "CPU tiny production-class software fixtures; live tensor ownership and exact continuation, not quality/speed/full-size feasibility.",
+  "not_measured": [
+    "CUDA/Spark allocation and kernels",
+    "Full Qwen3-8B optimizer/recovery feasibility",
+    "Process RSS or caching allocator returning to zero",
+    "Model quality or generation speed"
+  ],
+  "research_model_downloads_started": false,
+  "large_training_or_provisioning_started": false,
+  "publication": "User requested local commit and fast-forward main; user will push later.",
+  "historical_receipts_preserved": [
+    "docs/native_corrections_validation.json",
+    "docs/native_validation.json",
+    "docs/monitoring_validation.json"
+  ]
+}

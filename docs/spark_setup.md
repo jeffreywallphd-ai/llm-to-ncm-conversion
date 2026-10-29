@@ -43,8 +43,13 @@ Its finite cap is 3,600 seconds and three full optimizer steps, microbatch one,
 the actual 36-block/32-update/1024-canvas configuration, BF16 parameters/gradients,
 FP32 moments, explicit `fp32_moments_bf16_stochastic_v1`, activation checkpointing,
 and separate small training-CE chunks. It saves
-after two steps, releases model/optimizer/loss references, restores one destination
+after two steps, releases model/optimizer/loss references (the completed gradient
+report was already released just after its optimizer step), restores one destination
 from restricted shards, and takes the next bounded step. Warmup is disabled.
+
+BF16/FP32 CPU weak-reference tests verify that old parameters, gradients and moments
+are dead before replacement allocation. This fixes extra live ownership; it does not
+prove that a caching allocator returns reserved memory or that the full model fits.
 
 Record allocated/reserved device peaks, restoration peak, host/process memory,
 first versus later step times, source/answer throughput, actual sequence/canvas

@@ -53,7 +53,12 @@ clones slices to avoid writing an entire backing storage, and memory-maps restri
 tensor shards on restore. Restore allocates one empty model destination from meta,
 rebuilds nonpersistent RoPE buffers in the declared trained dtype, then copies shards directly into parameters
 and FP32 optimizer moments. It never builds a full model/optimizer Python bytes blob.
-The probe drops the completed loss graph and old model/optimizer before reloading.
+Each completed gradient report releases its parameter/gradient ownership immediately
+after the successful validated optimizer step. The probe then drops the completed
+loss graph and old model/optimizer before reloading. Weak-reference integration
+tests check release before replacement allocation and on its first forward; numerical
+continuation is checked separately. See the
+[lifetime follow-up](native_corrections.md#recovery-tensor-lifetime-follow-up--2026-10-29).
 
 An atomically committed small manifest/pointer references completed checksummed
 shards. All shards validate before weights are mutated. Interrupted writes cannot

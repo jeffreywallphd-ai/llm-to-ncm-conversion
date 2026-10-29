@@ -25,9 +25,14 @@ head policy and one final ID transfer.
 See [correction report](docs/native_corrections.md) and
 [new validation receipt](docs/native_corrections_validation.json) for actual results,
 preserved failures, BF16 CPU recovery evidence and unexecuted hardware checks.
-Current final installed-package suite: **114 passed, 1 CUDA skip**; lint,
+Historical correction revision `792ba52`: **114 passed, 1 CUDA skip**; lint,
 connected monitoring smoke and preparation plan-only passed.
 Historical 51/78-test receipts below remain evidence for their respective revisions.
+
+Recovery lifetime follow-up: **116 passed, 1 CUDA skip**; all eight focused recovery
+tests, lint and the connected monitoring smoke passed. BF16/FP32 weak-reference
+checks verify release before replacement allocation and exact continuation; see the
+[dated receipt](docs/recovery_lifetime_validation_2026-10-29.json).
 
 ## Architecture and training
 
@@ -54,7 +59,7 @@ learning. See [architecture](docs/architecture.md) and [data contracts](docs/dat
 ## Install and bounded validation
 
 ```sh
-uv sync --locked --python 3.12 --extra cpu --extra prepare --group dev
+uv sync --locked --python 3.12 --extra cpu --extra prepare --extra monitoring --group dev
 uv run --no-sync ncm doctor --profile cpu
 uv run --no-sync python -m pytest -q
 uv run --no-sync ruff check .
@@ -66,6 +71,49 @@ start training. Validation uses tiny Qwen production classes and explicitly
 labeled fixtures. It performs codec/generator training, save/reload/resume,
 fixed-batch learning diagnostics, and fresh-process generation, with finite stage
 and aggregate budgets. Failed attempts and their charges are preserved.
+
+## Running tests
+
+Run these commands from the repository root after the installation command above.
+The `monitoring` extra is needed for the real TensorBoard event and HTTP tests.
+On a machine with a working CUDA environment, follow [Spark setup](docs/spark_setup.md)
+instead of installing the CPU Torch extra over it.
+
+| Check | Command |
+|---|---|
+| Full test suite | `uv run --no-sync python -m pytest -q` |
+| Recovery tensor lifetime and exact in-process continuation (BF16 and FP32) | `uv run --no-sync python -m pytest -q tests/integration/test_optimizer_recovery.py -k in_process_recovery` |
+| All optimizer recovery, warmup-boundary and monitoring-invariance tests | `uv run --no-sync python -m pytest -q tests/integration/test_optimizer_recovery.py` |
+| Optimizer rounding, numerical safety and private RNG | `uv run --no-sync python -m pytest -q tests/unit/test_optimizer_precision.py` |
+| Data source contracts and software Parquet preparation | `uv run --no-sync python -m pytest -q tests/unit/test_real_data_contracts.py` |
+| Live TensorBoard events/HTTP and replay correctness | `uv run --no-sync python -m pytest -q tests/integration/test_monitoring_tensorboard.py tests/integration/test_replay_corrections.py` |
+| Unit tests only | `uv run --no-sync python -m pytest -q tests/unit` |
+| Lint | `uv run --no-sync ruff check .` |
+
+Tests use software fixtures; some integration tests perform bounded tiny-model
+training and recovery. They do not download research weights or establish real-8B
+feasibility. The CUDA kernel test skips when CUDA is unavailable. HTTP tests bind
+temporary loopback ports: a sandbox socket denial needs normal localhost execution
+permissions, not weakened assertions.
+
+For a connected end-to-end CPU training/monitoring smoke, run:
+
+```sh
+uv run --no-sync ncm monitor smoke --config configs/monitoring/smoke.yaml
+```
+
+This intentionally runs small codec/generator training, save/reload/resume and fresh
+generation. The longer CPU diagnostic is
+`uv run --no-sync ncm validate --config configs/validation/cpu_native.yaml`.
+Both have finite stage/aggregate budgets and produce ignored `runs/` artifacts.
+If the system temporary directory is unavailable, create a workspace parent such
+as `.cache/test-runs` and pass a new empty `--basetemp` path under it to pytest;
+pytest clears that selected path, so keep previous evidence in separate directories.
+
+The recovery lifetime follow-up releases the completed gradient report immediately
+after the validated update, before the recovery probe allocates another model.
+Actual before/after observations and current verification are in the
+[dated lifetime receipt](docs/recovery_lifetime_validation_2026-10-29.json).
 
 <!-- BEGIN NATIVE VALIDATION -->
 | Check | Actual result | Provenance / limit |
