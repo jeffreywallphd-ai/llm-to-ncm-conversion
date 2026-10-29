@@ -5,5 +5,5 @@
   "shared_physical_memory": false,
   "nominal_spark_bytes": null,
   "training_validation": "not executed",
-  "precision_policy": "BF16 weights/gradients, FP32 Adam moments, no master copy; measurement required"
+  "precision_policy": "FP32 AdamW arithmetic and moments; private stochastic BF16 write-back; no persistent FP32 master; hardware validation pending"
 }

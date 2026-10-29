@@ -8,8 +8,10 @@ from ncm_lab.monitoring.records import Measure
 @torch.no_grad()
 def rms(tensor):
     flat = tensor.detach().reshape(-1)
-    total = sum(float(flat[i : i + 1048576].float().square().sum()) for i in range(0, flat.numel(), 1048576))
-    return math.sqrt(total / flat.numel()) if flat.numel() else None
+    total = torch.zeros((), device=flat.device, dtype=torch.float64)
+    for i in range(0, flat.numel(), 1048576):
+        total = total + torch.linalg.vector_norm(flat[i : i + 1048576], dtype=torch.float64).square()
+    return float((total / flat.numel()).sqrt()) if flat.numel() else None
 
 
 @torch.no_grad()

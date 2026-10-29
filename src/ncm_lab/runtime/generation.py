@@ -9,7 +9,7 @@ from ncm_lab.runtime.budget import BudgetStop, Budget
 from dataclasses import asdict
 
 
-def run_generation(path, prompt_file, device="cpu"):
+def run_generation(path, prompt_file, device="cpu", inference=None):
     path = Path(path)
     if path.is_dir():
         path = path / "manifest.json"
@@ -46,6 +46,7 @@ def run_generation(path, prompt_file, device="cpu"):
         "budget": budget,
         "inputs": {},
         "threads": 1,
+        "inference": inference or {},
     }
     run = Run(
         value,
@@ -62,7 +63,7 @@ def run_generation(path, prompt_file, device="cpu"):
             return run.close("blocked", {"blockers": report["blockers"]})
         from ncm_lab.inference.export import generate
 
-        result = generate(path, prompt_file, device, run.meter)
+        result = generate(path, prompt_file, device, run.meter, inference)
         return run.close("completed", result)
     except BudgetStop as exc:
         return run.close("budget_stopped", {"error": str(exc)})

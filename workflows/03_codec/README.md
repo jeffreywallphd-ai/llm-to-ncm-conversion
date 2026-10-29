@@ -51,3 +51,16 @@ actual CPU fixture integration results; real-8B monitoring overhead is unmeasure
 Monitoring smoke `20261029T120129Z-05391a88a6` completed with canonical codec runs
 `20261029T120133Z-7df3585fb4`, `20261029T120134Z-d33df4e982`, `20261029T120139Z-e7f7c601ec`. The final installed-wheel suite passed 78 tests with 1 CUDA skip.
 Records and observed samples are in the monitoring validation receipt; all are CPU software fixtures.
+
+## Native correction policies
+
+The [C1–C8 report](../../docs/native_corrections.md) documents the corrected source
+binding, `fp32_moments_bf16_stochastic_v1` optimizer/private RNG/recovery contract,
+fixed `codec_stratified_coarse_indices_v1` selection, executed-phase monitoring and
+truthful replay. Frozen codecs honor trained dtype; target-cache casts are explicit.
+Inference/sample head chunks default independently to 128 positions with a declared
+temporary-memory cap and one final ID transfer. Training CE/KL limits stay small.
+Old nearest-write recovery cannot resume under the new numerical contract; historical
+files/scores remain intact. Compatible inference exports remain optimizer-independent.
+Current CPU/BF16 evidence is in the [new receipt](../../docs/native_corrections_validation.json);
+no full-8B, Spark or GPU speed claim follows from those fixtures.

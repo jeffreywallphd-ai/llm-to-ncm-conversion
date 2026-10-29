@@ -9,6 +9,38 @@ from ncm_lab.runtime.io import root, read, digest, canonical_hash
 from ncm_lab.data.tokenization import prompt_tokens
 
 
+def validate_source_binding(settings, lock=None):
+    """Validate metadata before tokenizer loading, content IO or dataset parsing."""
+    format_name = settings.get("format", "jsonl")
+    if format_name not in {"jsonl", "oasst_parquet"}:
+        raise ValueError("unsupported source format: " + format_name)
+    if not settings.get("source_asset_id"):
+        if not settings.get("source_sha256"):
+            raise ValueError("explicit-hash source or pinned training asset required")
+        if format_name == "oasst_parquet" and not str(settings["source_path"]).endswith(".parquet"):
+            raise ValueError("oasst_parquet requires a training Parquet source, not license/README")
+        return None
+    lock = lock or read(root() / "configs/data/assets.lock.json")
+    asset = next((a for a in lock["assets"] if a["id"] == settings["source_asset_id"]), None)
+    if asset is None:
+        raise ValueError("unknown pinned source asset ID")
+    expected = (root() / "runs/assets" / asset["path"]).resolve()
+    actual = (root() / settings["source_path"]).resolve()
+    if asset.get("split") != "train" or asset["revision"] != settings.get("revision") or actual != expected:
+        raise ValueError(
+            "source binding requires the canonical pinned training split/path/revision; license and README assets are not data"
+        )
+    if format_name == "oasst_parquet" and (
+        asset["role"] != "oasst1" or not asset["filename"].endswith(".parquet")
+    ):
+        raise ValueError("oasst_parquet source must select the pinned OASST training Parquet asset")
+    if format_name == "jsonl" and not asset["filename"].endswith(".jsonl"):
+        raise ValueError("jsonl source format disagrees with selected training asset")
+    if settings.get("source_sha256") and asset.get("sha256") and settings["source_sha256"] != asset["sha256"]:
+        raise ValueError("configured source SHA256 disagrees with pinned asset")
+    return asset
+
+
 def raw_examples(settings, index_path=None, check=None):
     path = root() / settings["source_path"]
     if settings.get("format", "jsonl") == "jsonl":
@@ -90,6 +122,7 @@ def raw_examples(settings, index_path=None, check=None):
 
 def prepare_data(run, value):
     settings = value["data"]
+    validate_source_binding(settings)
     path = root() / settings["source_path"]
     source_sha = digest(path, run.meter.check)
     if settings.get("source_sha256"):

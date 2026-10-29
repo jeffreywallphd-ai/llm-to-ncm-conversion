@@ -36,3 +36,16 @@ and [Spark prerequisites](../../docs/spark_setup.md) for stage-specific limitati
 <!-- BEGIN STAGE RESULTS -->
 Fresh-process fixture run `20261029T113712Z-ef1644f373` completed. It returned token `[2]` (EOS), empty decoded text, no truncation, one traversal and all 16 allocated positions computed. Forward/head time was 0.049650 seconds on CPU; this is not an 8B throughput estimate.
 <!-- END STAGE RESULTS -->
+
+## Native correction policies
+
+The [C1–C8 report](../../docs/native_corrections.md) documents the corrected source
+binding, `fp32_moments_bf16_stochastic_v1` optimizer/private RNG/recovery contract,
+fixed `codec_stratified_coarse_indices_v1` selection, executed-phase monitoring and
+truthful replay. Frozen codecs honor trained dtype; target-cache casts are explicit.
+Inference/sample head chunks default independently to 128 positions with a declared
+temporary-memory cap and one final ID transfer. Training CE/KL limits stay small.
+Old nearest-write recovery cannot resume under the new numerical contract; historical
+files/scores remain intact. Compatible inference exports remain optimizer-independent.
+Current CPU/BF16 evidence is in the [new receipt](../../docs/native_corrections_validation.json);
+no full-8B, Spark or GPU speed claim follows from those fixtures.

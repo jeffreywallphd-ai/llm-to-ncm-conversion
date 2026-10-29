@@ -11,6 +11,24 @@ at `c5e5329172e63026995a440aa0591a5e15804ab4`.
 See [migration](docs/migration.md). Main now has no external drafter, known answer
 anchor, AR verifier, acceptance loop, or autoregressive correction.
 
+## Current corrections
+
+The native training/monitoring review corrections C1–C8 are implemented. BF16 now
+uses `fp32_moments_bf16_stochastic_v1`: completed tiled FP32 AdamW arithmetic,
+FP32 moments, private checkpointed stochastic write-back and no master copy.
+Old nearest-write recovery is incompatible; compatible inference exports remain
+independent. Codec validation uses fixed `codec_stratified_coarse_indices_v1`
+coverage. Phase labels describe executed work; replay reports truthful snapshot
+outcomes and counts only derived views. Inference has a separate bounded 128-slot
+head policy and one final ID transfer.
+
+See [correction report](docs/native_corrections.md) and
+[new validation receipt](docs/native_corrections_validation.json) for actual results,
+preserved failures, BF16 CPU recovery evidence and unexecuted hardware checks.
+Current final installed-package suite: **114 passed, 1 CUDA skip**; lint,
+connected monitoring smoke and preparation plan-only passed.
+Historical 51/78-test receipts below remain evidence for their respective revisions.
+
 ## Architecture and training
 
 The original 36 Qwen blocks execute once per answer canvas. Blocks 1–8 process
@@ -81,7 +99,7 @@ uv run --no-sync ncm monitor serve --runs-dir runs --host 127.0.0.1 --port 6006
 
 The same monitor observes `codec train` and `generator train` with the stage configs
 below. [Monitoring validation](docs/monitoring_validation.json) records its actual
-checks. Final installed-wheel suite: **78 passed, 1 CUDA skip**; lint and the documented smoke command passed.
+checks. Historical monitoring revision `3072d45`: **78 passed, 1 CUDA skip**; lint and its documented smoke passed. Current correction results are linked above.
 Full-model/GPU monitoring overhead remains unmeasured.
 
 | Stage | Purpose |

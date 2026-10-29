@@ -10,6 +10,10 @@ from ncm_lab.runtime.io import read, root, resolve_reference, digest
 
 @dataclass(frozen=True)
 class Training:
+    optimizer_policy: str = "fp32_moments_bf16_stochastic_v1"
+    optimizer_seed: int = 1729
+    optimizer_tile_elements: int = 1048576
+    validation_seed: int = 20261029
     steps: int = 2
     epochs: int = 100
     batch_size: int = 1
@@ -36,7 +40,10 @@ class Training:
         if self.recovery_probe and self.warmup_processed_tokens:
             raise ValueError("full-training recovery probe must skip module-only warmup")
         for key, value in asdict(self).items():
-            if key == "recovery_probe":
+            if key == "optimizer_policy":
+                if value != "fp32_moments_bf16_stochastic_v1":
+                    raise ValueError("unsafe/unsupported optimizer numerical policy")
+            elif key == "recovery_probe":
                 if not isinstance(value, bool):
                     raise ValueError("recovery_probe must be boolean")
             elif (
@@ -58,9 +65,15 @@ class Training:
             "head_positions",
             "head_chunk",
             "shard_bytes",
+            "optimizer_tile_elements",
         ):
             if not isinstance(getattr(self, key), int) or getattr(self, key) <= 0:
                 raise ValueError("positive integer training limit required: " + key)
+        if any(
+            type(getattr(self, key)) is not int or getattr(self, key) < 0
+            for key in ("seed", "optimizer_seed", "validation_seed")
+        ):
+            raise ValueError("training/optimizer/validation seeds must be nonnegative integers")
         if (
             not 1 <= self.head_positions <= 32
             or not 1 <= self.head_chunk <= 8
@@ -95,6 +108,7 @@ def config(path):
         "run_root",
         "hardware_profile",
         "monitoring",
+        "inference",
     }
     if set(value) - allowed:
         raise ValueError("unknown native stage fields: " + str(sorted(set(value) - allowed)))
@@ -136,6 +150,9 @@ def config(path):
     value.setdefault("inputs", {})
     value.setdefault("data", {})
     value.setdefault("model", {})
+    from ncm_lab.inference.policy import Inference
+
+    value["inference"] = asdict(Inference(**value.get("inference", {})))
     from ncm_lab.monitoring.records import Monitoring
 
     if isinstance(value.get("monitoring"), str):

@@ -7,5 +7,7 @@
   "independent_human_review": null,
   "authorship_assignments": [],
   "monitoring_human_request": "User supplied the additive monitoring requirements after requesting completion/commit/local main fast-forward of the native migration",
-  "monitoring_ai_assistance": "Codex canonical records, native trainer diagnostics/sample hooks, independent TensorBoard projector/server, bounded CPU/event/HTTP/browser verification, tests and documentation"
+  "monitoring_ai_assistance": "Codex canonical records, native trainer diagnostics/sample hooks, independent TensorBoard projector/server, bounded CPU/event/HTTP/browser verification, tests and documentation",
+  "corrections_human_request": "User supplied C1\u2013C8 review requirements and explicitly authorized test, commit, local main fast-forward and push to origin main",
+  "corrections_ai_assistance": "Codex independent numerical implementation, production recovery/validation/replay corrections, bounded CPU/BF16/HTTP checks and documentation; no real-model training or human experiment execution inferred"
 }

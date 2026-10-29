@@ -5,7 +5,7 @@ development machine. Keep an already validated CUDA PyTorch installation; instal
 the package without requesting the CPU extra:
 
 ```sh
-pip install -e '.[upstream,prepare]'
+pip install -e '.[upstream,prepare,monitoring]'
 ncm doctor --profile spark
 ncm prepare --config configs/validation/real_pilot.yaml --plan-only
 ```
@@ -15,11 +15,16 @@ the tiled optimizer remain unvalidated here. The stage configs identify Spark;
 ordinary CUDA hosts can select their CUDA profile. Host offload is not an additional
 independent memory pool on Spark. Available unified/device capacity must not be added.
 
-For 8.2B parameters, BF16 weights and gradients plus two FP32 Adam moments are
-about 98.4 decimal GB before activations/new modules/OS overhead. No FP32 master
-copy is used; adding one would add about 32.8 GB. These are stated calculations,
-not a successful optimizer step or proof of fit. Preflight estimates the configured
-model and checks lower-bound memory plus retained/new checkpoint disk demand.
+Meta-device construction of the actual production classes counts 8,190,735,360
+original and 8,250,600,480 native-generator parameters; the codec has 6,901,504.
+BF16 generator parameters/gradients plus two FP32 moments require at least
+99,007,205,760 bytes (99.01 decimal GB). A persistent FP32 master would raise that
+subtotal to 132,009,607,680 bytes and is not selected. The corrected policy uses
+tiled FP32 arithmetic with private stochastic BF16 write-back and adds bounded
+scratch/RNG state. These are calculations, not a successful full step or fit proof.
+Activations/kernels/allocator/OS remain additional. No-master recovery weights and
+moments alone are 82,506,004,800 bytes; four retained/new versions are about 330.02
+GB. Preflight uses the configured module inventory and selected precision policy.
 
 Acquire assets only when explicitly authorized, then run the bounded six-stage
 pilot commands from the root README. Teacher extraction and target preparation
@@ -36,7 +41,8 @@ ncm profile train --config configs/validation/spark_8b_profile.yaml
 
 Its finite cap is 3,600 seconds and three full optimizer steps, microbatch one,
 the actual 36-block/32-update/1024-canvas configuration, BF16 parameters/gradients,
-FP32 moments, activation checkpointing, and chunked exact vocabulary CE. It saves
+FP32 moments, explicit `fp32_moments_bf16_stochastic_v1`, activation checkpointing,
+and separate small training-CE chunks. It saves
 after two steps, releases model/optimizer/loss references, restores one destination
 from restricted shards, and takes the next bounded step. Warmup is disabled.
 

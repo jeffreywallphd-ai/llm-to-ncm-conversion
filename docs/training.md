@@ -10,7 +10,13 @@ coarse-cutoff MSE, and beta=0.1 frozen-head KL. At most 32 valid positions in ch
 of eight reach the full vocabulary head. Checkpointed chunk graphs bound retained
 softmax activations; chunking alone is not claimed as proof of backward memory use.
 Encoder/decoder gradients through that frozen head are independently tested.
-Selection minimizes a fixed held-out objective; final-normalized state and latent
+Selection uses `codec_stratified_coarse_indices_v1`: fixed held-out example IDs
+and index assignments spanning coarse/middle/fine ranges, all 31 coarse indices
+when the admitted dev allowance permits. Independent per-example head seeds do
+not advance training RNG. Score is the unchanged equal mean of per-example actual
+weighted objectives, separately from count-weighted summaries. Plan/coverage and
+components are recorded and identity-bound; old fixed-501 scores are not compared.
+Final-normalized state and latent
 scales use only the admitted training set. Codec weights/scales are then frozen.
 
 Generator loss is correctly aligned parallel text CE plus 0.1 times the mean of
@@ -25,9 +31,12 @@ block, exercised embeddings, final norm/head, and all new modules. Warmup tokens
 count inside the generator's 100M limit. The full-training recovery probe disallows
 warmup and performs two full steps, release/reload, then another step.
 
-The supported optimizer is tiled AdamW with FP32 first/second moments, parameter-
-dtype gradients, and no FP32 master weights. CPU diagnostics use FP32 parameters;
-the proposed Spark path uses BF16 parameters. Original and new generator parameters
+The supported numerical policy is `fp32_moments_bf16_stochastic_v1`, with state
+schema `fp32_adamw_bf16_sr_v2`. It computes completed AdamW/decay updates in tiled
+FP32, keeps two FP32 moments and performs one stochastic BF16 write-back. There is
+no persistent FP32 master. FP32 diagnostics retain a deterministic FP32 path;
+BF16 nearest-rounded writes are not a fallback. Seed, tile size, traversal and
+the private optimizer RNG/draw counter are checkpointed and identity-bound. Original and new generator parameters
 have explicit separate rates; codec parameters use the codec learning rate. Global
 gradient clipping defaults to 1. No compressed-state kernel or LoRA is assumed.
 Actual parameter counts, moment bytes/dtypes, gradients, memory and step timings are
@@ -42,7 +51,7 @@ mid-step recovery and its attempted work remains charged.
 Serialization copies at most one configured CPU shard buffer (64 MiB default),
 clones slices to avoid writing an entire backing storage, and memory-maps restricted
 tensor shards on restore. Restore allocates one empty model destination from meta,
-rebuilds nonpersistent RoPE buffers, then copies shards directly into parameters
+rebuilds nonpersistent RoPE buffers in the declared trained dtype, then copies shards directly into parameters
 and FP32 optimizer moments. It never builds a full model/optimizer Python bytes blob.
 The probe drops the completed loss graph and old model/optimizer before reloading.
 
@@ -88,3 +97,12 @@ the unique quota. Longer-run time estimates require a compatible measured GPU pr
 
 Read-only TensorBoard monitoring, optional installation, canonical logs, samples,
 resume attempts and SSH viewing are documented in [monitoring](monitoring.md).
+
+The completed accumulation window is labeled with its executed phase and counts;
+warmup threshold crossing flushes that interval before the transition. Checkpoint
+`phase` prepares the next update; `last_executed_phase` reports the completed one.
+Gradient finite/norm reductions and prospective optimizer arithmetic stay on device
+through tiles, with bounded aggregate transfers before committing. Intended/stored
+update norms and active scalar counts are distinct; a short BF16 run need not move
+every representative scalar. Numerical tests and incompatible recovery policy are
+documented in [native corrections](native_corrections.md).

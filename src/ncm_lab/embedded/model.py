@@ -158,5 +158,7 @@ def from_metadata(metadata, device):
     model.to_empty(device=device)
     from transformers.models.qwen3.modeling_qwen3 import Qwen3RotaryEmbedding
 
-    model.backbone.model.rotary_emb = Qwen3RotaryEmbedding(model.backbone.config).to(device=device)
+    model.backbone.model.rotary_emb = Qwen3RotaryEmbedding(model.backbone.config).to(
+        device=device, dtype=getattr(torch, metadata["dtype"])
+    )
     return model

@@ -80,10 +80,11 @@ def load_codec(path, device="cpu", dtype=torch.float32):
         or digest(weights) != manifest["weights_manifest_sha256"]
     ):
         raise ValueError("selected codec weights changed")
+    reader = CheckpointReader(weights, expected_kind=INFERENCE, identity=manifest["identity"])
+    trained_dtype = manifest.get("trained_dtype") or reader.materialize(reader.field("metadata"))["dtype"]
     codec = ContinuousCodec(
         manifest["spec"]["hidden_size"], Architecture(**manifest["spec"]["architecture"])
-    ).to(device=device, dtype=dtype)
-    reader = CheckpointReader(weights, expected_kind=INFERENCE, identity=manifest["identity"])
+    ).to(device=device, dtype=getattr(torch, trained_dtype))
     reader.load_model(codec)
     codec.requires_grad_(False).eval()
     return codec, manifest
@@ -108,6 +109,7 @@ def targets(run, value, bound):
         "scales": selected["scales"],
         "architecture": value["architecture"],
         "dtype": value["dtype"],
+        "encoder_dtype": str(next(codec.parameters()).dtype),
         "template_sha256": data.manifest["identity"]["template_sha256"],
     }
     writer = ArtifactWriter(run.path / "artifacts/targets", "native_targets_v1", identity, run.meter)
@@ -145,7 +147,8 @@ def targets(run, value, bound):
                     steps=1,
                 )
                 states = prediction_states(teacher, example.prompt_ids, example.answer_ids)
-            writer.append(example, codec.fine_codes(states))
+            states = states.to(dtype=next(codec.parameters()).dtype)
+            writer.append(example, codec.fine_codes(states).to(dtype=getattr(torch, value["dtype"])))
     manifest = writer.finish(
         {
             "coordinate_system": "raw frozen encoder outputs; scales applied only in auxiliary loss",

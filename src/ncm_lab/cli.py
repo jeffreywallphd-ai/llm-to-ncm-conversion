@@ -35,6 +35,8 @@ def parser():
     generation.add_argument("--checkpoint", type=Path, required=True)
     generation.add_argument("--prompt-file", type=Path, required=True)
     generation.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
+    generation.add_argument("--head-chunk-positions", type=int, default=128)
+    generation.add_argument("--max-head-temp-bytes", type=int, default=268435456)
     monitor = commands.add_parser(
         "monitor", help="read-only canonical JSONL / TensorBoard monitoring"
     ).add_subparsers(dest="monitor_action", required=True)
@@ -87,6 +89,8 @@ def main(argv=None):
 
                 if not math.isfinite(args.max_seconds) or not 0 < args.max_seconds <= 604800:
                     raise ValueError("replay needs a finite positive lifetime of at most seven days")
+                if args.output_dir.exists():
+                    raise ValueError("replay refuses to overwrite an existing projection directory")
 
                 command = [
                     sys.executable,
@@ -106,11 +110,18 @@ def main(argv=None):
                 child = subprocess.run(
                     command, env={**os.environ, "CUDA_VISIBLE_DEVICES": ""}, timeout=args.max_seconds + 30
                 )
-                if child.returncode:
+                status_path = args.output_dir / "status.json"
+                if not status_path.is_file():
                     raise ValueError(
                         "projection failed or output already exists; inspect status.json / use a new directory"
                     )
-                result = {"status": "replayed", "output": str(args.output_dir), "canonical_modified": False}
+                result = {
+                    **json.loads(status_path.read_text()),
+                    "output": str(args.output_dir),
+                    "canonical_modified": False,
+                }
+                if child.returncode and result.get("status") not in {"incomplete", "invalid_source"}:
+                    raise ValueError("projector failed; inspect preserved projection status")
             else:
                 from ncm_lab.config.stages import config
                 from ncm_lab.runtime.runner import execute
@@ -135,7 +146,15 @@ def main(argv=None):
         elif args.command == "generate":
             from ncm_lab.runtime.generation import run_generation
 
-            result = run_generation(args.checkpoint, args.prompt_file, args.device)
+            result = run_generation(
+                args.checkpoint,
+                args.prompt_file,
+                args.device,
+                {
+                    "head_chunk_positions": args.head_chunk_positions,
+                    "max_head_temp_bytes": args.max_head_temp_bytes,
+                },
+            )
         else:
             from ncm_lab.config.stages import config
             from ncm_lab.runtime.runner import execute
@@ -156,7 +175,9 @@ def main(argv=None):
         print(json.dumps(result, indent=2, allow_nan=False))
         return (
             2
-            if isinstance(result, dict) and result.get("status") in {"failed", "blocked", "budget_stopped"}
+            if isinstance(result, dict)
+            and result.get("status")
+            in {"failed", "blocked", "budget_stopped", "incomplete", "invalid_source"}
             else 0
         )
     except (ValueError, OSError, KeyError, ImportError) as exc:

@@ -83,12 +83,15 @@ def codec_loss(
     max_head_positions=32,
     chunk_positions=8,
     diagnostics=None,
+    cutoff_index=None,
 ):
     if beta < 0 or not 1 <= max_head_positions <= 32 or not 1 <= chunk_positions <= 8:
         raise ValueError("bounded codec head-alignment configuration required")
     fine = codec.fine_codes(states)
     cumulative, _, _ = codec.targets(fine, valid)
-    cutoff = sampler.randrange(len(cumulative) - 1)
+    cutoff = sampler.randrange(len(cumulative) - 1) if cutoff_index is None else cutoff_index
+    if type(cutoff) is not int or not 0 <= cutoff < len(cumulative) - 1:
+        raise ValueError("invalid planned coarse cutoff index")
     full = codec.reconstruct(cumulative[-1], len(cumulative) - 1)
     coarse = codec.reconstruct(cumulative[cutoff], cutoff)
     mse_full = normalized_mse(full, states, valid, normalization)

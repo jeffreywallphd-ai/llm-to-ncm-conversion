@@ -15,10 +15,15 @@ only valid states/fine codes with content/geometry/precision identity. Larger ta
 preparation is a separate streaming process, never a generator-side teacher fallback.
 Normalize using training-only statistics in raw encoder coordinates.
 
-Use exact checkpointed/chunked vocabulary losses and explicit FP32-moment tiled
-AdamW, with parameter-dtype gradients and no master copy. These choices trade
-recomputation for bounded memory and require actual Spark measurement. Publish
-bounded shards behind atomic manifests and retain prior/selected versions.
+Keep exact checkpointed/chunked vocabulary losses. The original FP32-moment,
+no-master decision used direct nearest BF16 writes; review reproduced cancelled
+small updates, so that write-back choice is superseded. The supported correction
+is `fp32_moments_bf16_stochastic_v1`: tiled completed FP32 AdamW arithmetic,
+FP32 moments and a single adjacent-probability stochastic BF16 write-back, with
+private checkpointed RNG and no persistent master. Two bounded passes preserve
+pre-update rejection safety. This is not the external AdamW-SR implementation or
+a convergence/performance claim. Publish complete bounded shards behind atomic
+manifests, reject old recovery policy explicitly and retain historical evidence.
 
 Report software fixtures, small-batch learning, real-data codec fitting, and actual
 8B optimizer/recovery as distinct milestones. Preserve negative/failed attempts and
@@ -32,3 +37,12 @@ validates at its declared final step if it ends before the ordinary ten-step cad
 TensorBoard 2.20 requires pinned pkg_resources-compatible setuptools; Windows nested
 event IO uses extended paths. Histograms remain disabled and explicit enabling is
 rejected; no all-parameter dump is supplied. GPU/Spark overhead is unmeasured.
+
+Codec selection now binds fixed stratified coarse-index assignments rather than
+the per-example Random(0) reset that selected index 27/resolution 501. Training
+objective/sampling stays unchanged. A completed warmup window is recorded before
+unfreezing for the next update. Replay captures extents, exposes partial/deadline
+outcomes and counts recognized derived views instead of unrelated siblings.
+Inference gets its own typed head allocation/chunk policy and one final ID transfer;
+training head limits remain independent. BF16 resume also restores nonpersistent
+RoPE buffers in their declared dtype. See the C1–C8 correction report/receipt.

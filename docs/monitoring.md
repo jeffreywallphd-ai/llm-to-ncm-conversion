@@ -245,3 +245,33 @@ quality claim or formal study is added.
 Implementation references: [PyTorch SummaryWriter](https://docs.pytorch.org/docs/stable/tensorboard.html),
 [TensorBoard 2.20 core HTTP plugin](https://github.com/tensorflow/tensorboard/blob/2.20.0/tensorboard/plugins/core/core_plugin.py),
 [event reader](https://github.com/tensorflow/tensorboard/blob/2.20.0/tensorboard/backend/event_processing/event_accumulator.py).
+
+## Review corrections: phases, replay and inference samples
+
+Step phase/counts describe the work that actually ran. The last warmup accumulation
+window flushes as warmup, then emits previous/next phase, last completed step and
+effective-from-next-step. The checkpoint can prepare full training without having
+executed a full update. Different phases do not share one reporting interval.
+
+Offline replay validates an existing compatible declared attempt and captures its
+byte extents. `complete` covers exactly those bytes; later appends are outside that
+snapshot. `empty` is a valid declared zero-byte input. `incomplete` (nonzero exit)
+reports remaining bytes/backlog or an unresolved partial tail after time/storage
+limits. `follow_stopped` records the configured live lifetime ending. Missing,
+incompatible or corrupt source returns a failure; it is not empty/success. Partial
+lines wait for newline and are never parsed prematurely. CLI propagates the actual
+outcome; it never unconditionally labels an unfinished replay `replayed`.
+
+Derived aggregate accounting recognizes valid projection/view directories only.
+Unrelated sibling weights, caches, checkpoints and canonical JSONL are excluded.
+Normal server sessions count owned server logs as well as projection data. Actual
+free-space headroom remains a separate check. Custom replay outputs are supported,
+remain separate from source attempts, and cannot overwrite an existing directory.
+
+Samples share typed `inference.head_chunk_positions` (default 128, resolved at most
+the canvas) and `max_head_temp_bytes` (256 MiB). They log the resolved chunk and
+two-logits-buffer/ID allocation policy. IDs stay on device until one final transfer;
+full-canvas computation/EOS trimming and all RNG/mode restoration remain. Training
+CE and codec KL retain their separate eight-position bounds. CUDA speed effect is
+unmeasured. TensorBoard's event reload is approximately five seconds; use its refresh
+control or reload the page when the frontend auto-refresh is disabled.

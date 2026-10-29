@@ -97,9 +97,21 @@ def load_export(path, device="cpu", check=None):
 
 
 @torch.no_grad()
-def generate_tokens(model, prompt_ids, prompt_mask, eos_ids, chunk_positions=8, check=None):
-    if not 1 <= chunk_positions <= 32:
-        raise ValueError("bounded inference head chunks required")
+def generate_tokens(
+    model, prompt_ids, prompt_mask, eos_ids, chunk_positions=None, check=None, inference=None
+):
+    from ncm_lab.inference.policy import Inference
+
+    settings = dict(inference or {})
+    if chunk_positions is not None:
+        settings["head_chunk_positions"] = chunk_positions
+    policy = Inference(**settings).resolve(
+        model.architecture.canvas,
+        model.backbone.config.vocab_size,
+        model.backbone.lm_head.weight.element_size(),
+        prompt_ids.shape[0],
+    )
+    chunk_positions = policy["resolved_head_chunk_positions"]
     if prompt_ids.shape[0] != 1:
         raise ValueError("initial text-generation API supports one request at a time")
     if int(prompt_mask.sum()) + model.architecture.canvas > model.backbone.config.max_position_embeddings:
@@ -108,15 +120,14 @@ def generate_tokens(model, prompt_ids, prompt_mask, eos_ids, chunk_positions=8, 
         torch.cuda.synchronize()
     started = time.perf_counter()
     output = model(prompt_ids, prompt_mask)
-    tokens = []
+    device_ids = []
     for start in range(0, model.architecture.canvas, chunk_positions):
         if check:
             check()
-        tokens.extend(
-            model.backbone.lm_head(output.answer_states[:, start : start + chunk_positions])
-            .argmax(-1)[0]
-            .tolist()
+        device_ids.append(
+            model.backbone.lm_head(output.answer_states[:, start : start + chunk_positions]).argmax(-1)[0]
         )
+    tokens = transfer_token_ids(torch.cat(device_ids))
     if prompt_ids.device.type == "cuda":
         torch.cuda.synchronize()
     elapsed = time.perf_counter() - started
@@ -132,10 +143,16 @@ def generate_tokens(model, prompt_ids, prompt_mask, eos_ids, chunk_positions=8, 
         "logical_block_trace": list(output.trace),
         "forward_and_head_seconds": elapsed,
         "decoding": "parallel argmax; no AR repair or verification",
+        "inference_projection": policy,
     }
 
 
-def generate(path, prompt_file, device="cpu", meter=None):
+def transfer_token_ids(ids):
+    """One final small ID transfer, with no vocabulary-logit concatenation."""
+    return ids.to(device="cpu").tolist()
+
+
+def generate(path, prompt_file, device="cpu", meter=None, inference=None):
     model, tokenizer, manifest = load_export(path, device, meter.check if meter else None)
     text = Path(prompt_file).read_text(encoding="utf-8")
     if len(text) > 32768:
@@ -156,6 +173,7 @@ def generate(path, prompt_file, device="cpu", meter=None):
         torch.ones_like(tensor, dtype=torch.bool),
         manifest["eos_ids"],
         check=meter.check if meter else None,
+        inference=inference,
     )
     return {
         **result,

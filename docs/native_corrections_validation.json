@@ -1,0 +1,2019 @@
+{
+  "schema": "native_corrections_validation_v1",
+  "date": "2026-10-29",
+  "reviewed_base": "3072d4546024bf4616b1aa85408e3654d7ae589b",
+  "implementation_sha256": "cc746c6441600b247c72df8bc7983ef8d8f5209b1859a209699e6ec9c12ed24e",
+  "archive_preserved": {
+    "branch": "archive/hierarchical-drafter",
+    "sha": "c5e5329172e63026995a440aa0591a5e15804ab4"
+  },
+  "optimizer_policy": "fp32_moments_bf16_stochastic_v1",
+  "optimizer_schema": "fp32_adamw_bf16_sr_v2",
+  "codec_validation_policy": "codec_stratified_coarse_indices_v1",
+  "commands": [
+    {
+      "command": "PYTHONPATH=.cache/native-corrections/installed python -m pytest -q --basetemp=.cache/native-corrections/final-tests",
+      "exit_status": 0,
+      "passed": 114,
+      "skipped": 1,
+      "seconds": 80.4
+    },
+    {
+      "command": "ruff check .",
+      "exit_status": 0
+    },
+    {
+      "command": "ncm monitor smoke --config configs/monitoring/smoke.yaml",
+      "exit_status": 0,
+      "run_id": "20261029T135452Z-d75da1e34c"
+    },
+    {
+      "command": "ncm prepare --config configs/validation/real_pilot.yaml --plan-only",
+      "exit_status": 0,
+      "model_downloads_started": false
+    },
+    {
+      "command": "python -m pytest -q tests/integration/test_optimizer_recovery.py (additional before/after boundary cases)",
+      "exit_status": 0,
+      "passed": 6,
+      "seconds": 20.88
+    }
+  ],
+  "items": {
+    "C1": {
+      "files": [
+        "configs/data/real_pilot.yaml",
+        "configs/data/initial_100m_source_pool.yaml",
+        "src/ncm_lab/data/prepare.py"
+      ],
+      "decision": "canonical pinned train Parquet ID/path/revision/split/format validation before content/tokenizer loading",
+      "regression": "test_real_data_contracts: actual shipped configs/lock, license rejection and real tiny Parquet reader/preparation",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    },
+    "C2": {
+      "files": [
+        "src/ncm_lab/training/precision.py",
+        "src/ncm_lab/training/optimizer.py",
+        "src/ncm_lab/training/checkpoints.py",
+        "src/ncm_lab/embedded/model.py"
+      ],
+      "decision": "tiled FP32 AdamW/moments, private checkpointed stochastic BF16 write-back; declared-dtype RoPE restoration",
+      "regression": "test_optimizer_precision, test_optimizer_recovery: old cancellation, probabilities/endpoints, safe rejection, BF16 codec/generator exact continuation and monitoring invariance",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    },
+    "C3": {
+      "files": [
+        "src/ncm_lab/training/validation_plan.py",
+        "src/ncm_lab/training/losses.py",
+        "src/ncm_lab/training/engine.py"
+      ],
+      "decision": "fixed stratified cutoff indices plus independent per-example head sampling; same weighted selection objective",
+      "regression": "test_codec_validation: deterministic coverage including all 31 coarse indices, limited sets, reconstructed scores and unchanged RNG",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    },
+    "C4": {
+      "files": [
+        "src/ncm_lab/training/engine.py"
+      ],
+      "decision": "capture executed phase/counts before accumulation, flush/emit transition then prepare next update",
+      "regression": "test_optimizer_recovery: threshold crossing, long cadence, final warmup, frozen/full gradient statuses, resume on both sides",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    },
+    "C5": {
+      "files": [
+        "src/ncm_lab/monitoring/projector.py"
+      ],
+      "decision": "recognized derived view/projection roots only, separate actual headroom, include normal owned server logs",
+      "regression": "test_replay_corrections: unrelated large sibling, multiple views, individual/aggregate caps, headroom and unchanged canonical bytes",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    },
+    "C6": {
+      "files": [
+        "src/ncm_lab/monitoring/projector.py",
+        "src/ncm_lab/cli.py"
+      ],
+      "decision": "validate source; captured byte extents/offsets/partial tails; truthful complete/empty/incomplete/follow_stopped/invalid_source outcomes",
+      "regression": "test_replay_corrections plus actual TensorBoard live/HTTP tests: missing/empty/backlog/partial/corrupt/identity/overwrite/CLI outcomes",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    },
+    "C7": {
+      "files": [
+        "src/ncm_lab/training/precision.py",
+        "src/ncm_lab/training/optimizer.py",
+        "src/ncm_lab/training/engine.py",
+        "src/ncm_lab/monitoring/diagnostics.py"
+      ],
+      "decision": "device finite/norm and prospective-arithmetic reductions, bounded aggregate host transfers, validated report reused for clipping/update",
+      "regression": "test_optimizer_precision: scalar-extraction count independent of tile count; late nonfinite gradient leaves all state/RNG unchanged",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    },
+    "C8": {
+      "files": [
+        "src/ncm_lab/inference/policy.py",
+        "src/ncm_lab/inference/export.py",
+        "src/ncm_lab/monitoring/samples.py",
+        "src/ncm_lab/runtime/generation.py",
+        "src/ncm_lab/cli.py"
+      ],
+      "decision": "typed inference-only chunk 128/default 256 MiB cap; device argmax chunks with one final ID transfer",
+      "regression": "test_inference_projection: controlled margin/EOS/truncation/chunk call count, partial/full/1024 chunks, memory guard and one original-block traversal",
+      "observed_result": "passed in final installed-package suite",
+      "hardware_limit": "CPU software/numerical fixtures; real 8B/CUDA/Spark performance and feasibility not executed"
+    }
+  },
+  "package": {
+    "source_modules": 51,
+    "source_bytes_match": true,
+    "wheel_sha256": "fd2248411aefa80f38a1f5b54420790462333f194613cd97e1e0a2426fc1c536",
+    "test_wall_seconds": 85.88191080000252
+  },
+  "environment": {
+    "profile": "spark",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "architecture": "AMD64",
+    "python": "3.12.14",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.15.0",
+    "cuda_build": null,
+    "cuda_detected": false,
+    "devices": [],
+    "host_available_bytes": 1632649216,
+    "attention": "explicit-mask SDPA; actual kernel fallback requires measurement",
+    "optimizer": "fp32_moments_bf16_stochastic_v1: tiled FP32 arithmetic/moments, private RNG, one stochastic BF16 write-back, no persistent master",
+    "kernel_validation": "not executed by detection",
+    "full_8b_training_validation": "not executed",
+    "measured_throughput": null,
+    "shared_memory_policy": "Spark host/device capacity is one physical pool; never add them"
+  },
+  "numerical_probe": {
+    "origin": "software numerical fixture",
+    "policy": {
+      "schema": "fp32_adamw_bf16_sr_v2",
+      "policy": "fp32_moments_bf16_stochastic_v1",
+      "seed": 95,
+      "rng_algorithm": "torch.Generator/cpu",
+      "tile_elements": 4096,
+      "traversal_sha256": "122f8f48fe9c42effe11aff6278d49506c5d4d0e1008e77a1f2b44589f67c636",
+      "moments_dtype": "float32",
+      "master_parameters": false,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08
+    },
+    "budget": {
+      "max_wall_seconds": 30,
+      "steps": 1000,
+      "scalar_elements": 2048
+    },
+    "actual_seconds": 1.6903915000148118,
+    "initial_values": [
+      1.0,
+      0.10009765625,
+      0.02001953125,
+      0.010009765625
+    ],
+    "unsafe_nearest_values": [
+      1.0,
+      0.10009765625,
+      0.02001953125,
+      0.010009765625
+    ],
+    "stochastic_bf16_ensemble_means": [
+      0.9894943237304688,
+      0.09011173248291016,
+      0.009971141815185547,
+      -4.808796802535653e-06
+    ],
+    "fp32_reference_means": [
+      0.9898672103881836,
+      0.09008681029081345,
+      0.010017807595431805,
+      9.228103408531751e-06
+    ],
+    "independent_scalars_per_start": 512,
+    "acceptance_absolute_tolerance": 0.0015,
+    "rounding_draws": 2048000,
+    "last_update": {
+      "intended_fp32_l2": 0.0004541389215640702,
+      "stored_parameter_l2": 0.007033482827900994,
+      "scalar_elements": 2048,
+      "scope": "last completed optimizer update; all active scalar elements"
+    },
+    "moment_dtypes": [
+      "torch.float32"
+    ],
+    "hidden_master_parameters": false,
+    "research_quality_or_speed_claim": false
+  },
+  "actual_bf16_production_runs": [
+    {
+      "run_id": "20261029T135439Z-fa9b758b33",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\codec\\20261029T135439Z-fa9b758b33",
+      "stage": "codec",
+      "dtype": "bfloat16",
+      "manifest_sha256": "bbf9eecd75deb7fc77f31b9ca90d5828c2d901e44dc378cb61370e197c2db3ee",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 9,
+        "answer_position_exposures": 9,
+        "parameter_count": 1120,
+        "optimizer_covered_parameter_count": 1120,
+        "optimizer_state_tensor_bytes": 8960,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 256,
+          "traversal_sha256": "3a943fd5f06e5d3ad9e20ab9a38e88cbb2cae84d621e7c0da361db261d1b279c",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 3360,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.00020683066522101033,
+          "stored_parameter_l2": 0.0018210735078432896,
+          "scalar_elements": 1120,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 1.016074538230896,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\codec\\20261029T135439Z-fa9b758b33\\artifacts\\codec\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\codec\\20261029T135439Z-fa9b758b33\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.022774338722229,
+          "dev_loss": 1.0161871314048767,
+          "gradient_norm": 0.5362384616419679,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.0002953279989431973,
+            "stored_parameter_l2": 0.0023141793049953428,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 2,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0778717994689941,
+          "dev_loss": 1.0161162614822388,
+          "gradient_norm": 0.5460815020446609,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.0002480571320399892,
+            "stored_parameter_l2": 0.0020402740359428476,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0094504356384277,
+          "dev_loss": 1.016074538230896,
+          "gradient_norm": 0.36835278449337877,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.00020683066522101033,
+            "stored_parameter_l2": 0.0018210735078432896,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135428Z-180399a5cf",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135428Z-180399a5cf",
+      "stage": "generator",
+      "dtype": "bfloat16",
+      "manifest_sha256": "8edd7c1ac6058db88e5852fda849ba854315f281b58318ce60c70efd0d8cbcac",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 30,
+        "answer_position_exposures": 18,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 256,
+          "traversal_sha256": "bd41436a18c2e1db0c77ea4af24e584591232c079bfa520fd6302e3337d4e6b9",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 201280,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.008468841033816558,
+          "stored_parameter_l2": 0.029752067094911887,
+          "scalar_elements": 95664,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 3.942119598388672,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135428Z-180399a5cf\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135428Z-180399a5cf\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "warmup",
+          "next_phase": "full",
+          "trainable_parameters": 9952,
+          "frozen_parameters": 85712,
+          "loss": 3.931565523147583,
+          "dev_loss": 3.955603837966919,
+          "gradient_norm": 2.0185145305928667,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.009963974478654518,
+            "stored_parameter_l2": 0.029541995224884834,
+            "scalar_elements": 9952,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 2,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.89225435256958,
+          "dev_loss": 3.9483848810195923,
+          "gradient_norm": 2.8628378177638996,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008751191365976177,
+            "stored_parameter_l2": 0.026556890075072385,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.9191689491271973,
+          "dev_loss": 3.942119598388672,
+          "gradient_norm": 2.8244922228287863,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008468841033816558,
+            "stored_parameter_l2": 0.029752067094911887,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135430Z-6dd3b53535",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135430Z-6dd3b53535",
+      "stage": "generator",
+      "dtype": "bfloat16",
+      "manifest_sha256": "a5e21d64530ff79f49539b4802f4dd9c63ae5df6d308bb97534f5a018b591a39",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 1,
+        "processed_source_tokens": 10,
+        "answer_position_exposures": 6,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 79616,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 256,
+          "traversal_sha256": "bd41436a18c2e1db0c77ea4af24e584591232c079bfa520fd6302e3337d4e6b9",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 9952,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.009963974478654518,
+          "stored_parameter_l2": 0.029541995224884834,
+          "scalar_elements": 9952,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "warmup",
+        "best_dev_loss": 3.955603837966919,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135430Z-6dd3b53535\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135430Z-6dd3b53535\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "warmup",
+          "next_phase": "full",
+          "trainable_parameters": 9952,
+          "frozen_parameters": 85712,
+          "loss": 3.931565523147583,
+          "dev_loss": 3.955603837966919,
+          "gradient_norm": 2.0185145305928667,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.009963974478654518,
+            "stored_parameter_l2": 0.029541995224884834,
+            "scalar_elements": 9952,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135431Z-a02aade64c",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135431Z-a02aade64c",
+      "stage": "generator",
+      "dtype": "bfloat16",
+      "manifest_sha256": "5593679a502e1b399c0b386a68d333059085269490deab9ca959b0c531d05e30",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 30,
+        "answer_position_exposures": 18,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 256,
+          "traversal_sha256": "bd41436a18c2e1db0c77ea4af24e584591232c079bfa520fd6302e3337d4e6b9",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 201280,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.008468841033816558,
+          "stored_parameter_l2": 0.029752067094911887,
+          "scalar_elements": 95664,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 3.942119598388672,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135431Z-a02aade64c\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135431Z-a02aade64c\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 2,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.89225435256958,
+          "dev_loss": 3.9483848810195923,
+          "gradient_norm": 2.8628378177638996,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008751191365976177,
+            "stored_parameter_l2": 0.026556890075072385,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.9191689491271973,
+          "dev_loss": 3.942119598388672,
+          "gradient_norm": 2.8244922228287863,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008468841033816558,
+            "stored_parameter_l2": 0.029752067094911887,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": "9dc7529d3ad04dc8a185d54f2f918e39",
+        "checkpoint": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135430Z-6dd3b53535\\checkpoints\\version-7099b60fe0ed460c8068fdf1a96b33f5\\manifest.json",
+          "sha256": "0ca06dc0dfe79bf4352a8aab9f2d2aaf838b10465fda2525c3f047ae1756205b"
+        },
+        "restored_step": 1,
+        "restored_counters": {
+          "processed_source_tokens": 10,
+          "answer_position_exposures": 6,
+          "allocated_canvas_positions": 32
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135434Z-9dc88afa8e",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135434Z-9dc88afa8e",
+      "stage": "generator",
+      "dtype": "bfloat16",
+      "manifest_sha256": "3c357686c2f65e3085f3e14b85ad38a5c263175b9ee125df9b30d4b03ddf81d1",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 30,
+        "answer_position_exposures": 18,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 256,
+          "traversal_sha256": "bd41436a18c2e1db0c77ea4af24e584591232c079bfa520fd6302e3337d4e6b9",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 115568,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.008622582917223008,
+          "stored_parameter_l2": 0.02794147696625342,
+          "scalar_elements": 95664,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 3.942355990409851,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135434Z-9dc88afa8e\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135434Z-9dc88afa8e\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "warmup",
+          "next_phase": "warmup",
+          "trainable_parameters": 9952,
+          "frozen_parameters": 85712,
+          "loss": 3.931565523147583,
+          "dev_loss": 3.955603837966919,
+          "gradient_norm": 2.0185145305928667,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.009963974478654518,
+            "stored_parameter_l2": 0.029541995224884834,
+            "scalar_elements": 9952,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 2,
+          "phase": "warmup",
+          "next_phase": "full",
+          "trainable_parameters": 9952,
+          "frozen_parameters": 85712,
+          "loss": 3.89225435256958,
+          "dev_loss": 3.9480007886886597,
+          "gradient_norm": 2.025101413093939,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008384071714856892,
+            "stored_parameter_l2": 0.026964903255675944,
+            "scalar_elements": 9952,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.916661262512207,
+          "dev_loss": 3.942355990409851,
+          "gradient_norm": 2.8162433553949247,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008622582917223008,
+            "stored_parameter_l2": 0.02794147696625342,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135436Z-47246f534e",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135436Z-47246f534e",
+      "stage": "generator",
+      "dtype": "bfloat16",
+      "manifest_sha256": "09fa4280e0e60dd557b8ff0df39eea5c3aad16443b7bbbfd7ebd377308de1bad",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 1,
+        "processed_source_tokens": 10,
+        "answer_position_exposures": 6,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 79616,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 256,
+          "traversal_sha256": "bd41436a18c2e1db0c77ea4af24e584591232c079bfa520fd6302e3337d4e6b9",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 9952,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.009963974478654518,
+          "stored_parameter_l2": 0.029541995224884834,
+          "scalar_elements": 9952,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "warmup",
+        "best_dev_loss": 3.955603837966919,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135436Z-47246f534e\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135436Z-47246f534e\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "warmup",
+          "next_phase": "warmup",
+          "trainable_parameters": 9952,
+          "frozen_parameters": 85712,
+          "loss": 3.931565523147583,
+          "dev_loss": 3.955603837966919,
+          "gradient_norm": 2.0185145305928667,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.009963974478654518,
+            "stored_parameter_l2": 0.029541995224884834,
+            "scalar_elements": 9952,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135437Z-d2c074fbdb",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135437Z-d2c074fbdb",
+      "stage": "generator",
+      "dtype": "bfloat16",
+      "manifest_sha256": "91816a9f480813d40bf6e8fe387e105351d9b05bf3a9dbb9c6b7fbdb3b01f0cc",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 30,
+        "answer_position_exposures": 18,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 256,
+          "traversal_sha256": "bd41436a18c2e1db0c77ea4af24e584591232c079bfa520fd6302e3337d4e6b9",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 115568,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.008622582917223008,
+          "stored_parameter_l2": 0.02794147696625342,
+          "scalar_elements": 95664,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 3.942355990409851,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135437Z-d2c074fbdb\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135437Z-d2c074fbdb\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 2,
+          "phase": "warmup",
+          "next_phase": "full",
+          "trainable_parameters": 9952,
+          "frozen_parameters": 85712,
+          "loss": 3.89225435256958,
+          "dev_loss": 3.9480007886886597,
+          "gradient_norm": 2.025101413093939,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008384071714856892,
+            "stored_parameter_l2": 0.026964903255675944,
+            "scalar_elements": 9952,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.916661262512207,
+          "dev_loss": 3.942355990409851,
+          "gradient_norm": 2.8162433553949247,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.008622582917223008,
+            "stored_parameter_l2": 0.02794147696625342,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": "a187abe013a84b81a4c7ef57406d18bf",
+        "checkpoint": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\native-corrections\\final-tests\\native-production5\\runs\\generator\\20261029T135436Z-47246f534e\\checkpoints\\version-177c50e11c9046c2912f223a36047ace\\manifest.json",
+          "sha256": "7c1b0223cd5880c684da04a5b64245e8b4fa6606ea3daf9be2a9520e4dc6ab2f"
+        },
+        "restored_step": 1,
+        "restored_counters": {
+          "processed_source_tokens": 10,
+          "answer_position_exposures": 6,
+          "allocated_canvas_positions": 32
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    }
+  ],
+  "connected_smoke": {
+    "run_id": "20261029T135452Z-d75da1e34c",
+    "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T135452Z-d75da1e34c",
+    "status": "completed",
+    "stages": [
+      {
+        "run_id": "20261029T135456Z-adbb20acca",
+        "stage": "teacher",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T135456Z-adbb20acca",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T135457Z-718d3d5932",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135457Z-718d3d5932",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T135459Z-ef92b81ab3",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135459Z-ef92b81ab3",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T135500Z-94562454c5",
+        "stage": "targets",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T135500Z-94562454c5",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T135502Z-75feb9f244",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135502Z-75feb9f244",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T135505Z-9d023069e6",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135505Z-9d023069e6",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T135507Z-2ce5296d58",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135507Z-2ce5296d58",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T135508Z-d99068b5ce",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135508Z-d99068b5ce",
+        "status": "completed"
+      }
+    ],
+    "micro_overfit": [
+      {
+        "stage": "codec",
+        "run_id": "20261029T135507Z-2ce5296d58",
+        "status": "completed",
+        "first": {
+          "mse_full": 1.0393556356430054,
+          "mse_cutoff": 1.0199273824691772,
+          "head_kl": 0.0031236198265105486,
+          "loss": 1.0299538373947144,
+          "cutoff": 3,
+          "head_positions": 24,
+          "step": 1,
+          "microbatches": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "gradient_norm": 0.38794727761030573,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.02952983138065969,
+            "stored_parameter_l2": 0.02952983138065969,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          },
+          "step_seconds": 0.030628600157797337,
+          "processed_source_tokens": 24,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 24,
+          "allocated_canvas_positions": 128
+        },
+        "last": {
+          "mse_full": 1.0301398038864136,
+          "mse_cutoff": 1.0181920528411865,
+          "head_kl": 0.003122645663097501,
+          "loss": 1.0244780778884888,
+          "cutoff": 10,
+          "head_positions": 24,
+          "step": 3,
+          "microbatches": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "gradient_norm": 0.3862420503489409,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.02857021923440853,
+            "stored_parameter_l2": 0.02857021923440853,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          },
+          "step_seconds": 0.025764700025320053,
+          "processed_source_tokens": 72,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 72,
+          "allocated_canvas_positions": 384,
+          "dev_loss": 1.0054559707641602
+        },
+        "observed_loss_decrease": true,
+        "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+      },
+      {
+        "stage": "generator",
+        "run_id": "20261029T135508Z-d99068b5ce",
+        "status": "completed",
+        "first": {
+          "loss": 3.932727098464966,
+          "text_loss": 3.5066890716552734,
+          "latent_loss": 4.260380744934082,
+          "groups": [
+            4.142230987548828,
+            5.014113903045654,
+            5.245002269744873,
+            5.721570014953613,
+            3.8612937927246094,
+            3.914933204650879,
+            3.883798837661743,
+            3.5881054401397705,
+            4.810149192810059,
+            4.923470497131348,
+            4.242092609405518,
+            2.988112211227417,
+            3.4680893421173096,
+            4.150805473327637,
+            3.7869129180908203,
+            4.425411224365234
+          ],
+          "group_valid_bins": [
+            8,
+            8,
+            8,
+            8,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "backbone_answer_positions": 2832,
+          "step": 1,
+          "microbatches": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "gradient_norm": 2.584894845089533,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.353209737653516,
+            "stored_parameter_l2": 0.353209737653516,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          },
+          "step_seconds": 0.2395190999377519,
+          "processed_source_tokens": 40,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 24,
+          "allocated_canvas_positions": 128
+        },
+        "last": {
+          "loss": 3.6267330646514893,
+          "text_loss": 3.354961633682251,
+          "latent_loss": 2.717714786529541,
+          "groups": [
+            3.712904214859009,
+            4.32093620300293,
+            4.100425720214844,
+            4.368753433227539,
+            2.773397445678711,
+            2.5247554779052734,
+            2.2960798740386963,
+            2.1947102546691895,
+            2.576695442199707,
+            2.3774077892303467,
+            2.095395088195801,
+            1.6550849676132202,
+            1.8667844533920288,
+            2.1996965408325195,
+            2.0291831493377686,
+            2.3912253379821777
+          ],
+          "group_valid_bins": [
+            8,
+            8,
+            8,
+            8,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "backbone_answer_positions": 2832,
+          "step": 3,
+          "microbatches": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "gradient_norm": 1.8363805611483717,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.26122593979551073,
+            "stored_parameter_l2": 0.26122593979551073,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          },
+          "step_seconds": 0.21854270016774535,
+          "processed_source_tokens": 120,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 72,
+          "allocated_canvas_positions": 384,
+          "dev_loss": 3.5624823570251465
+        },
+        "observed_loss_decrease": true,
+        "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+      }
+    ],
+    "fresh_process_generation": {
+      "run_id": "20261029T135512Z-285dae37ba",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T135512Z-285dae37ba",
+      "status": "completed",
+      "tokens": [
+        2
+      ],
+      "eos_found": true,
+      "truncated": false,
+      "allocated_answer_positions": 16,
+      "computed_answer_positions": 16,
+      "backbone_traversals": 1,
+      "logical_block_trace": [
+        {
+          "block": 1,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 2,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 3,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 4,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 5,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 6,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 7,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 8,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 9,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 10,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 11,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 12,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 13,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 14,
+          "answer_positions": 6,
+          "sequence_positions": 8
+        },
+        {
+          "block": 15,
+          "answer_positions": 7,
+          "sequence_positions": 9
+        },
+        {
+          "block": 16,
+          "answer_positions": 7,
+          "sequence_positions": 9
+        },
+        {
+          "block": 17,
+          "answer_positions": 8,
+          "sequence_positions": 10
+        },
+        {
+          "block": 18,
+          "answer_positions": 9,
+          "sequence_positions": 11
+        },
+        {
+          "block": 19,
+          "answer_positions": 9,
+          "sequence_positions": 11
+        },
+        {
+          "block": 20,
+          "answer_positions": 10,
+          "sequence_positions": 12
+        },
+        {
+          "block": 21,
+          "answer_positions": 11,
+          "sequence_positions": 13
+        },
+        {
+          "block": 22,
+          "answer_positions": 12,
+          "sequence_positions": 14
+        },
+        {
+          "block": 23,
+          "answer_positions": 13,
+          "sequence_positions": 15
+        },
+        {
+          "block": 24,
+          "answer_positions": 15,
+          "sequence_positions": 17
+        },
+        {
+          "block": 25,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 26,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 27,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 28,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 29,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 30,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 31,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 32,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 33,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 34,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 35,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 36,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        }
+      ],
+      "forward_and_head_seconds": 0.024885200196877122,
+      "decoding": "parallel argmax; no AR repair or verification",
+      "inference_projection": {
+        "head_chunk_positions": 128,
+        "max_head_temp_bytes": 268435456,
+        "resolved_head_chunk_positions": 16,
+        "estimated_temporary_bytes": 4224,
+        "allocation_policy": "two logits-sized buffers plus full canvas int64 IDs; backend GEMM workspace is an additional measured hardware requirement"
+      },
+      "text": "",
+      "export_identity": "d4f62993ad00de439fdf2df06a390a934f6f0135342e8f49be23da4c5a61e484",
+      "elapsed_seconds": 3.2797787999734282,
+      "charged_work": {
+        "steps": 1,
+        "source_tokens": 2,
+        "answer_positions": 0,
+        "canvas_positions": 16
+      },
+      "origin": "software_fixture",
+      "memory": {
+        "host_available_bytes": 871272448,
+        "process_rss_bytes": 360288256,
+        "process_lifetime_peak_rss_bytes": 360349696,
+        "scope": "observed process memory; Spark host/device capacities must not be summed"
+      }
+    },
+    "data_identity": "0966c13f6a461872a737de7e59f8a9b213ed4f15154fd5fcd5c28e6493b210aa",
+    "automatic_large_training": false,
+    "real_data_codec": "not executed",
+    "real_8b_full_finetuning": "not executed",
+    "quality_or_speed_claim": false,
+    "elapsed_seconds": 23.78352540009655,
+    "charged_work": {
+      "steps": 0,
+      "source_tokens": 0,
+      "answer_positions": 0,
+      "canvas_positions": 0
+    },
+    "origin": "software_fixture",
+    "memory": {
+      "host_available_bytes": 1177124864,
+      "process_rss_bytes": 376459264,
+      "process_lifetime_peak_rss_bytes": 381906944,
+      "scope": "observed process memory; Spark host/device capacities must not be summed"
+    }
+  },
+  "smoke_stages": [
+    {
+      "run_id": "20261029T135456Z-adbb20acca",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T135456Z-adbb20acca",
+      "stage": "teacher",
+      "dtype": "float32",
+      "manifest_sha256": "a53a07aefaa5defa1516b2db26450af37e64295f845cef7c36b4d79ff3020628",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T135456Z-adbb20acca\\artifacts\\features\\manifest.json"
+      }
+    },
+    {
+      "run_id": "20261029T135457Z-718d3d5932",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135457Z-718d3d5932",
+      "stage": "codec",
+      "dtype": "float32",
+      "manifest_sha256": "1b1cd12f0f72290b8876db818e40b83c77fc34d96b1fc81010d72395242f07e1",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 2,
+        "processed_source_tokens": 12,
+        "answer_position_exposures": 12,
+        "parameter_count": 1120,
+        "optimizer_covered_parameter_count": 1120,
+        "optimizer_state_tensor_bytes": 8960,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 1048576,
+          "traversal_sha256": "ab962601b1f08a3d8ee5415a77a7d91c2d896cc390b1a698c0a6eb3b34271fff",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 0,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.02237154476576606,
+          "stored_parameter_l2": 0.02237154476576606,
+          "scalar_elements": 1120,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 1.0106906294822693,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135457Z-718d3d5932\\artifacts\\codec\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135457Z-718d3d5932\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0190911293029785,
+          "dev_loss": 1.0138070583343506,
+          "gradient_norm": 0.33575448679499087,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.029526714023517208,
+            "stored_parameter_l2": 0.029526714023517208,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 2,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0216856002807617,
+          "dev_loss": 1.0106906294822693,
+          "gradient_norm": 0.5540481571688294,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.02237154476576606,
+            "stored_parameter_l2": 0.02237154476576606,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135459Z-ef92b81ab3",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135459Z-ef92b81ab3",
+      "stage": "codec",
+      "dtype": "float32",
+      "manifest_sha256": "89fe20c0b4916b4e51d496545b21d4bd5b4d6fabff9702e4bd07c2610df9a707",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 18,
+        "answer_position_exposures": 18,
+        "parameter_count": 1120,
+        "optimizer_covered_parameter_count": 1120,
+        "optimizer_state_tensor_bytes": 8960,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 1048576,
+          "traversal_sha256": "ab962601b1f08a3d8ee5415a77a7d91c2d896cc390b1a698c0a6eb3b34271fff",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 0,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.021055793876176995,
+          "stored_parameter_l2": 0.021055793876176995,
+          "scalar_elements": 1120,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 1.0075498819351196,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135459Z-ef92b81ab3\\artifacts\\codec\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135459Z-ef92b81ab3\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0458046197891235,
+          "dev_loss": 1.0075498819351196,
+          "gradient_norm": 0.42282683080212796,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.021055793876176995,
+            "stored_parameter_l2": 0.021055793876176995,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": "5f4a06101cf54ba383714079c985825a",
+        "checkpoint": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135457Z-718d3d5932\\checkpoints\\version-da31107363da413ca1a59902bff8924e\\manifest.json",
+          "sha256": "54ee49e6e6e81bd8aa50995a614b599c3170aaf6d346cf7545c2b8b858bc9259"
+        },
+        "restored_step": 2,
+        "restored_counters": {
+          "processed_source_tokens": 12,
+          "answer_position_exposures": 12,
+          "allocated_canvas_positions": 64
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135500Z-94562454c5",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T135500Z-94562454c5",
+      "stage": "targets",
+      "dtype": "float32",
+      "manifest_sha256": "dbd1ebde463d993a9fd23ff74e4ad353bba908f15d3dace9ac888682edb770a1",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T135500Z-94562454c5\\artifacts\\targets\\manifest.json"
+      }
+    },
+    {
+      "run_id": "20261029T135502Z-75feb9f244",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135502Z-75feb9f244",
+      "stage": "generator",
+      "dtype": "float32",
+      "manifest_sha256": "8ef98c636843597bb3103f74304f2378182dbce1746b929cba12d510169ccdb3",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 2,
+        "processed_source_tokens": 20,
+        "answer_position_exposures": 12,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 1048576,
+          "traversal_sha256": "87529c67f5e0d3cfc196d0efbe805a53643a2612c17a355d642722d6030269d5",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 0,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.27246798477800893,
+          "stored_parameter_l2": 0.27246798477800893,
+          "scalar_elements": 95664,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 3.6506247520446777,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135502Z-75feb9f244\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135502Z-75feb9f244\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 4.003507614135742,
+          "dev_loss": 3.7748219966888428,
+          "gradient_norm": 2.871317146036996,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.35316014498252446,
+            "stored_parameter_l2": 0.35316014498252446,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 2,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.7077746391296387,
+          "dev_loss": 3.6506247520446777,
+          "gradient_norm": 2.599725461844672,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.27246798477800893,
+            "stored_parameter_l2": 0.27246798477800893,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135505Z-9d023069e6",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135505Z-9d023069e6",
+      "stage": "generator",
+      "dtype": "float32",
+      "manifest_sha256": "4995f11a19118c290d04929a02ea0a5c93aa34395d81c4826fa58d2cc4b9b4d0",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 30,
+        "answer_position_exposures": 18,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 1048576,
+          "traversal_sha256": "87529c67f5e0d3cfc196d0efbe805a53643a2612c17a355d642722d6030269d5",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 0,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.23854961505324,
+          "stored_parameter_l2": 0.23854961505324,
+          "scalar_elements": 95664,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 3.5807870626449585,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135505Z-9d023069e6\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135505Z-9d023069e6\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.703202247619629,
+          "dev_loss": 3.5807870626449585,
+          "gradient_norm": 2.396175635501904,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.23854961505324,
+            "stored_parameter_l2": 0.23854961505324,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": "dd34ce79984946beae4890a07c8531a2",
+        "checkpoint": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135502Z-75feb9f244\\checkpoints\\version-8d208e3b12e0482b9b1fe2fb3530e90c\\manifest.json",
+          "sha256": "ed096278d8aede1b6d7bdfecac637b9b2e3d6a6bc291707cee026ba960b15b80"
+        },
+        "restored_step": 2,
+        "restored_counters": {
+          "processed_source_tokens": 20,
+          "answer_position_exposures": 12,
+          "allocated_canvas_positions": 64
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135507Z-2ce5296d58",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135507Z-2ce5296d58",
+      "stage": "codec",
+      "dtype": "float32",
+      "manifest_sha256": "3257c2a185a4df4265f4150623e64f3c88fce54c08d4e4406abd3918dab6b8af",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 72,
+        "answer_position_exposures": 72,
+        "parameter_count": 1120,
+        "optimizer_covered_parameter_count": 1120,
+        "optimizer_state_tensor_bytes": 8960,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 1048576,
+          "traversal_sha256": "ab962601b1f08a3d8ee5415a77a7d91c2d896cc390b1a698c0a6eb3b34271fff",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 0,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.02857021923440853,
+          "stored_parameter_l2": 0.02857021923440853,
+          "scalar_elements": 1120,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 1.0054559707641602,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135507Z-2ce5296d58\\artifacts\\codec\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T135507Z-2ce5296d58\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0299538373947144,
+          "gradient_norm": 0.38794727761030573,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.02952983138065969,
+            "stored_parameter_l2": 0.02952983138065969,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 2,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0251866579055786,
+          "gradient_norm": 0.38321004708019973,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.02924111945593918,
+            "stored_parameter_l2": 0.02924111945593918,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 1120,
+          "frozen_parameters": 0,
+          "loss": 1.0244780778884888,
+          "dev_loss": 1.0054559707641602,
+          "gradient_norm": 0.3862420503489409,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.02857021923440853,
+            "stored_parameter_l2": 0.02857021923440853,
+            "scalar_elements": 1120,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    },
+    {
+      "run_id": "20261029T135508Z-d99068b5ce",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135508Z-d99068b5ce",
+      "stage": "generator",
+      "dtype": "float32",
+      "manifest_sha256": "2f8273c655afd290e34ce36673c5f0f77f1565c90ee692315b0267a8e2ea1277",
+      "summary": {
+        "status": "completed",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 120,
+        "answer_position_exposures": 72,
+        "parameter_count": 95664,
+        "optimizer_covered_parameter_count": 95664,
+        "optimizer_state_tensor_bytes": 765312,
+        "optimizer_precision_policy": {
+          "schema": "fp32_adamw_bf16_sr_v2",
+          "policy": "fp32_moments_bf16_stochastic_v1",
+          "seed": 1729,
+          "rng_algorithm": "torch.Generator/cpu",
+          "tile_elements": 1048576,
+          "traversal_sha256": "87529c67f5e0d3cfc196d0efbe805a53643a2612c17a355d642722d6030269d5",
+          "moments_dtype": "float32",
+          "master_parameters": false,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "epsilon": 1e-08
+        },
+        "optimizer_rounding_draws": 0,
+        "last_optimizer_update": {
+          "intended_fp32_l2": 0.26122593979551073,
+          "stored_parameter_l2": 0.26122593979551073,
+          "scalar_elements": 95664,
+          "scope": "last completed optimizer update; all active scalar elements"
+        },
+        "last_executed_phase": "full",
+        "best_dev_loss": 3.5624823570251465,
+        "artifact": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135508Z-d99068b5ce\\artifacts\\generator\\manifest.json",
+        "checkpoint": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T135508Z-d99068b5ce\\checkpoints\\current.json"
+      },
+      "executed_updates": [
+        {
+          "step": 1,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.932727098464966,
+          "gradient_norm": 2.584894845089533,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.353209737653516,
+            "stored_parameter_l2": 0.353209737653516,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 2,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.7461764812469482,
+          "gradient_norm": 2.1133683065535074,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.2866558799349044,
+            "stored_parameter_l2": 0.2866558799349044,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        },
+        {
+          "step": 3,
+          "phase": "full",
+          "next_phase": "full",
+          "trainable_parameters": 95664,
+          "frozen_parameters": 0,
+          "loss": 3.6267330646514893,
+          "dev_loss": 3.5624823570251465,
+          "gradient_norm": 1.8363805611483717,
+          "optimizer_update": {
+            "intended_fp32_l2": 0.26122593979551073,
+            "stored_parameter_l2": 0.26122593979551073,
+            "scalar_elements": 95664,
+            "scope": "last completed optimizer update; all active scalar elements"
+          }
+        }
+      ],
+      "lineage": {
+        "parent_attempt": null,
+        "checkpoint": null,
+        "restored_step": 0,
+        "restored_counters": {
+          "processed_source_tokens": 0,
+          "answer_position_exposures": 0,
+          "allocated_canvas_positions": 0
+        },
+        "budget_policy": "persistent phase ledger; spending is never restored from checkpoint"
+      }
+    }
+  ],
+  "preparation_plan": {
+    "schema": "native_preparation_plan_v1",
+    "plan_only": true,
+    "model_downloads_started": false,
+    "training_started": false,
+    "assets": 17,
+    "missing_payload_bytes": 16436997472,
+    "asset_storage_bytes": 16436997472,
+    "free_disk_bytes": 66759778304,
+    "budget": {
+      "schema_version": 1,
+      "phase_budget_id": "native-assets-v1",
+      "max_download_bytes": 20000000000,
+      "max_storage_bytes": 30000000000,
+      "max_wall_seconds": 7200,
+      "max_phase_wall_seconds": 21600,
+      "reserve_free_bytes": 1000000000,
+      "max_processed_bytes": 1000000000,
+      "max_prompt_examples": 256,
+      "max_prompt_chars": 32768,
+      "dev_fraction": 0.15
+    },
+    "stages": {
+      "data prepare": "configs/data/real_pilot.yaml",
+      "teacher extract": "configs/validation/teacher_features_pilot.yaml",
+      "codec train": "configs/validation/codec_pilot.yaml",
+      "targets build": "configs/validation/latent_targets_pilot.yaml",
+      "generator train": "configs/validation/generator_pilot.yaml"
+    },
+    "cache_estimates_decimal_bytes": {
+      "10m_teacher_states_bf16": 81920000000,
+      "10m_fine_codes_bf16": 7680000000
+    },
+    "blockers": []
+  },
+  "spark_preflight": {
+    "parameter_inventory": {
+      "original": 8190735360,
+      "generator": 8250600480,
+      "codec": 6901504,
+      "head": 622329856
+    },
+    "numerical_policy": "fp32_moments_bf16_stochastic_v1",
+    "estimated_parameters": 8250600480,
+    "weights_bytes": 16501200960,
+    "minimum_weights_gradients_moments_bytes": 99007205760,
+    "fp32_master_bytes": 0,
+    "one_recovery_bytes_estimate": 82506004800,
+    "peak_checkpoint_disk_policy": "last two plus selected, new version before retirement; up to four recovery versions",
+    "peak_disk_estimate": 330092176640,
+    "bounded_optimizer_scratch_estimate_bytes": 167837696,
+    "activation_bytes": "not included; requires actual kernel/optimizer/recovery probe",
+    "hardware": {
+      "profile": "spark",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "architecture": "AMD64",
+      "python": "3.12.14",
+      "torch": "2.13.0+cpu",
+      "transformers": "5.15.0",
+      "cuda_build": null,
+      "cuda_detected": false,
+      "devices": [],
+      "host_available_bytes": 1582039040,
+      "attention": "explicit-mask SDPA; actual kernel fallback requires measurement",
+      "optimizer": "fp32_moments_bf16_stochastic_v1: tiled FP32 arithmetic/moments, private RNG, one stochastic BF16 write-back, no persistent master",
+      "kernel_validation": "not executed by detection",
+      "full_8b_training_validation": "not executed",
+      "measured_throughput": null,
+      "shared_memory_policy": "Spark host/device capacity is one physical pool; never add them"
+    },
+    "blockers": [
+      "CUDA unavailable in this PyTorch build",
+      "weights, gradients and FP32 moments exceed available physical/device memory before activations",
+      "free disk cannot cover retained/new full recovery shards"
+    ]
+  },
+  "validation_envelope": {
+    "aggregate_ceiling_seconds": 1800,
+    "prior_checks_conservative_reservation_seconds": 600,
+    "final_suite_timeout_seconds": 900,
+    "final_smoke_timeout_seconds": 180,
+    "numerical_probe_max_seconds": 30,
+    "earlier_pytest_observed_seconds": [
+      1.56,
+      0.65,
+      16.62,
+      19.1,
+      25.53,
+      75.69,
+      75.02,
+      20.88,
+      79.74
+    ],
+    "explanation": "Conservative reservations bound this correction validation; every native child retains its finite per-run/phase ledger. Failed evidence is preserved."
+  },
+  "preserved_failures": [
+    {
+      "file": ".cache/native-corrections/focused-1.txt",
+      "outcome": "2 failed, 18 passed",
+      "causes": [
+        "identical Parquet fixture rows deduplicated to one partition; made fixture prompts distinct",
+        "BF16 nonpersistent RoPE buffer dtype mismatch on restore; corrected declared dtype"
+      ]
+    },
+    {
+      "file": ".cache/native-corrections/full-1.txt",
+      "outcome": "1 failed, 112 passed, 1 skipped",
+      "cause": "one-nanosecond forced-deadline assumption depended on coarse Windows monotonic clock; high-resolution timer and deterministic forced clock test added"
+    }
+  ],
+  "skip": "CUDA unavailable in installed torch 2.13.0+cpu",
+  "not_executed": [
+    "real-data Qwen codec fitting",
+    "actual full Qwen3-8B optimizer/recovery",
+    "CUDA/Spark throughput and allocation probes",
+    "quality/speed evaluation",
+    "10M/100M training"
+  ],
+  "research_model_downloads": false,
+  "provisioning_or_publication_claims": false,
+  "remote_publication_authorization": "User explicitly requested commit, fast-forward main and push origin main; publish after successful checks",
+  "next_bounded_command": "ncm profile train --config configs/validation/spark_8b_profile.yaml (requires actual suitable hardware, pinned prepared assets and native target handoff)"
+}

@@ -253,24 +253,72 @@ class CheckpointReader:
             self.copy_tensor(nodes[name], destination)
 
     def load_optimizer(self, optimizer):
+        from ncm_lab.training.precision import OPTIMIZER_SCHEMA
+
         nodes = {self.materialize(k): v for k, v in self.field("optimizer")["items"]}
+        required = {
+            "schema",
+            "precision",
+            "groups",
+            "weight_decay",
+            "tile_elements",
+            "state",
+            "rounding_rng",
+            "rounding_draws",
+        }
+        if set(nodes) != required or self.materialize(nodes["schema"]) != OPTIMIZER_SCHEMA:
+            raise ValueError(
+                "incompatible optimizer numerical-policy checkpoint; legacy nearest-rounded BF16 recovery is unsupported"
+            )
         groups = self.materialize(nodes["groups"])
-        if groups != optimizer.groups or self.materialize(nodes["schema"]) != "fp32_moment_adamw_v1":
+        if (
+            groups != optimizer.groups
+            or self.materialize(nodes["precision"]) != optimizer.precision_contract()
+            or self.materialize(nodes["tile_elements"]) != optimizer.tile_elements
+        ):
             raise ValueError("native optimizer parameter groups/precision mismatch")
         if self.materialize(nodes["weight_decay"]) != optimizer.weight_decay:
             raise ValueError("native optimizer weight-decay contract mismatch")
-        optimizer.state = {}
+        rng = self.materialize(nodes["rounding_rng"])
+        draws = self.materialize(nodes["rounding_draws"])
+        if (
+            type(draws) is not int
+            or draws < 0
+            or not isinstance(rng, torch.Tensor)
+            or rng.dtype != torch.uint8
+        ):
+            raise ValueError("invalid private optimizer RNG/counter state")
+        probe = torch.Generator(device=optimizer.generator.device)
+        probe.set_state(rng)
+        entries = []
         for key, node in nodes["state"]["items"]:
             name = self.materialize(key)
-            if name not in optimizer.parameters:
-                raise ValueError("unknown optimizer parameter")
-            values = {self.materialize(k): v for k, v in node["items"]}
+            if name not in optimizer.parameters or any(n == name for n, _ in entries):
+                raise ValueError("unknown/duplicate optimizer parameter")
+            fields = {self.materialize(k): v for k, v in node["items"]}
+            if (
+                set(fields) != {"step", "exp_avg", "exp_avg_sq"}
+                or type(self.materialize(fields["step"])) is not int
+                or self.materialize(fields["step"]) < 1
+            ):
+                raise ValueError("invalid optimizer step/moment schema")
+            for field in ("exp_avg", "exp_avg_sq"):
+                if fields[field].get("dtype") != "float32" or fields[field].get("shape") != list(
+                    optimizer.parameters[name].shape
+                ):
+                    raise ValueError("invalid FP32 optimizer moment metadata")
+            entries.append((name, fields))
+        restored = {}
+        for name, values in entries:
             state = {"step": self.materialize(values["step"])}
             for field in ("exp_avg", "exp_avg_sq"):
                 tensor = torch.empty_like(optimizer.parameters[name], dtype=torch.float32)
                 self.copy_tensor(values[field], tensor)
                 state[field] = tensor
-            optimizer.state[name] = state
+            restored[name] = state
+        optimizer.state = restored
+        optimizer.generator.set_state(rng)
+        optimizer.rounding_draws = draws
 
 
 def recovery_payload(model, optimizer, identity, metadata, state, sampler):

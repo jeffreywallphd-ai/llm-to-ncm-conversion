@@ -18,8 +18,8 @@
   "output_ref": "runs/handoffs/data.json",
   "data": {
     "format": "oasst_parquet",
-    "source_path": "runs/assets/oasst1/fdf72ae0827c1cda404aff25b6603abec9e3399b/LICENSE",
-    "source_sha256": null,
+    "source_path": "runs/assets/oasst1/fdf72ae0827c1cda404aff25b6603abec9e3399b/data/train-00000-of-00001-b42a775f407cee45.parquet",
+    "source_sha256": "bbfadf5ed1278ba2208c837fdcad865adf65f5df55d80abadab2745db13fcb5e",
     "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
     "license": "apache-2.0",
     "max_source_rows": 2000000,
@@ -29,6 +29,6 @@
     "dev_fraction": 0.15,
     "seed": 17,
     "overlength": "exclude",
-    "source_asset_id": "oasst1:LICENSE"
+    "source_asset_id": "oasst1:data/train-00000-of-00001-b42a775f407cee45.parquet"
   }
 }

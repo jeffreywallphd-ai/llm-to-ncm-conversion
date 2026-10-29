@@ -2,7 +2,6 @@
 
 from pathlib import Path
 import gc
-import math
 import random
 import time
 import torch
@@ -16,6 +15,7 @@ from ncm_lab.runtime.budget import BudgetStop
 from ncm_lab.teacher.model import load_generator, load_frozen_head, model_identity
 from ncm_lab.training.optimizer import TiledAdamW
 from ncm_lab.training.losses import chunked_ce, auxiliary_loss, codec_loss
+from ncm_lab.training.validation_plan import codec_validation_plan
 from ncm_lab.monitoring.records import Accumulator, Measure
 from ncm_lab.monitoring.metrics import quantities
 from ncm_lab.monitoring.diagnostics import Activity, gradients
@@ -107,18 +107,16 @@ def architecture_from_metadata(metadata, device):
     return from_metadata(metadata, device)
 
 
-def gradient_norm(model):
-    total = 0.0
-    for p in model.parameters():
-        if p.grad is None:
-            continue
-        flat = p.grad.detach().view(-1)
-        for start in range(0, flat.numel(), 1048576):
-            values = flat[start : start + 1048576].float()
-            if not bool(torch.isfinite(values).all()):
-                raise ValueError("nonfinite native gradient")
-            total += float(values.square().sum())
-    return math.sqrt(total)
+def make_optimizer(model, options, generator):
+    return TiledAdamW(
+        model.named_parameters(),
+        options["learning_rate"],
+        options["new_learning_rate"] if generator else options["learning_rate"],
+        options["weight_decay"],
+        tile_elements=options.get("optimizer_tile_elements", 1048576),
+        policy=options.get("optimizer_policy", "fp32_moments_bf16_stochastic_v1"),
+        seed=options.get("optimizer_seed", 1729),
+    )
 
 
 def _representatives(model):
@@ -197,6 +195,14 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
     restored_checkpoint_ref = None
     reader = CheckpointReader(resume, check=run.meter.check) if resume else None
     previous_metadata = reader.materialize(reader.field("metadata")) if reader else None
+    if (
+        previous_metadata
+        and previous_metadata.get("optimizer_precision", {}).get("policy")
+        != "fp32_moments_bf16_stochastic_v1"
+    ):
+        raise ValueError(
+            "incompatible optimizer numerical policy: legacy nearest-rounded recovery cannot resume under stochastic BF16 policy"
+        )
     head = None
     if generator:
         model = (
@@ -208,11 +214,17 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
         hidden = dataset.manifest["extra"]["hidden_size"]
         model = ContinuousCodec(hidden, architecture).to(device=device, dtype=dtype)
         head = load_frozen_head(value["model"], device, dtype)
-    optimizer = TiledAdamW(
-        model.named_parameters(),
-        options["learning_rate"],
-        options["new_learning_rate"] if generator else options["learning_rate"],
-        options["weight_decay"],
+    optimizer = make_optimizer(model, options, generator)
+    validation_plan = (
+        None
+        if generator
+        else codec_validation_plan(
+            dataset,
+            dev,
+            architecture.resolutions,
+            options["max_validation_examples"],
+            options.get("validation_seed", 20261029),
+        )
     )
     metadata = {
         "component": "generator" if generator else "codec",
@@ -223,6 +235,13 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
         "source": source,
         "dtype": value["dtype"],
         "normalization": normalization,
+        "optimizer_precision": optimizer.precision_contract(),
+        "selection_policy": validation_plan
+        if not generator
+        else {
+            "policy": "generator_equal_example_loss_v1",
+            "indices": dev[: options["max_validation_examples"]],
+        },
         "training_contract": {
             k: v
             for k, v in options.items()
@@ -286,7 +305,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 n: {"elements": p.numel(), "trainable": p.requires_grad, "dtype": str(p.dtype)}
                 for n, p in model.named_parameters()
             },
-            "policy": "FP32 first/second moments; no master weights; warmup retains autograd through frozen original blocks",
+            "policy": optimizer.precision_contract(),
         },
         exclusive=True,
     )
@@ -322,7 +341,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
         sample_prompts = fixed_prompts(dataset, dev, recorder.options.sample_prompts)
         tokenizer = load_tokenizer(value["model"])
 
-    def objective(indices, training=True):
+    def objective(indices, training=True, planned=None):
         detail = {"groups": [], "statistics_enabled": recorder.detail_due(recorder.step)}
         examples, ids, mask, labels, valid, tensor = padded_tensors(
             dataset, indices, architecture.canvas, device, dtype
@@ -363,11 +382,12 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 tensor,
                 valid,
                 normalization["variance"],
-                sampler if training else random.Random(0),
+                sampler if training else random.Random(planned["head_seed"]),
                 options["prediction_weight"],
                 options["head_positions"],
                 options["head_chunk"],
                 detail if recorder.options.enabled else None,
+                cutoff_index=None if training else planned["cutoff_index"],
             )
         observations = (
             quantities(
@@ -394,8 +414,13 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
         model.eval()
         rows = []
         with torch.no_grad():
-            for index in dev[: options["max_validation_examples"]]:
-                _, metrics, _, _, observations = objective([index], False)
+            assignments = (
+                [{"index": i} for i in dev[: options["max_validation_examples"]]]
+                if generator
+                else validation_plan["assignments"]
+            )
+            for planned in assignments:
+                _, metrics, _, _, observations = objective([planned["index"]], False, planned)
                 observed.add(observations)
                 rows.append(metrics)
         model.train(prior)
@@ -410,7 +435,15 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             )
         recorder.phase = prior_phase
         recorder.event("validation_completed", duration_seconds=time.perf_counter() - started)
-        return sum(row["loss"] for row in rows) / len(rows)
+        score = sum(row["loss"] for row in rows) / len(rows)
+        recorder.event(
+            "selection_evaluated",
+            score=score,
+            plan_sha256=canonical_hash(validation_plan),
+            policy="generator_equal_example_loss_v1" if generator else validation_plan["policy"],
+            per_example_components=rows,
+        )
+        return score
 
     try:
         while (
@@ -426,7 +459,10 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             step_source_count = step_answer_count = 0
             step_observations = Accumulator()
             recorder.step = state["optimizer_steps"] + 1
-            recorder.phase = state["phase"]
+            executed_phase = state["phase"]
+            recorder.phase = executed_phase
+            executed_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            executed_frozen = sum(p.numel() for p in model.parameters() if not p.requires_grad)
             activity = Activity() if generator and recorder.detail_due(recorder.step) else None
             remaining = (options["epochs"] - cursor.epoch) * len(cursor.order) - cursor.position
             microbatches = min(
@@ -457,30 +493,31 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 state["allocated_canvas_positions"] += len(indices) * architecture.canvas
                 state["backbone_answer_positions"] += metrics.get("backbone_answer_positions", 0)
                 aggregate.append(metrics)
-            norm = gradient_norm(model)
+            report = optimizer.check_gradients()
+            norm = report.norm
             diagnostic_gradients = gradients(model) if recorder.detail_due(recorder.step) else {}
             limit = options.get("gradient_clip", 1.0)
-            if norm > limit:
-                for parameter in model.parameters():
-                    if parameter.grad is not None:
-                        parameter.grad.mul_(limit / (norm + 1e-12))
-            optimizer.step()
+            report.clip_(limit)
+            optimizer.step(report)
             state["optimizer_steps"] += 1
-            if (
+            state["last_executed_phase"] = executed_phase
+            phase_boundary = (
                 generator
-                and state["phase"] == "warmup"
+                and executed_phase == "warmup"
                 and state["processed_source_tokens"] >= options["warmup_processed_tokens"]
-            ):
+            )
+            if phase_boundary:
                 state["phase"] = "full"
-                model.set_phase("full")
-                recorder.phase = "full"
-                run.event("full_backbone_unfrozen", step=state["optimizer_steps"])
             metrics = {
                 **aggregate[-1],
                 "step": state["optimizer_steps"],
                 "microbatches": len(aggregate),
-                "phase": state["phase"],
+                "phase": executed_phase,
+                "next_phase": state["phase"],
+                "trainable_parameters": executed_trainable,
+                "frozen_parameters": executed_frozen,
                 "gradient_norm": norm,
+                "optimizer_update": optimizer.last_update_summary,
                 "step_seconds": time.perf_counter() - step_started,
                 "processed_source_tokens": state["processed_source_tokens"],
                 "unique_available_answer_positions": unique_answers,
@@ -510,7 +547,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             interval.add(observed)
             if recorder.due(
                 recorder.step,
-                final=state["optimizer_steps"] == options["steps"]
+                final=phase_boundary
+                or state["optimizer_steps"] == options["steps"]
                 or stop_after is not None
                 and state["optimizer_steps"] >= stop_after
                 or cursor.position == len(cursor.order)
@@ -565,12 +603,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                             ),
                             unit="seconds",
                         ),
-                        "resources/trainable_parameters": Measure(
-                            sum(p.numel() for p in model.parameters() if p.requires_grad)
-                        ),
-                        "resources/frozen_parameters": Measure(
-                            sum(p.numel() for p in model.parameters() if not p.requires_grad)
-                        ),
+                        "resources/trainable_parameters": Measure(executed_trainable),
+                        "resources/frozen_parameters": Measure(executed_frozen),
                     }
                 )
                 for name, number in observe().items():
@@ -599,6 +633,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 )
                 for group in optimizer.groups:
                     values["optimizer/learning_rate/" + group["name"]] = Measure(group["lr"])
+                for name in ("intended_fp32_l2", "stored_parameter_l2", "scalar_elements"):
+                    values["optimizer/update/" + name] = Measure(optimizer.last_update_summary[name])
                 for name in (
                     "memory_allocated",
                     "memory_reserved",
@@ -642,6 +678,15 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                         "sampling_completed", duration_seconds=time.perf_counter() - sample_started
                     )
             run.metric(metrics)
+            if phase_boundary:
+                run.event(
+                    "phase_transition",
+                    previous_phase=executed_phase,
+                    next_phase=state["phase"],
+                    last_completed_step=state["optimizer_steps"],
+                    effective_from_step=state["optimizer_steps"] + 1,
+                )
+                model.set_phase(state["phase"])
             if (
                 state["optimizer_steps"] % options["checkpoint_interval"] == 0
                 or selection is not None
@@ -687,12 +732,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 reader = CheckpointReader(saved["manifest"], identity=identity, check=run.meter.check)
                 model = architecture_from_metadata(metadata, device)
                 reader.load_model(model)
-                optimizer = TiledAdamW(
-                    model.named_parameters(),
-                    options["learning_rate"],
-                    options["new_learning_rate"],
-                    options["weight_decay"],
-                )
+                optimizer = make_optimizer(model, options, True)
                 reader.load_optimizer(optimizer)
                 restore_rng(reader.materialize(reader.field("rng")), sampler)
                 reader = None
@@ -767,6 +807,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 "schema": "native_codec_v1",
                 "identity": identity,
                 "spec": model.spec,
+                "trained_dtype": value["dtype"],
                 "weights_manifest": str(Path(weights["manifest"]).relative_to(folder)),
                 "weights_manifest_sha256": weights["sha256"],
                 "normalization": normalization,
@@ -777,6 +818,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                     "criterion": "held-out normalized reconstruction plus head consistency",
                     "best_dev_loss": state["best_dev_loss"],
                     "recovery": state["selected"],
+                    "validation_plan": validation_plan,
                 },
                 "frozen": True,
             },
@@ -805,7 +847,11 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             for v in s.values()
             if isinstance(v, torch.Tensor)
         ),
-        "optimizer_precision_policy": "FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "optimizer_precision_policy": optimizer.precision_contract(),
+        "optimizer_rounding_draws": optimizer.rounding_draws,
+        "last_optimizer_update": optimizer.last_update_summary,
+        "last_executed_phase": state.get("last_executed_phase"),
+        "selection_policy": validation_plan,
         "processed_source_tokens": state["processed_source_tokens"],
         "answer_position_exposures": state["answer_position_exposures"],
         "allocated_canvas_positions": state["allocated_canvas_positions"],

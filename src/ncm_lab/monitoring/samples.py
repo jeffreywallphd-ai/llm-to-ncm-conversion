@@ -55,7 +55,12 @@ def observe_samples(model, tokenizer, prompts, recorder, meter, eos_ids):
             meter.charge(source=ids.numel(), canvas=model.architecture.canvas)
             sample_start = time.perf_counter()
             result = generate_tokens(
-                model, ids, torch.ones_like(ids, dtype=torch.bool), eos_ids, check=meter.check
+                model,
+                ids,
+                torch.ones_like(ids, dtype=torch.bool),
+                eos_ids,
+                check=meter.check,
+                inference=recorder.run.value.get("inference", {}),
             )
             elapsed = time.perf_counter() - sample_start
             text = tokenizer.decode(result["tokens"], skip_special_tokens=True)
@@ -71,7 +76,11 @@ def observe_samples(model, tokenizer, prompts, recorder, meter, eos_ids):
                 "truncated": result["truncated"],
                 "computed_canvas_positions": result["computed_answer_positions"],
                 "generation_seconds": elapsed,
-                "settings": {"decoding": "parallel argmax", "eos_ids": eos_ids},
+                "settings": {
+                    "decoding": "parallel argmax",
+                    "eos_ids": eos_ids,
+                    "projection": result["inference_projection"],
+                },
                 "model_identity": recorder.config_sha,
                 "checkpoint": "current in-memory optimizer boundary",
                 "cooperative_wall_limit_overrun": time.perf_counter() - started > options.sample_seconds,

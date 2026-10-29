@@ -53,7 +53,7 @@ def doctor(profile="cpu"):
         "devices": devices,
         "host_available_bytes": host_available(),
         "attention": "explicit-mask SDPA; actual kernel fallback requires measurement",
-        "optimizer": "tiled AdamW, FP32 moments, parameter-dtype gradients, no FP32 master weights",
+        "optimizer": "fp32_moments_bf16_stochastic_v1: tiled FP32 arithmetic/moments, private RNG, one stochastic BF16 write-back, no persistent master",
         "kernel_validation": "not executed by detection",
         "full_8b_training_validation": "not executed",
         "measured_throughput": None,
@@ -61,54 +61,77 @@ def doctor(profile="cpu"):
     }
 
 
+def parameter_inventory(model, architecture):
+    from transformers import Qwen3Config, Qwen3ForCausalLM
+    from ncm_lab.embedded.model import EmbeddedGenerator
+    from ncm_lab.codec.model import ContinuousCodec
+    from ncm_lab.config.architecture import Architecture
+
+    configuration = (
+        model["config"]
+        if model.get("fixture")
+        else dict(
+            hidden_size=4096,
+            intermediate_size=12288,
+            num_hidden_layers=36,
+            num_attention_heads=32,
+            num_key_value_heads=8,
+            head_dim=128,
+            vocab_size=151936,
+            tie_word_embeddings=False,
+        )
+    )
+    with torch.device("meta"):
+        backbone = Qwen3ForCausalLM(Qwen3Config(**configuration))
+        original = sum(p.numel() for p in backbone.parameters())
+        generated = EmbeddedGenerator(backbone, Architecture(**architecture))
+        codec = ContinuousCodec(backbone.config.hidden_size, Architecture(**architecture))
+    return {
+        "original": original,
+        "generator": sum(p.numel() for p in generated.parameters()),
+        "codec": sum(p.numel() for p in codec.parameters()),
+        "head": backbone.lm_head.weight.numel(),
+    }
+
+
 def estimate_parameters(model, architecture):
-    if model.get("fixture"):
-        from transformers import Qwen3Config, Qwen3ForCausalLM
-
-        with torch.device("meta"):
-            from ncm_lab.embedded.model import EmbeddedGenerator
-            from ncm_lab.config.architecture import Architecture
-
-            generated = EmbeddedGenerator(
-                Qwen3ForCausalLM(Qwen3Config(**model["config"])), Architecture(**architecture)
-            )
-        return sum(p.numel() for p in generated.parameters())
-    d = 4096
-    v = 151936
-    intermediate = 12288
-    layers = 36
-    z = architecture["latent_width"]
-    original = 2 * v * d + layers * (2 * d * d + 2 * d * 1024 + 3 * d * intermediate + 2 * d + 2 * 128) + d
-    added = 16 * (2 * d * z + 4 * z * z + 10 * z) + 32 * z + 4 * d
-    return original + added
+    return parameter_inventory(model, architecture)["generator"]
 
 
 def preflight(value, run_path, training=False):
     device = value["device"]
     profile = value.get("hardware_profile", "cpu" if device == "cpu" else "cuda")
     info = doctor(profile)
-    params = estimate_parameters(value["model"], value["architecture"])
+    inventory = parameter_inventory(value["model"], value["architecture"])
+    params = inventory["generator"]
     item = 2 if value["dtype"] == "bfloat16" else 4
     weights = params * item
     trained = params if training else 0
     stage = value.get("stage")
     if not value["model"].get("fixture") and stage == "codec":
-        z = value["architecture"]["latent_width"]
-        trained = 4 * 4096 * z + 6 * z * z + 40 * z
-        weights = (4096 * 151936 + trained) * item
+        trained = inventory["codec"]
+        weights = (inventory["head"] + trained) * item
     if not value["model"].get("fixture") and stage == "targets" and value.get("inputs", {}).get("features"):
-        z = value["architecture"]["latent_width"]
-        weights = (4 * 4096 * z + 6 * z * z + 40 * z) * item
+        weights = inventory["codec"] * item
     minimum = weights + trained * (item + 8)
     checkpoint = trained * (item + 8) if trained else weights
     result = {
+        "parameter_inventory": inventory,
+        "numerical_policy": value.get("training", {}).get(
+            "optimizer_policy", "fp32_moments_bf16_stochastic_v1"
+        ),
         "estimated_parameters": params,
         "weights_bytes": weights,
         "minimum_weights_gradients_moments_bytes": minimum,
         "fp32_master_bytes": 0,
         "one_recovery_bytes_estimate": checkpoint,
         "peak_checkpoint_disk_policy": "last two plus selected, new version before retirement; up to four recovery versions",
-        "peak_disk_estimate": 4 * checkpoint + 64 * 1024 * 1024,
+        "peak_disk_estimate": 4 * checkpoint + 64 * 1024 * 1024 + 1048576,
+        "bounded_optimizer_scratch_estimate_bytes": value.get("training", {}).get(
+            "optimizer_tile_elements", 1048576
+        )
+        * 160
+        + 65536,
         "activation_bytes": "not included; requires actual kernel/optimizer/recovery probe",
         "hardware": info,
         "blockers": [],

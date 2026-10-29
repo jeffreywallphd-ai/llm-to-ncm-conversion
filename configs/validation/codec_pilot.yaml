@@ -11,7 +11,10 @@
     "validation_interval": 1,
     "checkpoint_interval": 1,
     "head_positions": 32,
-    "head_chunk": 8
+    "head_chunk": 8,
+    "optimizer_policy": "fp32_moments_bf16_stochastic_v1",
+    "optimizer_seed": 1729,
+    "optimizer_tile_elements": 1048576
   },
   "stage": "codec",
   "inputs": {
