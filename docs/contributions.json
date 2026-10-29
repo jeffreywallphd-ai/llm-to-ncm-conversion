@@ -5,5 +5,7 @@
   "ai_assistance": "Codex implementation, source/API inspection, bounded CPU diagnostics, tests, packaging and documentation",
   "human_experiment_execution": null,
   "independent_human_review": null,
-  "authorship_assignments": []
+  "authorship_assignments": [],
+  "monitoring_human_request": "User supplied the additive monitoring requirements after requesting completion/commit/local main fast-forward of the native migration",
+  "monitoring_ai_assistance": "Codex canonical records, native trainer diagnostics/sample hooks, independent TensorBoard projector/server, bounded CPU/event/HTTP/browser verification, tests and documentation"
 }

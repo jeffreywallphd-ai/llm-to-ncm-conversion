@@ -15,6 +15,7 @@ dependencies = ["PyYAML==6.0.3"]
 cpu = ["torch==2.13.0", "transformers==5.15.0"]
 upstream = ["transformers==5.15.0"]
 prepare = ["pyarrow==23.0.0"]
+monitoring = ["tensorboard==2.20.0", "Pillow==12.1.0", "setuptools==80.10.2"]
 
 [dependency-groups]
 dev = ["pytest==9.0.2", "ruff==0.14.14"]

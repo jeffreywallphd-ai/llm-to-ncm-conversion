@@ -11,11 +11,14 @@ from ncm_lab.config.architecture import Architecture
 from ncm_lab.data.artifacts import Dataset, Cursor
 from ncm_lab.data.records import collate, ALIGNMENT
 from ncm_lab.embedded.geometry import masked_pool
-from ncm_lab.runtime.io import canonical_hash, write_json, digest, implementation_hash, atomic_json
+from ncm_lab.runtime.io import canonical_hash, write_json, digest, implementation_hash, atomic_json, read
 from ncm_lab.runtime.budget import BudgetStop
 from ncm_lab.teacher.model import load_generator, load_frozen_head, model_identity
 from ncm_lab.training.optimizer import TiledAdamW
 from ncm_lab.training.losses import chunked_ce, auxiliary_loss, codec_loss
+from ncm_lab.monitoring.records import Accumulator, Measure
+from ncm_lab.monitoring.metrics import quantities
+from ncm_lab.monitoring.diagnostics import Activity, gradients
 from ncm_lab.training.checkpoints import (
     CheckpointReader,
     INFERENCE,
@@ -190,6 +193,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
     )
     dtype = getattr(torch, value["dtype"])
     device = value["device"]
+    restore_started = time.perf_counter()
+    restored_checkpoint_ref = None
     reader = CheckpointReader(resume, check=run.meter.check) if resume else None
     previous_metadata = reader.materialize(reader.field("metadata")) if reader else None
     head = None
@@ -266,6 +271,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 "manifest": str(reader.path),
                 "sha256": digest(reader.path),
             }
+        restored_checkpoint_ref = {"path": str(reader.path), "sha256": digest(reader.path)}
         reader = None
     cursor = Cursor(train, sampler, state.get("cursor"))
     if generator:
@@ -289,8 +295,35 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
     restored_peak = None
     before_restore_peak = None
     stop_reason = None
+    recorder = run.recorder
+    recorder.step = state["optimizer_steps"]
+    recorder.phase = state["phase"]
+    recorder.lineage(
+        state.get("attempt_id"),
+        restored_checkpoint_ref,
+        state,
+    )
+    if resume:
+        recorder.event(
+            "checkpoint_restored",
+            duration_seconds=time.perf_counter() - restore_started,
+            phase="checkpointing",
+            checkpoint=restored_checkpoint_ref,
+        )
+    state["attempt_id"] = recorder.attempt
+    interval = Accumulator()
+    interval_start = state["optimizer_steps"] + 1
+    sample_prompts = []
+    tokenizer = None
+    if generator and recorder.options.enabled and recorder.options.sample_prompts:
+        from ncm_lab.monitoring.samples import fixed_prompts
+        from ncm_lab.teacher.model import load_tokenizer
+
+        sample_prompts = fixed_prompts(dataset, dev, recorder.options.sample_prompts)
+        tokenizer = load_tokenizer(value["model"])
 
     def objective(indices, training=True):
+        detail = {"groups": [], "statistics_enabled": recorder.detail_due(recorder.step)}
         examples, ids, mask, labels, valid, tensor = padded_tensors(
             dataset, indices, architecture.canvas, device, dtype
         )
@@ -307,7 +340,12 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 model.backbone.lm_head, output.answer_states, labels, valid, options["head_chunk"]
             )
             latent, groups, counts = auxiliary_loss(
-                output.cumulative_codes, tensor, valid, architecture.resolutions, source["scales"]
+                output.cumulative_codes,
+                tensor,
+                valid,
+                architecture.resolutions,
+                source["scales"],
+                detail["groups"] if recorder.options.enabled else None,
             )
             loss = text + options["auxiliary_weight"] * latent
             metrics = {
@@ -329,18 +367,49 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 options["prediction_weight"],
                 options["head_positions"],
                 options["head_chunk"],
+                detail if recorder.options.enabled else None,
             )
-        return loss, metrics, source_positions, int(valid.sum())
+        observations = (
+            quantities(
+                metrics,
+                detail,
+                generator=generator,
+                auxiliary_weight=options["auxiliary_weight"],
+                answer_count=int(valid.sum()),
+                stage="generator" if generator else "codec",
+                split="train" if training else "dev",
+            )
+            if recorder.options.enabled
+            else {}
+        )
+        return loss, metrics, source_positions, int(valid.sum()), observations
 
     def evaluate():
+        started = time.perf_counter()
+        recorder.event("validation_started")
+        prior_phase = recorder.phase
+        recorder.phase = "validation"
+        observed = Accumulator()
         prior = model.training
         model.eval()
         rows = []
         with torch.no_grad():
             for index in dev[: options["max_validation_examples"]]:
-                _, metrics, _, _ = objective([index], False)
+                _, metrics, _, _, observations = objective([index], False)
+                observed.add(observations)
                 rows.append(metrics)
         model.train(prior)
+        if recorder.options.enabled:
+            recorder.metric(
+                observed.finish(),
+                split="dev",
+                interval_start_step=recorder.step,
+                interval_end_step=recorder.step,
+                normalization_sha256=canonical_hash(source.get("scales", normalization)),
+                scale_floor=1e-3,
+            )
+        recorder.phase = prior_phase
+        recorder.event("validation_completed", duration_seconds=time.perf_counter() - started)
         return sum(row["loss"] for row in rows) / len(rows)
 
     try:
@@ -354,6 +423,11 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             optimizer.zero_grad()
             step_started = time.perf_counter()
             aggregate = []
+            step_source_count = step_answer_count = 0
+            step_observations = Accumulator()
+            recorder.step = state["optimizer_steps"] + 1
+            recorder.phase = state["phase"]
+            activity = Activity() if generator and recorder.detail_due(recorder.step) else None
             remaining = (options["epochs"] - cursor.epoch) * len(cursor.order) - cursor.position
             microbatches = min(
                 options["accumulation"], (remaining + options["batch_size"] - 1) // options["batch_size"]
@@ -363,16 +437,28 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 indices = cursor.take(options["batch_size"], options["epochs"])
                 if not indices:
                     break
-                loss, metrics, source_count, answer_count = objective(indices)
+                if generator:
+                    model.diagnostic_observer = activity
+                try:
+                    loss, metrics, source_count, answer_count, observations = objective(indices)
+                finally:
+                    if generator:
+                        model.diagnostic_observer = None
+                step_observations.add(observations)
                 if not bool(torch.isfinite(loss)):
+                    if recorder.options.enabled:
+                        recorder.metric(observations, split="diagnostic", attempted_update=True)
                     raise ValueError("nonfinite native training loss")
                 (loss / microbatches).backward()
                 state["processed_source_tokens"] += source_count
                 state["answer_position_exposures"] += answer_count
+                step_source_count += source_count
+                step_answer_count += answer_count
                 state["allocated_canvas_positions"] += len(indices) * architecture.canvas
                 state["backbone_answer_positions"] += metrics.get("backbone_answer_positions", 0)
                 aggregate.append(metrics)
             norm = gradient_norm(model)
+            diagnostic_gradients = gradients(model) if recorder.detail_due(recorder.step) else {}
             limit = options.get("gradient_clip", 1.0)
             if norm > limit:
                 for parameter in model.parameters():
@@ -387,6 +473,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             ):
                 state["phase"] = "full"
                 model.set_phase("full")
+                recorder.phase = "full"
                 run.event("full_backbone_unfrozen", step=state["optimizer_steps"])
             metrics = {
                 **aggregate[-1],
@@ -400,10 +487,160 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 "answer_position_exposures": state["answer_position_exposures"],
                 "allocated_canvas_positions": state["allocated_canvas_positions"],
             }
+            observed = step_observations.finish()
+            # First average the trainer's equally weighted microbatch objective;
+            # then weight completed optimizer steps equally across an interval.
+            observed = {
+                name: Measure(
+                    row.value,
+                    1,
+                    row.unit,
+                    "equal completed optimizer steps; each objective averages its actual microbatches",
+                    row.status,
+                )
+                if "/loss/" in name or "weighted_contribution" in name
+                else row
+                for name, row in observed.items()
+            }
+            if not generator and recorder.options.enabled:
+                for cutoff in range(len(architecture.resolutions) - 1):
+                    observed.setdefault(
+                        f"codec/train/cutoff_{cutoff + 1:02d}/reconstruction_normalized_mse", Measure(None, 0)
+                    )
+            interval.add(observed)
+            if recorder.due(
+                recorder.step,
+                final=state["optimizer_steps"] == options["steps"]
+                or stop_after is not None
+                and state["optimizer_steps"] >= stop_after
+                or cursor.position == len(cursor.order)
+                and cursor.epoch + 1 >= options["epochs"],
+            ):
+                from ncm_lab.runtime.memory import observe
+
+                values = interval.finish()
+                values.update(diagnostic_gradients)
+                for i, row in enumerate(activity.rows if activity else []):
+                    for name, number in row.items():
+                        if name not in {"update", "resolution"}:
+                            values[f"hierarchy/update_{row['update']:02d}/{name}"] = Measure(
+                                number,
+                                reduction="last sampled logical forward; all inference-visible slots; gated updates",
+                            )
+                seconds = metrics["step_seconds"]
+                values.update(
+                    {
+                        "resources/step_wall_seconds": Measure(
+                            seconds,
+                            unit="seconds",
+                            reduction="host elapsed optimizer step; not CUDA device-event timing",
+                        ),
+                        "resources/source_tokens_per_step_second": Measure(
+                            step_source_count / seconds,
+                            unit="tokens/second",
+                            reduction="all step nonpadding source tokens / host step wall",
+                        ),
+                        "resources/answer_tokens_per_step_second": Measure(
+                            step_answer_count / seconds,
+                            unit="tokens/second",
+                            reduction="all step supervised tokens / host step wall",
+                        ),
+                        "resources/global_gradient_l2": Measure(norm),
+                        "resources/processed_source_tokens": Measure(
+                            state["processed_source_tokens"], unit="tokens"
+                        ),
+                        "resources/answer_position_exposures": Measure(
+                            state["answer_position_exposures"], unit="tokens"
+                        ),
+                        "resources/allocated_canvas_positions": Measure(
+                            state["allocated_canvas_positions"], unit="positions"
+                        ),
+                        "resources/budget_wall_seconds_used": Measure(
+                            time.perf_counter() - run.meter.started, unit="seconds"
+                        ),
+                        "resources/budget_wall_seconds_remaining": Measure(
+                            max(
+                                0,
+                                run.meter.budget.max_wall_seconds - (time.perf_counter() - run.meter.started),
+                            ),
+                            unit="seconds",
+                        ),
+                        "resources/trainable_parameters": Measure(
+                            sum(p.numel() for p in model.parameters() if p.requires_grad)
+                        ),
+                        "resources/frozen_parameters": Measure(
+                            sum(p.numel() for p in model.parameters() if not p.requires_grad)
+                        ),
+                    }
+                )
+                for name, number in observe().items():
+                    if name != "scope":
+                        values["resources/" + name] = Measure(number, unit="bytes")
+                phase_ledger = read(run.meter.path)
+                for name, number in run.meter.used.items():
+                    values["budgets/run/" + name + "/charged"] = Measure(number)
+                    values["budgets/run/" + name + "/remaining"] = Measure(
+                        getattr(run.meter.budget, "max_" + name) - number
+                    )
+                    phase_number = phase_ledger["charges"][name]
+                    values["budgets/phase/" + name + "/charged"] = Measure(phase_number)
+                    values["budgets/phase/" + name + "/remaining"] = Measure(
+                        getattr(run.meter.budget, "max_phase_" + name) - phase_number
+                    )
+                values["budgets/phase/wall_seconds_reserved"] = Measure(
+                    phase_ledger["wall"],
+                    unit="seconds",
+                    reduction="conservative active wall reservations plus completed actual charges",
+                )
+                values["resources/run_storage_bytes"] = Measure(
+                    sum(p.stat().st_size for p in run.path.rglob("*") if p.is_file()),
+                    unit="bytes",
+                    reduction="observed current run including retained checkpoint versions",
+                )
+                for group in optimizer.groups:
+                    values["optimizer/learning_rate/" + group["name"]] = Measure(group["lr"])
+                for name in (
+                    "memory_allocated",
+                    "memory_reserved",
+                    "max_memory_allocated",
+                    "max_memory_reserved",
+                ):
+                    values["resources/gpu_" + name] = Measure(
+                        getattr(torch.cuda, name)() if device == "cuda" else None, unit="bytes"
+                    )
+                recorder.metric(
+                    values,
+                    interval_start_step=interval_start,
+                    interval_end_step=recorder.step,
+                    microbatches=len(aggregate),
+                    accumulation=options["accumulation"],
+                    amp_scaler="not used",
+                    skipped_update=False,
+                    normalization_sha256=canonical_hash(source.get("scales", normalization)),
+                    scale_floor=1e-3,
+                    hierarchy_logical_observations=activity.logical_count if activity else 0,
+                )
+                interval_start = recorder.step + 1
             selection = None
             if state["optimizer_steps"] % options["validation_interval"] == 0:
                 metrics["dev_loss"] = evaluate()
                 selection = metrics["dev_loss"]
+                if generator and sample_prompts and recorder.step % recorder.options.sample_interval == 0:
+                    from ncm_lab.monitoring.samples import observe_samples
+
+                    sample_started = time.perf_counter()
+                    recorder.event("sampling_started")
+                    observe_samples(
+                        model,
+                        tokenizer,
+                        sample_prompts,
+                        recorder,
+                        run.meter,
+                        model_identity(value["model"])["eos_ids"],
+                    )
+                    recorder.event(
+                        "sampling_completed", duration_seconds=time.perf_counter() - sample_started
+                    )
             run.metric(metrics)
             if (
                 state["optimizer_steps"] % options["checkpoint_interval"] == 0
@@ -417,6 +654,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 state["selected_this_step"] = chosen
                 if chosen:
                     state["best_dev_loss"] = selection
+                save_started = time.perf_counter()
+                recorder.event("checkpointing_started")
                 saved = save_checkpoint(
                     run.path / "checkpoints",
                     recovery_payload(model, optimizer, identity, metadata, state, sampler),
@@ -427,6 +666,13 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                     state["selected"] = saved
                     atomic_json(run.path / "checkpoints/selected.json", saved)
                 prune(run.path / "checkpoints", state["selected"])
+                recorder.event(
+                    "checkpoint_completed",
+                    manifest=saved["manifest"],
+                    sha256=saved["sha256"],
+                    duration_seconds=time.perf_counter() - save_started,
+                )
+                recorder.durable()
             if generator and options["recovery_probe"] and state["optimizer_steps"] == 2:
                 if device == "cuda":
                     before_restore_peak = torch.cuda.max_memory_allocated()
@@ -458,6 +704,15 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 break
     except BudgetStop as exc:
         stop_reason = str(exc)
+        if recorder.options.enabled and interval.values:
+            recorder.step = state["optimizer_steps"]
+            recorder.metric(
+                interval.finish(),
+                terminal=True,
+                interval_start_step=interval_start,
+                interval_end_step=recorder.step,
+                final_available=True,
+            )
     if not state["selected"]:
         raise ValueError("no completed held-out selection; recovery remains diagnostic only")
     # Export the held-out selected state without holding a second model/optimizer copy.

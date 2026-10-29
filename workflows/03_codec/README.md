@@ -36,3 +36,18 @@ and [Spark prerequisites](../../docs/spark_setup.md) for stage-specific limitati
 <!-- BEGIN STAGE RESULTS -->
 CPU software-fixture runs: `20261029T113637Z-a6dac79462` (completed), `20261029T113638Z-788dbec959` (completed), `20261029T113647Z-8068ba5639` (completed). The predeclared 40-step fixed-batch diagnostic loss changed from 1.029954 to 0.871352. Real-Qwen validation remains not executed.
 <!-- END STAGE RESULTS -->
+
+## Live monitoring
+
+Canonical monitoring is enabled by default, with configurable cadence in
+`configs/monitoring/default.yaml`. In another terminal, run
+`ncm monitor serve --runs-dir runs --host 127.0.0.1 --port 6006` after installing
+the optional monitoring extra. Closing the browser/server does not stop training.
+See [monitoring](../../docs/monitoring.md) for objective versus count-weighted
+summaries, cutoff/group counts, gradient states, fixed prompt samples and resume
+attempts. [Monitoring validation](../../docs/monitoring_validation.json) records
+actual CPU fixture integration results; real-8B monitoring overhead is unmeasured.
+
+Monitoring smoke `20261029T120129Z-05391a88a6` completed with canonical codec runs
+`20261029T120133Z-7df3585fb4`, `20261029T120134Z-d33df4e982`, `20261029T120139Z-e7f7c601ec`. The final installed-wheel suite passed 78 tests with 1 CUDA skip.
+Records and observed samples are in the monitoring validation receipt; all are CPU software fixtures.

@@ -85,3 +85,6 @@ reports held-out processing separately through the phase ledger. Configurations
 are finite future envelopes, not estimates of sufficiency or permission to launch.
 Current pinned source may fall short; such a run blocks rather than repeats to fill
 the unique quota. Longer-run time estimates require a compatible measured GPU probe.
+
+Read-only TensorBoard monitoring, optional installation, canonical logs, samples,
+resume attempts and SSH viewing are documented in [monitoring](monitoring.md).

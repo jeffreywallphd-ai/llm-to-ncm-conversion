@@ -94,6 +94,7 @@ def config(path):
         "threads",
         "run_root",
         "hardware_profile",
+        "monitoring",
     }
     if set(value) - allowed:
         raise ValueError("unknown native stage fields: " + str(sorted(set(value) - allowed)))
@@ -135,6 +136,11 @@ def config(path):
     value.setdefault("inputs", {})
     value.setdefault("data", {})
     value.setdefault("model", {})
+    from ncm_lab.monitoring.records import Monitoring
+
+    if isinstance(value.get("monitoring"), str):
+        value["monitoring"] = read(root() / value["monitoring"])
+    value["monitoring"] = asdict(Monitoring(**value.get("monitoring", {})))
     if value["model"] and not value["model"].get("fixture"):
         a = value["architecture"]
         if (a["early_blocks"], a["hierarchy_blocks"], a["late_blocks"], a["canvas"], a["latent_width"]) != (

@@ -28,7 +28,7 @@ def chunked_ce(head, states, labels, valid, chunk_positions=8):
     return total / targets.numel()
 
 
-def auxiliary_loss(predicted, fine_targets, valid, resolutions, scales):
+def auxiliary_loss(predicted, fine_targets, valid, resolutions, scales, diagnostics=None):
     levels = list(range(1, len(resolutions), 2))
     if len(predicted) != len(levels):
         raise ValueError("one cumulative prediction required after every update pair")
@@ -45,6 +45,21 @@ def auxiliary_loss(predicted, fine_targets, valid, resolutions, scales):
         else:
             losses.append(prediction.sum() * 0)
         counts.append(count)
+        if diagnostics is not None:
+            raw_sum = (
+                float((prediction.detach().float() - target.float())[mask].square().sum()) if count else 0.0
+            )
+            elements = count * prediction.shape[-1]
+            diagnostics.append(
+                {
+                    "level": level,
+                    "resolution": resolutions[level],
+                    "vectors": count,
+                    "elements": elements,
+                    "raw_sum": raw_sum,
+                    "normalized_sum": float(losses[-1].detach()) * elements,
+                }
+            )
     active = [value for value, count in zip(losses, counts) if count]
     if not active:
         raise ValueError("all auxiliary groups have empty target supervision")
@@ -58,7 +73,16 @@ def normalized_mse(prediction, target, valid, normalization):
 
 
 def codec_loss(
-    codec, head, states, valid, normalization, sampler, beta=0.1, max_head_positions=32, chunk_positions=8
+    codec,
+    head,
+    states,
+    valid,
+    normalization,
+    sampler,
+    beta=0.1,
+    max_head_positions=32,
+    chunk_positions=8,
+    diagnostics=None,
 ):
     if beta < 0 or not 1 <= max_head_positions <= 32 or not 1 <= chunk_positions <= 8:
         raise ValueError("bounded codec head-alignment configuration required")
@@ -92,6 +116,25 @@ def codec_loss(
             kl = kl + consistency(original, recovered, head.weight)
     kl = kl / len(indices)
     total = 0.5 * mse_full + 0.5 * mse_cutoff + beta * kl
+    if diagnostics is not None:
+        from ncm_lab.monitoring.diagnostics import tensor_statistics
+
+        diagnostics.update(
+            elements=int(valid.sum()) * states.shape[-1],
+            cutoff_resolution=codec.architecture.resolutions[cutoff],
+            normalization=normalization,
+            beta=beta,
+            head_reconstruction="sampled_cutoff",
+            kl_direction="KL(teacher || reconstruction)",
+            temperature=1.0,
+            statistics={
+                "teacher_states": tensor_statistics(states[valid]),
+                "encoder_codes": tensor_statistics(fine[valid]),
+                "reconstructed_states": tensor_statistics(coarse[valid]),
+            }
+            if diagnostics.get("statistics_enabled", True)
+            else {},
+        )
     return total, {
         "mse_full": float(mse_full.detach()),
         "mse_cutoff": float(mse_cutoff.detach()),

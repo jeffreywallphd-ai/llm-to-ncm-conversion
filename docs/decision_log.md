@@ -23,3 +23,12 @@ bounded shards behind atomic manifests and retain prior/selected versions.
 Report software fixtures, small-batch learning, real-data codec fitting, and actual
 8B optimizer/recovery as distinct milestones. Preserve negative/failed attempts and
 cumulative budget charges. No initial large run is launched to finish implementation.
+
+Monitoring is additive and read-only: canonical strict JSONL is projected by separate
+spawned CPU-only TensorBoard processes. Each invocation/resume has a distinct attempt;
+older checkpoint recovery retains abandoned history and aggregate charges. Losses,
+optimizer and checkpoint selection remain authoritative. A short diagnostic now
+validates at its declared final step if it ends before the ordinary ten-step cadence.
+TensorBoard 2.20 requires pinned pkg_resources-compatible setuptools; Windows nested
+event IO uses extended paths. Histograms remain disabled and explicit enabling is
+rejected; no all-parameter dump is supplied. GPU/Spark overhead is unmeasured.

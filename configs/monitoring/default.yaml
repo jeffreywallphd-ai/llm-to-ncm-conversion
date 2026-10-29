@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "scalar_interval": 10,
+  "scalar_seconds": 30,
+  "detail_interval": 100,
+  "first_steps": 3,
+  "sample_interval": 500,
+  "sample_prompts": 4,
+  "sample_seconds": 60,
+  "text_chars": 2048,
+  "histograms": false
+}

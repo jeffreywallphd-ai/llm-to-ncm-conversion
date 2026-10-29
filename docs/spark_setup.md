@@ -51,3 +51,6 @@ Real-data codec training, real-8B full fine tuning/recovery, compatible kernel
 behavior, memory feasibility, downstream quality, and speed are **not executed or
 not measured** in this environment. If preflight or runtime fails, retain the
 failed run and report the actual blocker; do not freeze the backbone to claim fit.
+
+Read-only TensorBoard monitoring, optional installation, canonical logs, samples,
+resume attempts and SSH viewing are documented in [monitoring](monitoring.md).

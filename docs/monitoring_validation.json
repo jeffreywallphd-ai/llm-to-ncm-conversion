@@ -1,0 +1,954 @@
+{
+  "schema": "native_monitoring_validation_v1",
+  "date": "2026-10-29",
+  "native_migration_commit": "b496b3eed91d7da838b41ded6ac4947908c0b908",
+  "implementation_sha256": "686dde78b5780752d0044f85bf3dd7d4aefcdabccb62397af78c7a9c96fbf102",
+  "dependencies": {
+    "dependencies": {
+      "tensorboard": "2.20.0",
+      "Pillow": "12.1.0",
+      "setuptools": "80.10.2"
+    },
+    "compatible": true,
+    "tensorflow_installed": false,
+    "output_parent_writable": true,
+    "output": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\_monitoring",
+    "cuda_initialization": "not performed",
+    "training_started": false,
+    "install": "uv sync --locked --extra cpu --extra prepare --extra monitoring --group dev (CPU); see Spark instructions to preserve CUDA Torch"
+  },
+  "tests": {
+    "command": "PYTHONPATH=.cache/monitoring/installed python -m pytest -q --basetemp=.cache/monitoring/release-tests",
+    "passed": 78,
+    "skipped": 1,
+    "seconds": 55.74,
+    "skip": "CPU Torch has no CUDA"
+  },
+  "lint": {
+    "command": "ruff check .",
+    "result": "passed"
+  },
+  "package": {
+    "source_modules": 48,
+    "bytes_match": true,
+    "wheel_sha256": "7c25d7c3e57d21309abb8f456830ad9a74ad4e96d3f9fd13a7a8a366fc1a481e"
+  },
+  "smoke_command": "python -m ncm_lab monitor smoke --config configs/monitoring/smoke.yaml",
+  "smoke": {
+    "run_id": "20261029T120129Z-05391a88a6",
+    "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T120129Z-05391a88a6",
+    "status": "completed",
+    "stages": [
+      {
+        "run_id": "20261029T120132Z-8c02c928f7",
+        "stage": "teacher",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T120132Z-8c02c928f7",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T120133Z-7df3585fb4",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120133Z-7df3585fb4",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T120134Z-d33df4e982",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120134Z-d33df4e982",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T120135Z-5b9fe3ddce",
+        "stage": "targets",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T120135Z-5b9fe3ddce",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T120136Z-d50dcf6a9e",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120136Z-d50dcf6a9e",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T120138Z-d7f0fdb70f",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120138Z-d7f0fdb70f",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T120139Z-e7f7c601ec",
+        "stage": "codec",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120139Z-e7f7c601ec",
+        "status": "completed"
+      },
+      {
+        "run_id": "20261029T120140Z-c7ca8417aa",
+        "stage": "generator",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120140Z-c7ca8417aa",
+        "status": "completed"
+      }
+    ],
+    "micro_overfit": [
+      {
+        "stage": "codec",
+        "run_id": "20261029T120139Z-e7f7c601ec",
+        "status": "completed",
+        "first": {
+          "mse_full": 1.0393556356430054,
+          "mse_cutoff": 1.0199273824691772,
+          "head_kl": 0.0031236198265105486,
+          "loss": 1.0299538373947144,
+          "cutoff": 3,
+          "head_positions": 24,
+          "step": 1,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 0.3879472662062123,
+          "step_seconds": 0.04029159992933273,
+          "processed_source_tokens": 24,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 24,
+          "allocated_canvas_positions": 128
+        },
+        "last": {
+          "mse_full": 1.0301398038864136,
+          "mse_cutoff": 1.0181920528411865,
+          "head_kl": 0.0031226463615894318,
+          "loss": 1.0244780778884888,
+          "cutoff": 10,
+          "head_positions": 24,
+          "step": 3,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 0.38624205165770537,
+          "step_seconds": 0.025545099982991815,
+          "processed_source_tokens": 72,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 72,
+          "allocated_canvas_positions": 384,
+          "dev_loss": 1.0102336406707764
+        },
+        "observed_loss_decrease": true,
+        "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+      },
+      {
+        "stage": "generator",
+        "run_id": "20261029T120140Z-c7ca8417aa",
+        "status": "completed",
+        "first": {
+          "loss": 3.932727098464966,
+          "text_loss": 3.5066890716552734,
+          "latent_loss": 4.260380744934082,
+          "groups": [
+            4.14223051071167,
+            5.014113903045654,
+            5.245002269744873,
+            5.721570014953613,
+            3.8612937927246094,
+            3.914933204650879,
+            3.883798837661743,
+            3.5881054401397705,
+            4.8101487159729,
+            4.9234700202941895,
+            4.242092132568359,
+            2.988112211227417,
+            3.4680893421173096,
+            4.1508049964904785,
+            3.7869129180908203,
+            4.425410747528076
+          ],
+          "group_valid_bins": [
+            8,
+            8,
+            8,
+            8,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "backbone_answer_positions": 2832,
+          "step": 1,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 2.584894788074169,
+          "step_seconds": 0.16711250017397106,
+          "processed_source_tokens": 40,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 24,
+          "allocated_canvas_positions": 128
+        },
+        "last": {
+          "loss": 3.6267330646514893,
+          "text_loss": 3.354961633682251,
+          "latent_loss": 2.717714786529541,
+          "groups": [
+            3.7129039764404297,
+            4.320936679840088,
+            4.100425720214844,
+            4.368753910064697,
+            2.773397445678711,
+            2.5247554779052734,
+            2.2960798740386963,
+            2.1947102546691895,
+            2.576695442199707,
+            2.3774077892303467,
+            2.095395088195801,
+            1.6550846099853516,
+            1.8667844533920288,
+            2.1996965408325195,
+            2.0291829109191895,
+            2.391225576400757
+          ],
+          "group_valid_bins": [
+            8,
+            8,
+            8,
+            8,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "backbone_answer_positions": 2832,
+          "step": 3,
+          "microbatches": 1,
+          "phase": "full",
+          "gradient_norm": 1.8363805756136395,
+          "step_seconds": 0.15331919980235398,
+          "processed_source_tokens": 120,
+          "unique_available_answer_positions": 24,
+          "answer_position_exposures": 72,
+          "allocated_canvas_positions": 384,
+          "dev_loss": 3.562482237815857
+        },
+        "observed_loss_decrease": true,
+        "meaning": "fixed-batch software debugging; no generalization or real-8B evidence"
+      }
+    ],
+    "fresh_process_generation": {
+      "run_id": "20261029T120143Z-d1a9345756",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T120143Z-d1a9345756",
+      "status": "completed",
+      "tokens": [
+        2
+      ],
+      "eos_found": true,
+      "truncated": false,
+      "allocated_answer_positions": 16,
+      "computed_answer_positions": 16,
+      "backbone_traversals": 1,
+      "logical_block_trace": [
+        {
+          "block": 1,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 2,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 3,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 4,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 5,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 6,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 7,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 8,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 9,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 10,
+          "answer_positions": 4,
+          "sequence_positions": 6
+        },
+        {
+          "block": 11,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 12,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 13,
+          "answer_positions": 5,
+          "sequence_positions": 7
+        },
+        {
+          "block": 14,
+          "answer_positions": 6,
+          "sequence_positions": 8
+        },
+        {
+          "block": 15,
+          "answer_positions": 7,
+          "sequence_positions": 9
+        },
+        {
+          "block": 16,
+          "answer_positions": 7,
+          "sequence_positions": 9
+        },
+        {
+          "block": 17,
+          "answer_positions": 8,
+          "sequence_positions": 10
+        },
+        {
+          "block": 18,
+          "answer_positions": 9,
+          "sequence_positions": 11
+        },
+        {
+          "block": 19,
+          "answer_positions": 9,
+          "sequence_positions": 11
+        },
+        {
+          "block": 20,
+          "answer_positions": 10,
+          "sequence_positions": 12
+        },
+        {
+          "block": 21,
+          "answer_positions": 11,
+          "sequence_positions": 13
+        },
+        {
+          "block": 22,
+          "answer_positions": 12,
+          "sequence_positions": 14
+        },
+        {
+          "block": 23,
+          "answer_positions": 13,
+          "sequence_positions": 15
+        },
+        {
+          "block": 24,
+          "answer_positions": 15,
+          "sequence_positions": 17
+        },
+        {
+          "block": 25,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 26,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 27,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 28,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 29,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 30,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 31,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 32,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 33,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 34,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 35,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        },
+        {
+          "block": 36,
+          "answer_positions": 16,
+          "sequence_positions": 18
+        }
+      ],
+      "forward_and_head_seconds": 0.025087299989536405,
+      "decoding": "parallel argmax; no AR repair or verification",
+      "text": "",
+      "export_identity": "7e94ff18b637c83808bcd288803d2ab3df6caff2310fc6fd0084082991657616",
+      "elapsed_seconds": 3.1857773999217898,
+      "charged_work": {
+        "steps": 1,
+        "source_tokens": 2,
+        "answer_positions": 0,
+        "canvas_positions": 16
+      },
+      "origin": "software_fixture",
+      "memory": {
+        "host_available_bytes": 1306169344,
+        "process_rss_bytes": 359972864,
+        "process_lifetime_peak_rss_bytes": 360038400,
+        "scope": "observed process memory; Spark host/device capacities must not be summed"
+      }
+    },
+    "data_identity": "0966c13f6a461872a737de7e59f8a9b213ed4f15154fd5fcd5c28e6493b210aa",
+    "automatic_large_training": false,
+    "real_data_codec": "not executed",
+    "real_8b_full_finetuning": "not executed",
+    "quality_or_speed_claim": false,
+    "elapsed_seconds": 18.134490499971434,
+    "charged_work": {
+      "steps": 0,
+      "source_tokens": 0,
+      "answer_positions": 0,
+      "canvas_positions": 0
+    },
+    "origin": "software_fixture",
+    "memory": {
+      "host_available_bytes": 1579487232,
+      "process_rss_bytes": 377565184,
+      "process_lifetime_peak_rss_bytes": 382533632,
+      "scope": "observed process memory; Spark host/device capacities must not be summed"
+    }
+  },
+  "canonical_stages": [
+    {
+      "run_id": "20261029T120132Z-8c02c928f7",
+      "stage": "teacher",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T120132Z-8c02c928f7",
+      "status": "completed",
+      "attempt_id": "5276c7e38f7145c6bf244143f6304d1a",
+      "run_manifest_sha256": "6c1b7488707c42340d28d5cc1a6114a8a51686e1e23a1a2ef84acc5f6e8f536c",
+      "canonical_streams": {
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T120132Z-8c02c928f7\\monitor_events.jsonl",
+          "sha256": "e7f3b614a239c05a4bb10e36faf3371bdd0ba878cd7b0909ea010088b4ab9be6",
+          "records": 2
+        }
+      }
+    },
+    {
+      "run_id": "20261029T120133Z-7df3585fb4",
+      "stage": "codec",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120133Z-7df3585fb4",
+      "status": "completed",
+      "attempt_id": "27dd198de89e4a668460780400782812",
+      "run_manifest_sha256": "50473d2adf1af3d89283cc4f27ca3693f625c0a60747e477d714492d363078f2",
+      "canonical_streams": {
+        "metrics": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120133Z-7df3585fb4\\monitor_metrics.jsonl",
+          "sha256": "2de9be0ba832b57910e7b99ede44bfe716b023b223991fd89e2ce6491491e13a",
+          "records": 4
+        },
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120133Z-7df3585fb4\\monitor_events.jsonl",
+          "sha256": "0d8933c2d9cff6548b7723d49090742b1d248764e4694ac95112227bf20a5d13",
+          "records": 11
+        }
+      }
+    },
+    {
+      "run_id": "20261029T120134Z-d33df4e982",
+      "stage": "codec",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120134Z-d33df4e982",
+      "status": "completed",
+      "attempt_id": "cd2760d5f5aa4f15aaf83c4dfa4cf404",
+      "run_manifest_sha256": "5c0ce032cc415b695ea6b77f19edd64f04960fa60552ed14a2e02cf87c8a256f",
+      "canonical_streams": {
+        "metrics": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120134Z-d33df4e982\\monitor_metrics.jsonl",
+          "sha256": "227bc1dd766ceb1832ed60727b61ea6dee19bbc52d75bd28f5a24fbd8873a49d",
+          "records": 2
+        },
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120134Z-d33df4e982\\monitor_events.jsonl",
+          "sha256": "f61df70aefccf2b27ef4c6fa412e2d6a6e5eb5fd5b30b9ab35427dad26761303",
+          "records": 9
+        }
+      }
+    },
+    {
+      "run_id": "20261029T120135Z-5b9fe3ddce",
+      "stage": "targets",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T120135Z-5b9fe3ddce",
+      "status": "completed",
+      "attempt_id": "3a0cbb26918f4b66915f11687e1d665d",
+      "run_manifest_sha256": "e0411f1458fdc2cf3e46354b2665ba8a019f42174e8d33af867d8ab4e30adc59",
+      "canonical_streams": {
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T120135Z-5b9fe3ddce\\monitor_events.jsonl",
+          "sha256": "bc1d5acfb1065789de436c00a95a55dfe9d1d3784e1504909468d901e75d24dc",
+          "records": 2
+        }
+      }
+    },
+    {
+      "run_id": "20261029T120136Z-d50dcf6a9e",
+      "stage": "generator",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120136Z-d50dcf6a9e",
+      "status": "completed",
+      "attempt_id": "68219170210c4a26b7f8d4cbc13194a4",
+      "run_manifest_sha256": "3e9e31ca8a5b78b4b53c974ab4493962c70beb91348fc2c5be864375fa462b36",
+      "canonical_streams": {
+        "metrics": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120136Z-d50dcf6a9e\\monitor_metrics.jsonl",
+          "sha256": "43a25d798ffa33dcb2f9f12828c25d87206f49bfd8d1a0f9cc6940557e01c3f4",
+          "records": 4
+        },
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120136Z-d50dcf6a9e\\monitor_events.jsonl",
+          "sha256": "7358f2b230883631c24a015ec010eee20116f5ece3ffca78b707b79af7e46f13",
+          "records": 15
+        },
+        "samples": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120136Z-d50dcf6a9e\\monitor_samples.jsonl",
+          "sha256": "fbb2c8c2e37afc38e269f94db782dd56d104dadafa1d4a859027b2f2ec6c9cb6",
+          "records": 2
+        }
+      }
+    },
+    {
+      "run_id": "20261029T120138Z-d7f0fdb70f",
+      "stage": "generator",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120138Z-d7f0fdb70f",
+      "status": "completed",
+      "attempt_id": "e5d65d4f446c4fb9966ad3b52758df84",
+      "run_manifest_sha256": "18c710e784ae1df4ea972b27710a9a4a10e83ff7b4b3e1b953c7364ba42a3402",
+      "canonical_streams": {
+        "metrics": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120138Z-d7f0fdb70f\\monitor_metrics.jsonl",
+          "sha256": "d2cef9aaae3e6c66ef1a0a0f395397afce36c8b09e0ce7df20aed3698ac45ac0",
+          "records": 2
+        },
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120138Z-d7f0fdb70f\\monitor_events.jsonl",
+          "sha256": "12ffbae102b7212b6ed63b801f8a01cbf9944f2fb0f7f91eaeb17432f3b64128",
+          "records": 11
+        },
+        "samples": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120138Z-d7f0fdb70f\\monitor_samples.jsonl",
+          "sha256": "883f7a11fa36dbf6c8d651d857cb271c113597e8ea36ad4d112984172fe7dfcd",
+          "records": 1
+        }
+      }
+    },
+    {
+      "run_id": "20261029T120139Z-e7f7c601ec",
+      "stage": "codec",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120139Z-e7f7c601ec",
+      "status": "completed",
+      "attempt_id": "6487ddd85564486d9336d751ab6277ad",
+      "run_manifest_sha256": "f78fdfc847d7eba04c4f0196c9b1d370bcf96e7d4c7842504cf9a7fca833fc83",
+      "canonical_streams": {
+        "metrics": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120139Z-e7f7c601ec\\monitor_metrics.jsonl",
+          "sha256": "638d2410ef7d5c58fc0269be926f95ec20e128ee97e30e853d64369b84988747",
+          "records": 4
+        },
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T120139Z-e7f7c601ec\\monitor_events.jsonl",
+          "sha256": "aed44822a12963d1dafa6cc5addfed74588f505e5ee3d99d6b4f9da17e34ccc0",
+          "records": 7
+        }
+      }
+    },
+    {
+      "run_id": "20261029T120140Z-c7ca8417aa",
+      "stage": "generator",
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120140Z-c7ca8417aa",
+      "status": "completed",
+      "attempt_id": "b09d488a57374d94b43beb7192d74351",
+      "run_manifest_sha256": "90365fe4356560d36c2e4c64dedda518ff2e19782cc224bdd3a5de571a679a8a",
+      "canonical_streams": {
+        "metrics": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120140Z-c7ca8417aa\\monitor_metrics.jsonl",
+          "sha256": "8135b1c4724940791ca91ad15b7c4f3bf62e18b5407fee9309b9f8e79b024ca9",
+          "records": 4
+        },
+        "events": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120140Z-c7ca8417aa\\monitor_events.jsonl",
+          "sha256": "a6e71a4b51e30e78ab45b27684870425f4c9c224091c1d7cbb2820f9996ad94a",
+          "records": 9
+        },
+        "samples": {
+          "path": "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T120140Z-c7ca8417aa\\monitor_samples.jsonl",
+          "sha256": "995cb9d7f242e57149d58fa0c370578b89133c4ae12b1884c2c3b4eaec60e5f6",
+          "records": 1
+        }
+      }
+    }
+  ],
+  "actual_prompt_samples": [
+    {
+      "schema": "native_monitor_record_v1",
+      "stream": "samples",
+      "run_id": "20261029T120136Z-d50dcf6a9e",
+      "attempt_id": "68219170210c4a26b7f8d4cbc13194a4",
+      "stage": "generator",
+      "phase": "full",
+      "step": 1,
+      "sequence": 1,
+      "utc": "2026-10-29T12:01:36.711109+00:00",
+      "wall_time": 1793275296.711109,
+      "elapsed_seconds": 0.49884979985654354,
+      "split": "dev",
+      "origin": "software_fixture",
+      "config_sha256": "43228c1b393cf1f7e15469618c6878ec9694ca131fdb084cd391f013958f2fce",
+      "prompt_id": "dev0",
+      "prompt": "token4",
+      "text": "token30 token12 token11 token11 token31 token11 token11 token11 token31 token31 token31 token31 token31 token11 token11 token11",
+      "display_text_shortened": false,
+      "prompt_display_shortened": false,
+      "returned_tokens": 16,
+      "eos_position": null,
+      "truncated": true,
+      "computed_canvas_positions": 16,
+      "generation_seconds": 0.01986949983984232,
+      "settings": {
+        "decoding": "parallel argmax",
+        "eos_ids": [
+          2
+        ]
+      },
+      "model_identity": "43228c1b393cf1f7e15469618c6878ec9694ca131fdb084cd391f013958f2fce",
+      "checkpoint": "current in-memory optimizer boundary",
+      "cooperative_wall_limit_overrun": false
+    },
+    {
+      "schema": "native_monitor_record_v1",
+      "stream": "samples",
+      "run_id": "20261029T120136Z-d50dcf6a9e",
+      "attempt_id": "68219170210c4a26b7f8d4cbc13194a4",
+      "stage": "generator",
+      "phase": "full",
+      "step": 2,
+      "sequence": 2,
+      "utc": "2026-10-29T12:01:37.458458+00:00",
+      "wall_time": 1793275297.458458,
+      "elapsed_seconds": 1.246828599832952,
+      "split": "dev",
+      "origin": "software_fixture",
+      "config_sha256": "43228c1b393cf1f7e15469618c6878ec9694ca131fdb084cd391f013958f2fce",
+      "prompt_id": "dev0",
+      "prompt": "token4",
+      "text": "token8",
+      "display_text_shortened": false,
+      "prompt_display_shortened": false,
+      "returned_tokens": 2,
+      "eos_position": 1,
+      "truncated": false,
+      "computed_canvas_positions": 16,
+      "generation_seconds": 0.019549600081518292,
+      "settings": {
+        "decoding": "parallel argmax",
+        "eos_ids": [
+          2
+        ]
+      },
+      "model_identity": "43228c1b393cf1f7e15469618c6878ec9694ca131fdb084cd391f013958f2fce",
+      "checkpoint": "current in-memory optimizer boundary",
+      "cooperative_wall_limit_overrun": false
+    },
+    {
+      "schema": "native_monitor_record_v1",
+      "stream": "samples",
+      "run_id": "20261029T120138Z-d7f0fdb70f",
+      "attempt_id": "e5d65d4f446c4fb9966ad3b52758df84",
+      "stage": "generator",
+      "phase": "full",
+      "step": 3,
+      "sequence": 1,
+      "utc": "2026-10-29T12:01:38.745147+00:00",
+      "wall_time": 1793275298.745147,
+      "elapsed_seconds": 0.6216987997759134,
+      "split": "dev",
+      "origin": "software_fixture",
+      "config_sha256": "158c3b3f6252fbffab800f28aa35ebe0d45f2a207e999d20577097ee3103b9e0",
+      "prompt_id": "dev0",
+      "prompt": "token4",
+      "text": "",
+      "display_text_shortened": false,
+      "prompt_display_shortened": false,
+      "returned_tokens": 1,
+      "eos_position": 0,
+      "truncated": false,
+      "computed_canvas_positions": 16,
+      "generation_seconds": 0.019584400113672018,
+      "settings": {
+        "decoding": "parallel argmax",
+        "eos_ids": [
+          2
+        ]
+      },
+      "model_identity": "158c3b3f6252fbffab800f28aa35ebe0d45f2a207e999d20577097ee3103b9e0",
+      "checkpoint": "current in-memory optimizer boundary",
+      "cooperative_wall_limit_overrun": false
+    },
+    {
+      "schema": "native_monitor_record_v1",
+      "stream": "samples",
+      "run_id": "20261029T120140Z-c7ca8417aa",
+      "attempt_id": "b09d488a57374d94b43beb7192d74351",
+      "stage": "generator",
+      "phase": "full",
+      "step": 3,
+      "sequence": 1,
+      "utc": "2026-10-29T12:01:41.492662+00:00",
+      "wall_time": 1793275301.492662,
+      "elapsed_seconds": 1.0117854999843985,
+      "split": "dev",
+      "origin": "software_fixture",
+      "config_sha256": "35039fdba2531684c1052a5674512ebd04fd0129a294f39c7dcbb53713271295",
+      "prompt_id": "dev0",
+      "prompt": "token4",
+      "text": "",
+      "display_text_shortened": false,
+      "prompt_display_shortened": false,
+      "returned_tokens": 1,
+      "eos_position": 0,
+      "truncated": false,
+      "computed_canvas_positions": 16,
+      "generation_seconds": 0.021345599787309766,
+      "settings": {
+        "decoding": "parallel argmax",
+        "eos_ids": [
+          2
+        ]
+      },
+      "model_identity": "35039fdba2531684c1052a5674512ebd04fd0129a294f39c7dcbb53713271295",
+      "checkpoint": "current in-memory optimizer boundary",
+      "cooperative_wall_limit_overrun": false
+    }
+  ],
+  "checks": {
+    "actual_codec_generator_components_and_count_weighting": "passed",
+    "sixteen_groups_thirtytwo_update_mappings": "passed",
+    "gated_activity_no_backward_recompute_duplicates": "passed",
+    "no_extra_backward_and_exact_training_updates_rng_cursor": "passed",
+    "prompt_only_samples_preserve_mixed_modes_python_numpy_torch_rng": "passed",
+    "real_SummaryWriter_EventAccumulator_values_steps_timestamps": "passed",
+    "live_complete_line_visibility_and_new_attempt_resume_discovery": "passed",
+    "real_loopback_HTTP_expected_logdir_and_owned_cleanup": "passed",
+    "projector_and_HTTP_failure_leave_independent_trainer_progressing": "passed",
+    "partial_lines_corruption_refusal_replay_no_duplicate_copy": "passed",
+    "earlier_checkpoint_new_attempt_true_steps_old_history_unchanged": "passed",
+    "optional_dependencies_absent_and_derived_disk_limit": "passed",
+    "nonfinite_empty_zero_frozen_absent_strict_JSON": "passed",
+    "finite_view_lifetimes_before_spawn": "passed"
+  },
+  "browser_inspection": {
+    "performed": true,
+    "origin": "CPU software fixture",
+    "observed": [
+      "grouped objectives",
+      "16-group cumulative-error heatmap",
+      "32 gates/updates",
+      "codec curves",
+      "resource step time",
+      "prompt outputs with EOS/truncation",
+      "unavailable values",
+      "failed attempt retained"
+    ],
+    "initial_url": "http://127.0.0.1:6006",
+    "fresh_projection_url": "http://127.0.0.1:3006",
+    "projection_status": {
+      "utc": "2026-10-29T12:00:54.983889+00:00",
+      "state": "live",
+      "attempts": 29,
+      "records": 261,
+      "source_last_wall_time": 1793275102.548246,
+      "data_age_seconds": 152.4356439113617,
+      "offsets": {
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115343Z-4f57c9e45a\\monitor_metrics.jsonl": 49817,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115343Z-4f57c9e45a\\monitor_events.jsonl": 6291,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115343Z-4f57c9e45a\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115344Z-049887bc78\\monitor_metrics.jsonl": 24905,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115344Z-049887bc78\\monitor_events.jsonl": 4905,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115344Z-049887bc78\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115347Z-280f8061d8\\monitor_metrics.jsonl": 55319,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115347Z-280f8061d8\\monitor_events.jsonl": 2942,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115347Z-280f8061d8\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115502Z-49de5565da\\monitor_metrics.jsonl": 49816,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115502Z-49de5565da\\monitor_events.jsonl": 6287,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115502Z-49de5565da\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115504Z-3a254960ca\\monitor_metrics.jsonl": 24906,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115504Z-3a254960ca\\monitor_events.jsonl": 4905,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115504Z-3a254960ca\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115509Z-37e33c453b\\monitor_metrics.jsonl": 61803,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115509Z-37e33c453b\\monitor_events.jsonl": 3975,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115509Z-37e33c453b\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115809Z-2c2a924284\\monitor_metrics.jsonl": 55854,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115809Z-2c2a924284\\monitor_events.jsonl": 6307,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115809Z-2c2a924284\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115810Z-c26451fb78\\monitor_metrics.jsonl": 27925,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115810Z-c26451fb78\\monitor_events.jsonl": 5768,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115810Z-c26451fb78\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115814Z-f543eca123\\monitor_metrics.jsonl": 70862,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115814Z-f543eca123\\monitor_events.jsonl": 3991,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\codec\\20261029T115814Z-f543eca123\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115514Z-6f2a23010e\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115514Z-6f2a23010e\\monitor_events.jsonl": 994,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115514Z-6f2a23010e\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115748Z-1b63a31dc7\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115748Z-1b63a31dc7\\monitor_events.jsonl": 1008,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115748Z-1b63a31dc7\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115818Z-33f1808cf1\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115818Z-33f1808cf1\\monitor_events.jsonl": 1010,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generation\\20261029T115818Z-33f1808cf1\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115345Z-ae93c90dee\\monitor_metrics.jsonl": 242317,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115345Z-ae93c90dee\\monitor_events.jsonl": 8428,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115345Z-ae93c90dee\\monitor_samples.jsonl": 2060,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115346Z-8dc92bdbb8\\monitor_metrics.jsonl": 121200,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115346Z-8dc92bdbb8\\monitor_events.jsonl": 5983,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115346Z-8dc92bdbb8\\monitor_samples.jsonl": 960,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115505Z-1e3c4025ba\\monitor_metrics.jsonl": 242318,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115505Z-1e3c4025ba\\monitor_events.jsonl": 8414,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115505Z-1e3c4025ba\\monitor_samples.jsonl": 2056,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115507Z-41779d747e\\monitor_metrics.jsonl": 121197,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115507Z-41779d747e\\monitor_events.jsonl": 5981,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115507Z-41779d747e\\monitor_samples.jsonl": 962,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115510Z-904500addf\\monitor_metrics.jsonl": 306772,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115510Z-904500addf\\monitor_events.jsonl": 5044,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115510Z-904500addf\\monitor_samples.jsonl": 962,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115811Z-5769e370a7\\monitor_metrics.jsonl": 248361,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115811Z-5769e370a7\\monitor_events.jsonl": 8434,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115811Z-5769e370a7\\monitor_samples.jsonl": 2060,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115813Z-40db3eedc8\\monitor_metrics.jsonl": 124218,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115813Z-40db3eedc8\\monitor_events.jsonl": 6853,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115813Z-40db3eedc8\\monitor_samples.jsonl": 962,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115815Z-5719b054cc\\monitor_metrics.jsonl": 315832,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115815Z-5719b054cc\\monitor_events.jsonl": 5062,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\generator\\20261029T115815Z-5719b054cc\\monitor_samples.jsonl": 962,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115344Z-aff592dafa\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115344Z-aff592dafa\\monitor_events.jsonl": 988,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115344Z-aff592dafa\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115504Z-5fcb428aa1\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115504Z-5fcb428aa1\\monitor_events.jsonl": 989,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115504Z-5fcb428aa1\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115811Z-93d5e790a3\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115811Z-93d5e790a3\\monitor_events.jsonl": 1006,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\targets\\20261029T115811Z-93d5e790a3\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115343Z-4a62d1b453\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115343Z-4a62d1b453\\monitor_events.jsonl": 991,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115343Z-4a62d1b453\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115501Z-8d73cff7a2\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115501Z-8d73cff7a2\\monitor_events.jsonl": 990,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115501Z-8d73cff7a2\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115808Z-6e4af4f9e1\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115808Z-6e4af4f9e1\\monitor_events.jsonl": 1006,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\teacher\\20261029T115808Z-6e4af4f9e1\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115338Z-562a06f4f4\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115338Z-562a06f4f4\\monitor_events.jsonl": 987,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115338Z-562a06f4f4\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115455Z-c61b345e33\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115455Z-c61b345e33\\monitor_events.jsonl": 993,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115455Z-c61b345e33\\monitor_samples.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115805Z-3d41891804\\monitor_metrics.jsonl": 0,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115805Z-3d41891804\\monitor_events.jsonl": 1010,
+        "C:\\ai-projects\\llm-to-ncm-conversion\\runs\\validation\\20261029T115805Z-3d41891804\\monitor_samples.jsonl": 0
+      }
+    },
+    "owned_process_cleanup": {
+      "owned_processes_stopped": true,
+      "trainer_signalled": false
+    }
+  },
+  "preserved_failures": [
+    {
+      "file": ".cache/monitoring/full-tests-1.txt",
+      "result": "3 failed, 62 passed, 1 skipped",
+      "cause": "TensorBoard server missing pkg_resources; added tested setuptools pin"
+    },
+    {
+      "file": ".cache/monitoring/full-tests-2.txt",
+      "result": "1 failed, 64 passed, 1 skipped",
+      "cause": "TensorBoard byte-path IO on Windows long nested event path; extended paths added"
+    },
+    {
+      "run_id": "20261029T115338Z-562a06f4f4",
+      "result": "failed",
+      "cause": "3-step micro diagnostic ended before 10-step held-out selection; final-step validation added"
+    },
+    {
+      "file": ".cache/monitoring/wheel-build-cache-failure.txt",
+      "result": "failed",
+      "cause": "sandbox uv cache permission; rebuilt with workspace cache"
+    },
+    {
+      "file": ".cache/monitoring-initial-tests.txt",
+      "result": "setup errors",
+      "cause": "workspace basetemp parent initially missing; created before subsequent tests"
+    }
+  ],
+  "histograms": "disabled; enabling is explicitly rejected rather than collecting unbounded parameters",
+  "overhead": "not measured as a matched overhead comparison; recorded step times are not overhead estimates",
+  "real_8b_cuda_spark_training": "not executed",
+  "model_downloads": "none",
+  "cloud_publication": "none",
+  "remote_main_push": "not requested or performed",
+  "human_experiment_execution": null
+}

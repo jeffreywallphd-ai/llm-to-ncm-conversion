@@ -34,7 +34,7 @@ def validate(run, value):
             "validation_interval": 1,
             "warmup_processed_tokens": 0,
         },
-        "run_root": str(root() / "runs"),
+        "run_root": value.get("run_root", str(root() / "runs")),
     }
     stages = []
 
@@ -90,8 +90,8 @@ def validate(run, value):
             "training": {
                 **common["training"],
                 "steps": micro_steps,
-                "validation_interval": 10,
-                "checkpoint_interval": 10,
+                "validation_interval": min(10, micro_steps),
+                "checkpoint_interval": min(10, micro_steps),
                 "batch_size": 8,
             },
             "output_ref": None,

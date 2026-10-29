@@ -43,6 +43,9 @@ class Run:
             },
             exclusive=True,
         )
+        from ncm_lab.monitoring.recorder import Recorder
+
+        self.recorder = Recorder(self)
 
     def start(self):
         self.meter = Meter(Budget(**self.value["budget"]), self.path, self.path.parents[1] / "ledgers")
@@ -56,6 +59,7 @@ class Run:
             stream.write(
                 dumps({"utc": datetime.now(timezone.utc).isoformat(), "status": status, **fields}) + "\n"
             )
+        self.recorder.event(status, **fields)
 
     def metric(self, value):
         from json import dumps
@@ -67,6 +71,8 @@ class Run:
     def close(self, status, summary):
         from ncm_lab.runtime.memory import observe
 
+        self.recorder.phase = status
+        self.recorder.durable()
         if self.meter:
             self.meter.close()
         summary = {
@@ -78,7 +84,8 @@ class Run:
             "memory": observe(),
         }
         write_json(self.path / "summary.json", summary, exclusive=True)
-        self.event(status)
+        self.event(status, reason=summary.get("error", summary.get("reason", summary.get("stop_reason"))))
+        self.recorder.durable()
         write_json(
             self.path / "manifest.json",
             {

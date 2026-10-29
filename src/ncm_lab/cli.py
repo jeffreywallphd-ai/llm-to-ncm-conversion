@@ -35,13 +35,95 @@ def parser():
     generation.add_argument("--checkpoint", type=Path, required=True)
     generation.add_argument("--prompt-file", type=Path, required=True)
     generation.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
+    monitor = commands.add_parser(
+        "monitor", help="read-only canonical JSONL / TensorBoard monitoring"
+    ).add_subparsers(dest="monitor_action", required=True)
+    monitor.add_parser("doctor")
+    serve = monitor.add_parser("serve")
+    serve.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=6006)
+    serve.add_argument("--max-seconds", type=float, default=86400)
+    serve.add_argument("--max-bytes", type=int, default=2147483648)
+    serve.add_argument("--headroom-bytes", type=int, default=2147483648)
+    serve.add_argument("--run-id")
+    serve.add_argument("--attempt-id")
+    replay = monitor.add_parser("replay")
+    replay.add_argument("--attempt-dir", type=Path, required=True)
+    replay.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    replay.add_argument("--output-dir", type=Path, required=True)
+    replay.add_argument("--follow", action="store_true")
+    replay.add_argument("--max-seconds", type=float, default=3600)
+    smoke = monitor.add_parser("smoke")
+    smoke.add_argument("--config", type=Path, default=Path("configs/monitoring/smoke.yaml"))
     return p
 
 
 def main(argv=None):
     try:
         args = parser().parse_args(argv)
-        if args.command == "doctor":
+        if args.command == "monitor":
+            if args.monitor_action == "doctor":
+                from ncm_lab.monitoring.server import doctor
+
+                result = doctor()
+            elif args.monitor_action == "serve":
+                from ncm_lab.monitoring.server import serve
+
+                result = serve(
+                    runs_dir=args.runs_dir,
+                    host=args.host,
+                    port=args.port,
+                    max_seconds=args.max_seconds,
+                    max_bytes=args.max_bytes,
+                    headroom_bytes=args.headroom_bytes,
+                    run_id=args.run_id,
+                    attempt_id=args.attempt_id,
+                )
+            elif args.monitor_action == "replay":
+                import subprocess
+                import os
+                import math
+
+                if not math.isfinite(args.max_seconds) or not 0 < args.max_seconds <= 604800:
+                    raise ValueError("replay needs a finite positive lifetime of at most seven days")
+
+                command = [
+                    sys.executable,
+                    "-m",
+                    "ncm_lab.monitoring.projector",
+                    "--runs-dir",
+                    str(args.runs_dir),
+                    "--attempt-dir",
+                    str(args.attempt_dir),
+                    "--output-dir",
+                    str(args.output_dir),
+                    "--max-seconds",
+                    str(args.max_seconds),
+                ]
+                if args.follow:
+                    command += ["--follow"]
+                child = subprocess.run(
+                    command, env={**os.environ, "CUDA_VISIBLE_DEVICES": ""}, timeout=args.max_seconds + 30
+                )
+                if child.returncode:
+                    raise ValueError(
+                        "projection failed or output already exists; inspect status.json / use a new directory"
+                    )
+                result = {"status": "replayed", "output": str(args.output_dir), "canonical_modified": False}
+            else:
+                from ncm_lab.config.stages import config
+                from ncm_lab.runtime.runner import execute
+
+                value = config(args.config)
+                if (
+                    not value["model"].get("fixture")
+                    or value["device"] != "cpu"
+                    or value["stage"] != "validation"
+                ):
+                    raise ValueError("monitor smoke requires a bounded CPU fixture validation config")
+                result = execute(value)
+        elif args.command == "doctor":
             from ncm_lab.runtime.doctor import doctor
 
             result = doctor(args.profile)

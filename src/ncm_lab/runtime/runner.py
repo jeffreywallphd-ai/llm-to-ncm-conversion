@@ -70,12 +70,21 @@ def execute(value, resume=None, stop_after=None):
             "cancelled", {"reason": "user interruption; resume last complete optimizer boundary"}
         )
     except Exception as exc:
-        write_json(
-            run.path / "failure.json",
-            {"error": str(exc), "traceback": traceback.format_exc()},
-            exclusive=True,
-        )
-        return run.close("failed", {"error": type(exc).__name__ + ": " + str(exc)})
+        primary = type(exc).__name__ + ": " + str(exc)
+        trace = traceback.format_exc()
+        try:
+            write_json(run.path / "failure.json", {"error": primary, "traceback": trace}, exclusive=True)
+            return run.close("failed", {"error": primary})
+        except Exception as cleanup:
+            # Preserve the actual training error even when canonical storage fails.
+            return {
+                "run_id": run.id,
+                "path": str(run.path),
+                "status": "failed",
+                "error": primary,
+                "canonical_storage_error": type(cleanup).__name__ + ": " + str(cleanup),
+                "sealed_manifest": False,
+            }
 
 
 def run_file(path, resume=None):

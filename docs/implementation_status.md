@@ -16,3 +16,8 @@ limitations. This is an executable initial research implementation, not proof th
 parallel generation retains the pretrained model's quality. Source/target quotas
 can be unavailable. No financial, business, generalization, novelty, or publication
 claim is made. Formal studies remain future extensions.
+
+Read-only canonical/TensorBoard monitoring is implemented and CPU validated:
+78 tests passed, 1 CUDA skip; actual event/HTTP/browser checks and a
+connected installed-wheel smoke completed. See [monitoring validation](monitoring_validation.json).
+Histogram collection is disabled/unsupported; no real-8B or matched overhead claim is made.

@@ -18,10 +18,13 @@ class Refinement(nn.Module):
         )
         self.up = nn.Linear(width, hidden, bias=False)
 
-    def forward(self, hidden, compact, features, embedding, gate):
+    def forward(self, hidden, compact, features, embedding, gate, observer=None):
         delta = self.network(self.down(hidden) + compact + self.position(features) + embedding)
         residual = gate * delta
-        return hidden + self.up(residual), compact + residual
+        bridge = self.up(residual)
+        if observer is not None:
+            observer(hidden, compact, residual, bridge, gate)
+        return hidden + bridge, compact + residual
 
 
 @dataclass
@@ -56,6 +59,7 @@ class EmbeddedGenerator(nn.Module):
         nn.init.normal_(self.queries, std=0.02)
         nn.init.normal_(self.level_embeddings, std=0.02)
         self.phase = "full"
+        self.diagnostic_observer = None
 
     def set_phase(self, phase):
         if phase not in {"warmup", "full"}:
@@ -122,7 +126,14 @@ class EmbeddedGenerator(nn.Module):
                         answer.dtype,
                     )
                     answer, compact = self.refinements[group](
-                        answer, compact, features, self.level_embeddings[level], self.gates[level]
+                        answer,
+                        compact,
+                        features,
+                        self.level_embeddings[level],
+                        self.gates[level],
+                        (lambda *args, update=level: self.diagnostic_observer(update, slots, *args))
+                        if self.diagnostic_observer is not None
+                        else None,
                     )
                 if return_aux:
                     auxiliary.append(compact)

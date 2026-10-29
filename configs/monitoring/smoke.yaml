@@ -1,0 +1,26 @@
+{
+  "schema": "native_stage_v1",
+  "stage": "validation",
+  "model": "configs/models/tiny_qwen.yaml",
+  "architecture": "configs/architecture/tiny_native.yaml",
+  "device": "cpu",
+  "dtype": "float32",
+  "threads": 1,
+  "budget": {
+    "phase_id": "monitoring-smoke-v1",
+    "max_wall_seconds": 120,
+    "max_steps": 64,
+    "max_storage_bytes": 512000000,
+    "max_phase_wall_seconds": 1800,
+    "max_phase_storage_bytes": 4000000000
+  },
+  "data": {"micro_overfit_steps": 3},
+  "monitoring": {
+    "scalar_interval": 1,
+    "detail_interval": 1,
+    "sample_interval": 1,
+    "sample_prompts": 1,
+    "sample_seconds": 15,
+    "text_chars": 256
+  }
+}

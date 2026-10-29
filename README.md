@@ -52,7 +52,7 @@ and aggregate budgets. Failed attempts and their charges are preserved.
 <!-- BEGIN NATIVE VALIDATION -->
 | Check | Actual result | Provenance / limit |
 |---|---|---|
-| `python -m pytest` / installed wheel | 51 passed, 1 CUDA skip in each | CPU software fixtures; includes 1024-slot geometry |
+| Native migration at `b496b3e`: tests / installed wheel | 51 passed, 1 CUDA skip in each | CPU software fixtures; includes 1024-slot geometry |
 | `ruff check .` | Passed | Native source/tests |
 | Connected validation `20261029T113627Z-62a290a040` | Completed, save/resume and fresh process export | CPU; data `0966c13f6a461872a737de7e59f8a9b213ed4f15154fd5fcd5c28e6493b210aa` |
 | 40-step codec `20261029T113647Z-8068ba5639` | Loss 1.0300 → 0.8714 | Same fixed batch; no generalization claim |
@@ -64,6 +64,25 @@ Exact artifacts, failures, loss components and environment: [native validation](
 <!-- END NATIVE VALIDATION -->
 
 ## Six workflows
+
+Live training monitoring is available through a read-only local TensorBoard view.
+Canonical JSONL remains authoritative; the event projector and web server run in
+independent CPU-only processes. Install the optional `monitoring` extra alongside
+the appropriate CPU or existing CUDA environment. See [monitoring](docs/monitoring.md)
+for metric definitions, all 16/32 mappings, samples, resume histories and limits.
+
+```sh
+uv sync --locked --python 3.12 --extra cpu --extra prepare --extra monitoring --group dev
+# Terminal 1: bounded CPU software fixture, no model download
+uv run --no-sync ncm monitor smoke --config configs/monitoring/smoke.yaml
+# Terminal 2: can start before training; then open http://127.0.0.1:6006
+uv run --no-sync ncm monitor serve --runs-dir runs --host 127.0.0.1 --port 6006
+```
+
+The same monitor observes `codec train` and `generator train` with the stage configs
+below. [Monitoring validation](docs/monitoring_validation.json) records its actual
+checks. Final installed-wheel suite: **78 passed, 1 CUDA skip**; lint and the documented smoke command passed.
+Full-model/GPU monitoring overhead remains unmeasured.
 
 | Stage | Purpose |
 |---|---|

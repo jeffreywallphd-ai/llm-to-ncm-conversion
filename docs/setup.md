@@ -30,3 +30,6 @@ benchmark evaluator, finance dataset, or paper registry is installed.
 For GPU hosts preserve their compatible CUDA Torch build instead of installing
 the CPU extra over it. See [Spark setup](spark_setup.md). Environment detection
 does not establish training, optimizer, recovery, kernel, quality, or speed readiness.
+
+Read-only TensorBoard monitoring, optional installation, canonical logs, samples,
+resume attempts and SSH viewing are documented in [monitoring](monitoring.md).
