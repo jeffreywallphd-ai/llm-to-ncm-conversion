@@ -47,6 +47,21 @@ after two steps, releases model/optimizer/loss references (the completed gradien
 report was already released just after its optimizer step), restores one destination
 from restricted shards, and takes the next bounded step. Warmup is disabled.
 
+The recommended post-pilot larger route is the [Tülu extension wave](extension_training.md):
+`ncm wave plan --config configs/waves/tulu3_extension.yaml`, then an explicit
+`ncm wave run --config configs/waves/tulu3_extension.yaml` after inspecting initial
+testing and this feasibility milestone. Resume adds `--resume /ABS/WAVE/manifest.json`.
+Its tokenizer/data-only acquisition and qualification precede missing Qwen weights.
+The six shards total 1.413GB; cached canonical Qwen files are verified and reused.
+Actual Tülu capacity remains unknown until that preparation runs.
+
+Plan simultaneous prepared/index data, selected teacher cache, broader fine codes,
+selected exports and retained/new recovery states. At least 81.92GB of teacher
+states plus up to 76.8GB of broader codes, about 330GB of full recovery versions,
+model weights, metadata and 128GB additional free-space headroom may be needed.
+The capacity report refines this from actual selected counts. These estimates and
+preflight are not a measured Spark fit, kernel validation or time forecast.
+
 BF16/FP32 CPU weak-reference tests verify that old parameters, gradients and moments
 are dead before replacement allocation. This fixes extra live ownership; it does not
 prove that a caching allocator returns reserved memory or that the full model fits.

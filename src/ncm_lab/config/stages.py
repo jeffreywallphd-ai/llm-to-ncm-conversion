@@ -10,6 +10,7 @@ from ncm_lab.runtime.io import read, root, resolve_reference, digest
 
 @dataclass(frozen=True)
 class Training:
+    objective: str = "steps"
     optimizer_policy: str = "fp32_moments_bf16_stochastic_v1"
     optimizer_seed: int = 1729
     optimizer_tile_elements: int = 1048576
@@ -40,7 +41,10 @@ class Training:
         if self.recovery_probe and self.warmup_processed_tokens:
             raise ValueError("full-training recovery probe must skip module-only warmup")
         for key, value in asdict(self).items():
-            if key == "optimizer_policy":
+            if key == "objective":
+                if value not in {"steps", "epochs", "tokens"}:
+                    raise ValueError("training objective must be steps, epochs, or tokens")
+            elif key == "optimizer_policy":
                 if value != "fp32_moments_bf16_stochastic_v1":
                     raise ValueError("unsafe/unsupported optimizer numerical policy")
             elif key == "recovery_probe":
@@ -83,6 +87,8 @@ class Training:
             or self.gradient_clip <= 0
         ):
             raise ValueError("invalid learning rate or bounded head/checkpoint configuration")
+        if self.objective == "tokens" and self.warmup_processed_tokens >= self.max_processed_tokens:
+            raise ValueError("token objective must leave room for full fine tuning after warmup")
 
 
 def config(path):
@@ -109,6 +115,7 @@ def config(path):
         "hardware_profile",
         "monitoring",
         "inference",
+        "wave_context",
     }
     if set(value) - allowed:
         raise ValueError("unknown native stage fields: " + str(sorted(set(value) - allowed)))

@@ -12,7 +12,7 @@ From the repository root, after preceding dependencies and explicit asset prepar
 ncm teacher extract --config configs/validation/teacher_features_pilot.yaml
 ```
 
-The separate future budget configuration is `configs/teacher/initial_10m_features.yaml`; it is excluded from automatic validation.
+The preserved historical budget configuration is `configs/teacher/initial_10m_features.yaml`; it is excluded from automatic validation.
 
 Budget: pilot stages use finite per-run time/work/disk caps from
 `configs/budgets/real_pilot.yaml`, with a persistent shared aggregate ledger.
@@ -36,3 +36,19 @@ and [Spark prerequisites](../../docs/spark_setup.md) for stage-specific limitati
 <!-- BEGIN STAGE RESULTS -->
 CPU software-fixture runs: `20261029T113634Z-d1fb3269e1` (completed). Real-Qwen validation remains not executed.
 <!-- END STAGE RESULTS -->
+
+## Tulu extension stage
+
+The shared capacity gate verifies the exact 10M training-answer subset before loading the frozen teacher.
+
+```sh
+ncm teacher extract --config configs/teacher/tulu3_codec_10m.yaml
+```
+
+These independent configs use `runs/handoffs/tulu3-standalone/`. For per-wave
+resolved handoffs and sequential processes, use the complete
+[extension wave](../07_extension_training/README.md) after initial testing.
+Resource/safety interruption remains incomplete; native training resumes only
+a complete checkpoint, while partial preprocessing restarts with retained charges.
+Actual extension software results and real-data/GPU unknowns are recorded in the
+[dated receipt](../../docs/tulu3_extension_validation_2026-10-29.json).

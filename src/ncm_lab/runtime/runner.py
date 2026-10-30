@@ -61,7 +61,9 @@ def execute(value, resume=None, stop_after=None):
             "budget_stopped",
             {
                 "reason": str(exc),
-                "checkpoint": str(run.path / "checkpoints/current.json"),
+                "checkpoint": str(run.path / "checkpoints/current.json")
+                if (run.path / "checkpoints/current.json").is_file()
+                else None,
                 "artifact_published": False,
             },
         )

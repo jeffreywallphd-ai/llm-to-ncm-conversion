@@ -49,6 +49,7 @@ def state_normalization(dataset, indices, meter):
     for index in indices:
         meter.check()
         _, tensor = dataset[index]
+        meter.charge(source=tensor.shape[0], answer=tensor.shape[0])
         values = tensor.double()
         count += values.numel()
         total += float(values.sum())
@@ -74,6 +75,7 @@ def latent_scales(codec, dataset, indices, meter):
     for index in indices:
         meter.check()
         _, _, _, _, valid, states = padded_tensors(dataset, [index], codec.architecture.canvas, device, dtype)
+        meter.charge(source=int(valid.sum()), answer=int(valid.sum()), canvas=codec.architecture.canvas)
         fine = codec.fine_codes(states)
         for level in range(1, len(codec.architecture.resolutions), 2):
             pooled, mask = masked_pool(fine, valid, codec.architecture.resolutions[level])
@@ -263,6 +265,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             "attention": "explicit-mask SDPA; no AR KV reuse",
         },
     }
+    if options.get("objective") == "epochs":
+        metadata["training_contract"]["objective_epochs"] = options["epochs"]
     if generator:
         metadata["backbone_config"].pop("_name_or_path", None)
     identity = native_identity(metadata)
@@ -314,6 +318,40 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
     restored_peak = None
     before_restore_peak = None
     stop_reason = None
+    objective_kind = options.get("objective", "steps")
+    max_update_tokens = (
+        max(
+            len(dataset.metadata(i)["example"]["prompt_ids"])
+            + len(dataset.metadata(i)["example"]["answer_ids"])
+            if generator
+            else len(dataset.metadata(i)["example"]["answer_ids"])
+            for i in train
+        )
+        * options["batch_size"]
+        * options["accumulation"]
+    )
+
+    def objective_reached():
+        if objective_kind == "tokens":
+            return state["processed_source_tokens"] >= options["max_processed_tokens"] and (
+                not generator or state.get("last_executed_phase") == "full"
+            )
+        if objective_kind == "epochs":
+            return cursor.position == len(cursor.order) and cursor.epoch + 1 >= options["epochs"]
+        return state["optimizer_steps"] >= options["steps"]
+
+    def unfinished(reason, code):
+        checkpoint = run.path / "checkpoints/current.json"
+        return {
+            "status": "budget_stopped" if code == "resource_interrupted" else "incomplete",
+            "completion": {"code": code, "objective": objective_kind, "reason": reason},
+            "stop_reason": reason,
+            "optimizer_steps": state["optimizer_steps"],
+            "processed_source_tokens": state["processed_source_tokens"],
+            "checkpoint": str(checkpoint) if checkpoint.is_file() else None,
+            "artifact_published": False,
+        }
+
     recorder = run.recorder
     recorder.step = state["optimizer_steps"]
     recorder.phase = state["phase"]
@@ -451,8 +489,11 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             and cursor.epoch < options["epochs"]
             and not (cursor.position == len(cursor.order) and cursor.epoch + 1 >= options["epochs"])
         ):
+            if objective_reached():
+                break
             if state["processed_source_tokens"] >= options["max_processed_tokens"]:
-                raise BudgetStop("declared processed-token endpoint reached")
+                if objective_kind != "tokens":
+                    raise BudgetStop("processed-token safety limit reached before objective completion")
             optimizer.zero_grad()
             step_started = time.perf_counter()
             aggregate = []
@@ -502,6 +543,14 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             del report  # Its parameter/gradient ownership must end before recovery allocation.
             state["optimizer_steps"] += 1
             state["last_executed_phase"] = executed_phase
+            terminal_update = (
+                objective_reached()
+                or state["optimizer_steps"] == options["steps"]
+                or cursor.position == len(cursor.order)
+                and cursor.epoch + 1 >= options["epochs"]
+                or stop_after is not None
+                and state["optimizer_steps"] >= stop_after
+            )
             phase_boundary = (
                 generator
                 and executed_phase == "warmup"
@@ -549,6 +598,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
             if recorder.due(
                 recorder.step,
                 final=phase_boundary
+                or terminal_update
                 or state["optimizer_steps"] == options["steps"]
                 or stop_after is not None
                 and state["optimizer_steps"] >= stop_after
@@ -659,7 +709,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 )
                 interval_start = recorder.step + 1
             selection = None
-            if state["optimizer_steps"] % options["validation_interval"] == 0:
+            if terminal_update or state["optimizer_steps"] % options["validation_interval"] == 0:
                 metrics["dev_loss"] = evaluate()
                 selection = metrics["dev_loss"]
                 if generator and sample_prompts and recorder.step % recorder.options.sample_interval == 0:
@@ -692,6 +742,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 state["optimizer_steps"] % options["checkpoint_interval"] == 0
                 or selection is not None
                 or state["optimizer_steps"] == options["steps"]
+                or terminal_update
             ):
                 state["cursor"] = cursor.state()
                 chosen = selection is not None and (
@@ -754,6 +805,12 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                 interval_end_step=recorder.step,
                 final_available=True,
             )
+        return unfinished(stop_reason, "resource_interrupted")
+    diagnostic_stop = (
+        stop_after is not None and value["model"].get("fixture") and state["optimizer_steps"] >= stop_after
+    )
+    if not objective_reached() and not diagnostic_stop:
+        return unfinished("step/epoch safety cap reached before declared objective", "objective_incomplete")
     if not state["selected"]:
         raise ValueError("no completed held-out selection; recovery remains diagnostic only")
     # Export the held-out selected state without holding a second model/optimizer copy.
@@ -860,6 +917,26 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
         "unique_available_answer_positions": unique_answers,
         "best_dev_loss": state["best_dev_loss"],
         "stop_reason": stop_reason,
+        "completion": {
+            "code": "diagnostic_boundary" if diagnostic_stop else "objective_attained",
+            "objective": objective_kind,
+            "max_whole_update_tokens": max_update_tokens,
+            "token_overshoot": max(0, state["processed_source_tokens"] - options["max_processed_tokens"])
+            if objective_kind == "tokens"
+            else None,
+            "maximum_token_overshoot": max_update_tokens
+            * (
+                2
+                if generator
+                and 0
+                < options["max_processed_tokens"] - options["warmup_processed_tokens"]
+                < max_update_tokens
+                else 1
+            )
+            - 1
+            if objective_kind == "tokens"
+            else None,
+        },
         "status": "budget_stopped" if stop_reason else "completed",
         "peak_allocated_bytes": peak,
         "peak_reserved_bytes": reserved,

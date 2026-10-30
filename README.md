@@ -29,7 +29,7 @@ Historical correction revision `792ba52`: **114 passed, 1 CUDA skip**; lint,
 connected monitoring smoke and preparation plan-only passed.
 Historical 51/78-test receipts below remain evidence for their respective revisions.
 
-Recovery lifetime follow-up: **116 passed, 1 CUDA skip**; all eight focused recovery
+Recovery lifetime revision `31df0df`: **116 passed, 1 CUDA skip**; all eight focused recovery
 tests, lint and the connected monitoring smoke passed. BF16/FP32 weak-reference
 checks verify release before replacement allocation and exact continuation; see the
 [dated receipt](docs/recovery_lifetime_validation_2026-10-29.json).
@@ -84,6 +84,7 @@ instead of installing the CPU Torch extra over it.
 | Full test suite | `uv run --no-sync python -m pytest -q` |
 | Recovery tensor lifetime and exact in-process continuation (BF16 and FP32) | `uv run --no-sync python -m pytest -q tests/integration/test_optimizer_recovery.py -k in_process_recovery` |
 | All optimizer recovery, warmup-boundary and monitoring-invariance tests | `uv run --no-sync python -m pytest -q tests/integration/test_optimizer_recovery.py` |
+| Tülu Parquet admission, qualification, wave processes and resume | `uv run --no-sync python -m pytest -q tests/integration/test_tulu_data.py tests/integration/test_tulu_wave.py tests/unit/test_extension_selection.py` |
 | Optimizer rounding, numerical safety and private RNG | `uv run --no-sync python -m pytest -q tests/unit/test_optimizer_precision.py` |
 | Data source contracts and software Parquet preparation | `uv run --no-sync python -m pytest -q tests/unit/test_real_data_contracts.py` |
 | Live TensorBoard events/HTTP and replay correctness | `uv run --no-sync python -m pytest -q tests/integration/test_monitoring_tensorboard.py tests/integration/test_replay_corrections.py` |
@@ -129,7 +130,67 @@ Actual before/after observations and current verification are in the
 Exact artifacts, failures, loss components and environment: [native validation](docs/native_validation.json).
 <!-- END NATIVE VALIDATION -->
 
-## Six workflows
+## Training stages: CPU checks, OASST pilot, then Tülu extension
+
+Choose the workflow explicitly. CPU checks use tiny software fixtures. The OASST
+pilot checks initial operations. After inspecting that pilot and the bounded Spark
+feasibility profile, an operator can start the larger Tülu extension. Installation,
+help, planning and pilot completion never start it automatically.
+
+| Stage | OASST initial testing | Larger Tülu extension |
+|---|---|---|
+| Acquire | `ncm prepare --config configs/validation/real_pilot.yaml` | Wave first verifies/acquires tokenizer, data and notices, then qualifies data before weights |
+| Prepare data | `ncm data prepare --config configs/data/real_pilot.yaml` | Complete conversations, grouped dedup/split, representative length-aware selection, capacity report |
+| Teacher | `ncm teacher extract --config configs/validation/teacher_features_pilot.yaml` | Exact source/length-aware subset with at least 10M distinct training answer positions; frozen pinned teacher |
+| Codec | `ncm codec train --config configs/validation/codec_pilot.yaml` | Fresh shared codec, three passes, held-out selection and train-only scales |
+| Targets | `ncm targets build --config configs/validation/latent_targets_pilot.yaml` | Selected frozen codec; broader pool streamed into fine codes |
+| Generator | `ncm generator train --config configs/validation/generator_pilot.yaml` | Fresh pinned-Qwen initialization, 1M warmup tokens within nominal 100M processed training tokens, full fine tuning and export |
+
+The complete larger sequence has one command, plus offline planning and exact resume:
+
+```sh
+ncm wave plan --config configs/waves/tulu3_extension.yaml
+ncm wave run --config configs/waves/tulu3_extension.yaml
+ncm wave run --config configs/waves/tulu3_extension.yaml --resume /ABS/WAVE/manifest.json
+ncm monitor serve --runs-dir runs --host 127.0.0.1 --port 6006
+```
+
+On the locked CPU development environment, prefix commands with `uv run --no-sync`.
+On Spark retain CUDA Torch and install `pip install -e '.[upstream,prepare,monitoring]'`;
+see [hardware/storage prerequisites](docs/spark_setup.md). CPU installation/tests
+are documented above. **Real Tülu capacity and full-model feasibility remain unknown**
+until the operator runs those checks; the release size alone does not qualify it.
+
+The dataset is `allenai/tulu-3-sft-mixture` at
+`b14afda60f1bbebe55d5d2fa1e4df5042f97f8be`, with six Parquet shards pinned by SHA256
+and verified during acquisition (1,412,954,868 bytes). Preparation preserves the entire context and holds out the
+final assistant target. It admits at most 512 prompt and 1024 answer tokens including
+EOS, excludes overlength references, applies a pinned CPU English heuristic and
+component policy, and checks exact OASST overlap. The collection is ODC-BY with
+varying component terms, including noncommercial data, and mixed/unknown origins.
+Released references do not imply human authorship or independent OASST/No Robots
+benchmark status.
+
+Each wave prints its `runs/waves/<id>/manifest.json`. Its `status.json` links exact
+child runs, per-wave handoffs, capacity reports, recovery points and failures; normal
+training metrics remain under `runs/<stage>/<id>/`. Insufficient/partial capacity
+blocks before teacher allocation. Resume verifies this same wave; it never transfers
+an OASST checkpoint to different data/codec. Partial preprocessing restarts with
+retained charges. Training resumes a complete optimizer boundary. Successful
+objective completion forces final validation/checkpoint/export between normal
+cadences; safety/resource exhaustion remains incomplete.
+
+See the [full operator guide](docs/extension_training.md),
+[extension workflow](workflows/07_extension_training/README.md), and
+[dated validation](docs/tulu3_extension_validation_2026-10-29.json) for exact stage
+configs, data policies, finite resource ceilings and actual fixture evidence.
+
+Tülu extension verification: **143 passed, 1 CUDA skip**; Ruff and connected
+monitoring smoke passed. The connected wave used local Tülu-shaped Parquet and tiny
+production classes, including exact resume and owned-process cancellation checks.
+These software results do not measure real corpus capacity or full-model training.
+
+## Independent stage workflows and monitoring
 
 Live training monitoring is available through a read-only local TensorBoard view.
 Canonical JSONL remains authoritative; the event projector and web server run in
@@ -158,6 +219,7 @@ Full-model/GPU monitoring overhead remains unmeasured.
 | [04 latent targets](workflows/04_latent_targets/README.md) | Frozen fine-code cache; separate from generator training |
 | [05 generator](workflows/05_generator/README.md) | Prompt-only embedded model, optional warmup, full fine tuning and recovery |
 | [06 generation](workflows/06_generation/README.md) | Standalone export and bounded parallel generation |
+| [07 extension wave](workflows/07_extension_training/README.md) | Qualified Tülu preparation and fresh, resumable complete training sequence |
 
 An authorized real pilot starts with an acquisition preview and explicit retrieval:
 
@@ -179,11 +241,11 @@ There is no historical-run scan or arbitrary latest checkpoint selection. Resume
 uses a complete native recovery checkpoint; an inference export cannot resume
 training. See [training](docs/training.md) for timing, storage, and precision rules.
 
-Intended larger budgets remain separate: [10M codec positions](configs/codec/initial_10m_answer_tokens.yaml)
-and [100M processed generator tokens](configs/generator/initial_100m_processed_tokens.yaml).
-They are not automatic validation. The source-pool target is up to 100M unique
-prepared tokens; current source availability and unique-data shortfalls are recorded.
-Repetition increases exposures, never unique-data counts.
+The old OASST-only `initial_100m_*`/`initial_10m_*` configs are preserved historical
+envelopes; they do not establish a 100M source pool or 10M distinct training answer
+positions. The Tülu wave above supersedes them as the recommended larger route.
+Repetition increases exposures, never distinct-data counts. Real extension budgets
+and CPU validation remain separate explicit operations.
 
 ## Current limitations and extension
 

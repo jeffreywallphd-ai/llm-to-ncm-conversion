@@ -1,0 +1,1 @@
+"""Verified released-reference adapters."""

@@ -33,3 +33,23 @@ quality and speed remain unexecuted/unmeasured. See
 Final correction suite: 114 passed, 1 CUDA skip in 80.40 seconds;
 installed source bytes match the wheel, smoke completed, and preparation plan started
 no downloads. BF16 codec/generator recovery was executed on CPU fixtures.
+
+## Tulu extension implementation
+
+The dedicated pinned multi-shard route, complete-context rendering, disk-backed
+source/language/overlap/group/selection policy, capacity gate, sequential wave CLI
+and explicit objective completion are implemented. See
+[operator guide](extension_training.md) and [dated software validation](tulu3_extension_validation_2026-10-29.json).
+
+Real extension capacity remains **unknown**. No real Tulu scan, 10M-position codec
+fit, 100M-token generator wave or Qwen weight download ran during implementation.
+Genuine operational blockers remain pinned full assets/qualified data, suitable
+validated CUDA/Spark hardware, and sufficient simultaneous cache/checkpoint/free
+storage. Full-model fit, retained quality, throughput and speed remain unmeasured.
+The historical OASST-only larger envelopes do not establish enough distinct data.
+
+Final extension software verification: 143 passing tests, one CUDA skip, Ruff and
+connected monitoring smoke passed. Local two-shard Tülu-shaped waves exercised
+qualification, separate stage processes, terminal export, exact same-wave recovery,
+retained preprocessing charges, corrupted-output rejection and Windows child-tree
+cancellation. These are software fixtures, not measurements of released Tülu capacity.

@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import time
 import uuid
+import os
 from ncm_lab.runtime.io import root, write_json, read, digest, implementation_hash, atomic_json, reference
 from ncm_lab.runtime.budget import Budget, Meter
 from ncm_lab.runtime.doctor import doctor
@@ -43,13 +44,23 @@ class Run:
             },
             exclusive=True,
         )
+        if os.environ.get("NCM_CHILD_LAUNCH_RECORD"):
+            write_json(
+                os.environ["NCM_CHILD_LAUNCH_RECORD"],
+                {
+                    "run_id": self.id,
+                    "path": str(self.path.resolve()),
+                    "launch": reference(self.path / "launch.json"),
+                },
+                exclusive=True,
+            )
         from ncm_lab.monitoring.recorder import Recorder
 
         self.recorder = Recorder(self)
 
     def start(self):
         self.meter = Meter(Budget(**self.value["budget"]), self.path, self.path.parents[1] / "ledgers")
-        self.event("started")
+        self.event("started", wave=self.value.get("wave_context"))
         return self.meter
 
     def event(self, status, **fields):

@@ -20,15 +20,14 @@ def extract(run, value, bound):
         raise ValueError("nonnegative integer teacher subset quota required")
     indices = list(range(len(data)))
     if quota:
-        train = data.indices("train")
-        selected = []
-        positions = 0
-        for index in train:
-            selected.append(index)
-            positions += len(data.metadata(index)["example"]["answer_ids"])
-            if positions >= quota:
-                break
-        indices = sorted(selected + data.indices("dev")[: value["data"].get("max_dev_examples", 256)])
+        from ncm_lab.data.capacity import qualified_selection
+
+        selection = qualified_selection(
+            data, quota, value["data"].get("max_dev_examples", 256), run.meter.check
+        )
+        indices = selection["train_indices"] + selection["dev_indices"]
+    elif data.manifest["identity"].get("dataset") == "allenai/tulu-3-sft-mixture":
+        raise ValueError("extension teacher requires explicit qualified codec quota before allocation")
     teacher = load_original(value["model"], value["device"], getattr(torch, value["dtype"]), frozen=True)
     identity = {
         "model": model_identity(value["model"]),

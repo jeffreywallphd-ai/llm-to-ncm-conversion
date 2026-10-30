@@ -16,6 +16,14 @@ def parser():
     prepare = commands.add_parser("prepare")
     prepare.add_argument("--config", type=Path, required=True)
     prepare.add_argument("--plan-only", action="store_true")
+    wave = commands.add_parser('wave').add_subparsers(dest='wave_action', required=True)
+    for action in ('plan', 'run'):
+        operation = wave.add_parser(action)
+        operation.add_argument('--config', type=Path, required=True)
+        if action == 'run':
+            operation.add_argument('--resume', type=Path)
+    preflight = commands.add_parser('preflight')
+    preflight.add_argument('--config', type=Path, required=True)
     for name, action in [
         ("data", "prepare"),
         ("teacher", "extract"),
@@ -33,7 +41,9 @@ def parser():
     validation.add_argument("--config", type=Path, required=True)
     generation = commands.add_parser("generate")
     generation.add_argument("--checkpoint", type=Path, required=True)
-    generation.add_argument("--prompt-file", type=Path, required=True)
+    generation_input = generation.add_mutually_exclusive_group(required=True)
+    generation_input.add_argument("--prompt-file", type=Path)
+    generation_input.add_argument("--messages-file", type=Path)
     generation.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
     generation.add_argument("--head-chunk-positions", type=int, default=128)
     generation.add_argument("--max-head-temp-bytes", type=int, default=268435456)
@@ -64,7 +74,21 @@ def parser():
 def main(argv=None):
     try:
         args = parser().parse_args(argv)
-        if args.command == "monitor":
+        if args.command == 'wave':
+            from ncm_lab.runtime.wave import plan, run_wave
+            from ncm_lab.config.waves import wave_config
+
+            wave = wave_config(args.config)
+            result = plan(wave) if args.wave_action == 'plan' else run_wave(wave, args.resume)
+        elif args.command == 'preflight':
+            from ncm_lab.runtime.doctor import preflight
+            from ncm_lab.config.stages import config
+            from ncm_lab.runtime.io import root
+
+            value = config(args.config)
+            result = preflight(value, root(), training=value['stage'] in {'generator','profile'})
+            result['status'] = 'blocked' if result['blockers'] else 'completed'
+        elif args.command == "monitor":
             if args.monitor_action == "doctor":
                 from ncm_lab.monitoring.server import doctor
 
@@ -154,6 +178,7 @@ def main(argv=None):
                     "head_chunk_positions": args.head_chunk_positions,
                     "max_head_temp_bytes": args.max_head_temp_bytes,
                 },
+                messages_file=args.messages_file,
             )
         else:
             from ncm_lab.config.stages import config
@@ -177,7 +202,7 @@ def main(argv=None):
             2
             if isinstance(result, dict)
             and result.get("status")
-            in {"failed", "blocked", "budget_stopped", "incomplete", "invalid_source"}
+            in {"failed", "blocked", "budget_stopped", "incomplete", "invalid_source", "cancelled"}
             else 0
         )
     except (ValueError, OSError, KeyError, ImportError) as exc:

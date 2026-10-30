@@ -1,0 +1,38 @@
+{
+  "schema": "native_stage_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": "configs/budgets/tulu3_extension.yaml",
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "hardware_profile": "spark",
+  "threads": 8,
+  "monitoring": "configs/monitoring/default.yaml",
+  "stage": "prepare",
+  "preparation": {
+    "asset_lock": "configs/data/tulu3_extension.assets.lock.json",
+    "assets_root": "runs/assets",
+    "asset_ids": [
+      "target:model-00001-of-00005.safetensors",
+      "target:model-00002-of-00005.safetensors",
+      "target:model-00003-of-00005.safetensors",
+      "target:model-00004-of-00005.safetensors",
+      "target:model-00005-of-00005.safetensors",
+      "target:model.safetensors.index.json"
+    ],
+    "stages": {},
+    "budget": {
+      "schema_version": 1,
+      "phase_budget_id": "tulu3-extension-model-v1",
+      "max_download_bytes": 25000000000,
+      "max_storage_bytes": 20000000000,
+      "max_wall_seconds": 21600,
+      "max_phase_wall_seconds": 86400,
+      "reserve_free_bytes": 128000000000,
+      "max_processed_bytes": 20000000000,
+      "max_prompt_examples": 1000000,
+      "max_prompt_chars": 131072,
+      "dev_fraction": 0.15
+    }
+  }
+}

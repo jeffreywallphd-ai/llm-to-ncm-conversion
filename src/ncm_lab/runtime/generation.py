@@ -9,7 +9,10 @@ from ncm_lab.runtime.budget import BudgetStop, Budget
 from dataclasses import asdict
 
 
-def run_generation(path, prompt_file, device="cpu", inference=None):
+def run_generation(path, prompt_file=None, device="cpu", inference=None, *, messages_file=None):
+    if (prompt_file is None) == (messages_file is None):
+        raise ValueError("choose exactly one prompt-file or messages-file")
+    input_file = prompt_file or messages_file
     path = Path(path)
     if path.is_dir():
         path = path / "manifest.json"
@@ -52,7 +55,11 @@ def run_generation(path, prompt_file, device="cpu", inference=None):
         value,
         {
             "export": {"manifest": str(path), "sha256": digest(path)},
-            "prompt": {"path": str(Path(prompt_file).resolve()), "sha256": digest(prompt_file)},
+            "prompt": {
+                "path": str(Path(input_file).resolve()),
+                "sha256": digest(input_file),
+                "format": "messages" if messages_file else "text",
+            },
         },
     )
     try:
@@ -63,7 +70,7 @@ def run_generation(path, prompt_file, device="cpu", inference=None):
             return run.close("blocked", {"blockers": report["blockers"]})
         from ncm_lab.inference.export import generate
 
-        result = generate(path, prompt_file, device, run.meter, inference)
+        result = generate(path, prompt_file, device, run.meter, inference, messages_file=messages_file)
         return run.close("completed", result)
     except BudgetStop as exc:
         return run.close("budget_stopped", {"error": str(exc)})

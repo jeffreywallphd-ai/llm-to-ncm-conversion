@@ -13,7 +13,7 @@ from ncm_lab.data.download import (
 
 def prepare(value, plan_only=True):
     settings = value["preparation"]
-    assets = read(root() / settings["asset_lock"])["assets"]
+    assets = selected_assets(settings)
     base = root() / settings["assets_root"]
     budget = PreparationBudget(**settings["budget"])
     needed = []
@@ -66,7 +66,11 @@ def prepare(value, plan_only=True):
                     "license": asset["license"],
                 }
             )
-        output = base / "native-preparation.json"
+        output = (
+            root() / settings["receipt_path"]
+            if settings.get("receipt_path")
+            else base / "native-preparation.json"
+        )
         write_json(
             output,
             {
@@ -80,7 +84,7 @@ def prepare(value, plan_only=True):
         return {
             **result,
             "plan_only": False,
-            "model_downloads_started": bool(needed),
+            "model_downloads_started": any(a["filename"].endswith(".safetensors") for a in needed),
             "status": "completed",
             "artifact": str(output),
             "next_commands": [
@@ -88,4 +92,17 @@ def prepare(value, plan_only=True):
             ],
         }
     finally:
-        meter.save()
+        meter.close()
+
+
+def selected_assets(settings):
+    assets = read(root() / settings["asset_lock"])["assets"]
+    selection = settings.get("asset_ids")
+    if selection is None:
+        return assets  # Historical pilot selection remains byte-for-byte unchanged.
+    if not isinstance(selection, list) or len(selection) != len(set(selection)):
+        raise ValueError("explicit unique asset IDs required")
+    lookup = {asset["id"]: asset for asset in assets}
+    if not selection or set(selection) - lookup.keys():
+        raise ValueError("unknown/empty acquisition asset selection")
+    return [lookup[key] for key in sorted(selection)]

@@ -11,5 +11,7 @@
   "corrections_human_request": "User supplied C1\u2013C8 review requirements and explicitly authorized test, commit, local main fast-forward and push to origin main",
   "corrections_ai_assistance": "Codex independent numerical implementation, production recovery/validation/replay corrections, bounded CPU/BF16/HTTP checks and documentation; no real-model training or human experiment execution inferred",
   "recovery_lifetime_human_request": "User supplied the focused recovery ownership fix and requested tests, commit, local main fast-forward, no push, and clear README test instructions",
-  "recovery_lifetime_ai_assistance": "Codex weak-reference production-path reproduction, narrow completed-report release, BF16/FP32 exact-continuation checks and documentation"
+  "recovery_lifetime_ai_assistance": "Codex weak-reference production-path reproduction, narrow completed-report release, BF16/FP32 exact-continuation checks and documentation",
+  "tulu_extension_human_request": "User supplied the Tulu extension/training wave requirements and requested clear README stages, tests, commit, fast-forward main and push origin/main.",
+  "tulu_extension_ai_assistance": "Codex implementation of pinned metadata/acquisition selection, complete-context preparation/qualification, sequential wave control, completion semantics, bounded CPU fixtures and documentation. No human experiment execution or real-data/GPU result inferred."
 }

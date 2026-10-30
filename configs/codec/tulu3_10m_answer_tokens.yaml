@@ -1,0 +1,40 @@
+{
+  "schema": "native_stage_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": {
+    "phase_id": "tulu3-extension-v1",
+    "max_wall_seconds": 604800,
+    "max_steps": 2000000,
+    "max_source_tokens": 1000000000,
+    "max_answer_positions": 1000000000,
+    "max_canvas_positions": 3000000000,
+    "max_storage_bytes": 10000000000,
+    "max_phase_wall_seconds": 12096000,
+    "max_phase_steps": 20000000,
+    "max_phase_source_tokens": 5000000000,
+    "max_phase_answer_positions": 5000000000,
+    "max_phase_canvas_positions": 20000000000,
+    "max_phase_storage_bytes": 3000000000000
+  },
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "hardware_profile": "spark",
+  "threads": 8,
+  "monitoring": "configs/monitoring/default.yaml",
+  "stage": "codec",
+  "inputs": {
+    "features": "runs/handoffs/tulu3-standalone/features.json"
+  },
+  "output_ref": "runs/handoffs/tulu3-standalone/codec.json",
+  "training": {
+    "objective": "epochs",
+    "steps": 2000000,
+    "epochs": 3,
+    "minimum_unique_answer_positions": 10000000,
+    "max_processed_tokens": 100000000,
+    "validation_interval": 100,
+    "checkpoint_interval": 100,
+    "max_validation_examples": 32
+  }
+}

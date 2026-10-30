@@ -1,0 +1,1099 @@
+{
+  "schema": "tulu3_extension_validation_v1",
+  "date": "2026-10-29",
+  "date_timezone": "America/New_York; run IDs/timestamps use UTC",
+  "reviewed_base": "31df0df3262de73859dca3c7795d2c32fe6a958f",
+  "implementation_sha256": "72be9a1161fcfe7d9a8c8ee7ba556fda19af49f48f0e5bc0ea5c6de7a1a76c63",
+  "scope": "Bounded CPU software fixtures: two local Tulu-shaped Parquet shards and tiny production Qwen classes. No real Tulu capacity or full-model training measured.",
+  "archive_preserved": {
+    "branch": "archive/hierarchical-drafter",
+    "sha": "c5e5329172e63026995a440aa0591a5e15804ab4"
+  },
+  "commands": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/integration/test_tulu_data.py --basetemp=.cache/tulu-wave/data-tests-2",
+      "log": {
+        "path": ".cache/tulu-wave/data-tests-2.txt",
+        "sha256": "8f77165ea248956df7f26ae1af2da429afb915f95776cbeeeb7898f355d29710"
+      },
+      "exit_status": 0,
+      "passed": 4,
+      "seconds": 8.37
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/integration/test_tulu_wave.py --basetemp=.cache/tulu-wave/wave-tests-1",
+      "log": {
+        "path": ".cache/tulu-wave/wave-tests-1.txt",
+        "sha256": "88cde3fd5ca76597c9a6cb9f5a556b17610526336462e405484772c93517813e"
+      },
+      "exit_status": 0,
+      "passed": 8,
+      "seconds": 35.89
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/integration/test_tulu_data.py tests/integration/test_tulu_wave.py tests/integration/test_optimizer_recovery.py tests/unit/test_extension_selection.py --basetemp=.cache/tulu-wave/focused-2",
+      "log": {
+        "path": ".cache/tulu-wave/focused-2.txt",
+        "sha256": "6004ca557e089d7429511f36e66a6aae0b1b1ad22be45e87ddaafabbc3abe6f8"
+      },
+      "exit_status": 0,
+      "passed": 30,
+      "seconds": 149.11,
+      "timeout_seconds": 360
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/tulu-wave/full-tests-1",
+      "log": {
+        "path": ".cache/tulu-wave/full-tests-1.txt",
+        "sha256": "fede9dd63c0ceb028876c0690eaca7bf0c268bbb4c73c9d1256e9617f4acef91"
+      },
+      "exit_status": 0,
+      "passed": 141,
+      "skipped": 1,
+      "seconds": 221.79,
+      "interpretation": "Before final storage/log guards; historical result retained."
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/tulu-wave/full-tests-release",
+      "log": {
+        "path": ".cache/tulu-wave/full-tests-release.txt",
+        "sha256": "eae717cc775c7bc08379bbe8fa77dd4042a375cf7576136374875cda9ff488b6"
+      },
+      "exit_status": 0,
+      "passed": 143,
+      "skipped": 1,
+      "seconds": 219.09,
+      "timeout_seconds": 450
+    },
+    {
+      "command": ".venv/Scripts/ruff.exe check .",
+      "exit_status": 0
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab monitor smoke --config configs/monitoring/smoke.yaml",
+      "exit_status": 0,
+      "timeout_seconds": 120,
+      "output": {
+        "path": ".cache/tulu-wave/smoke-release.json",
+        "sha256": "3e2ace486f68b80f9c9b0f7164070b18554f59ab7bbb9c0c2b1501d773471663"
+      },
+      "run_id": "20261030T023814Z-4c6e3543f3",
+      "manifest": {
+        "path": "runs/validation/20261030T023814Z-4c6e3543f3/manifest.json",
+        "sha256": "4fb10dab077f1c4bbe1d193c3a7e5bfb575501cbc91d8612074553e9ab25d0c4"
+      },
+      "seconds": 29.222163600148633
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab wave plan --config configs/waves/tulu3_extension.yaml",
+      "exit_status": 0,
+      "output": {
+        "path": ".cache/tulu-wave/plan-release.json",
+        "sha256": "ad4da9da3f0d6d86abd4ca14acd0fa33a25053138b5e97d7f4bf873efed247c5"
+      },
+      "capacity": "unknown",
+      "network_retrieval": false,
+      "model_construction": false,
+      "ledger_reservation": false
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/unit/test_extension_selection.py --basetemp=.cache/tulu-wave/process-tree",
+      "exit_status": 0,
+      "passed": 4,
+      "seconds": 3.37,
+      "timeout_seconds": 40,
+      "log": {
+        "path": ".cache/tulu-wave/process-tree.txt",
+        "sha256": "8efc955d0e49a69f30bd25327e4880bc2b5e55d8fcdfa0c796f3194e4f536b9e"
+      }
+    }
+  ],
+  "environment": {
+    "profile": "cpu",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "architecture": "AMD64",
+    "python": "3.12.14",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.15.0",
+    "cuda_build": null,
+    "cuda_detected": false,
+    "devices": [],
+    "host_available_bytes": 1250406400,
+    "attention": "explicit-mask SDPA; actual kernel fallback requires measurement",
+    "optimizer": "fp32_moments_bf16_stochastic_v1: tiled FP32 arithmetic/moments, private RNG, one stochastic BF16 write-back, no persistent master",
+    "kernel_validation": "not executed by detection",
+    "full_8b_training_validation": "not executed",
+    "measured_throughput": null,
+    "shared_memory_policy": "Spark host/device capacity is one physical pool; never add them",
+    "locked_dependencies": {
+      "ncm-lab": "0.2.0",
+      "torch": "2.13.0+cpu",
+      "transformers": "5.15.0",
+      "pyarrow": "23.0.0",
+      "langid": "1.1.6",
+      "numpy": "2.4.1",
+      "pytest": "9.0.2",
+      "ruff": "0.14.14",
+      "tensorboard": "2.20.0"
+    }
+  },
+  "pinned_real_assets": {
+    "dataset": "allenai/tulu-3-sft-mixture",
+    "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+    "lock": {
+      "path": "configs/data/tulu3_extension.assets.lock.json",
+      "sha256": "f3f726a793de40521c8a379b708f332408f7b52fc9ac1e41864fcac9e2afd044"
+    },
+    "metadata_requests_total_bytes": 11699,
+    "metadata_evidence": [
+      {
+        "path": ".cache/tulu-wave/metadata/tree.json",
+        "sha256": "520164d77035ffc39951d99a62c34f498efe77f0515729a6c2253a88fcb036ee"
+      },
+      {
+        "path": ".cache/tulu-wave/metadata/README.md",
+        "sha256": "1b6fff37d3f206b70086d9d65015a75dfb98b603a99af7330b0d44cd198464d6"
+      },
+      {
+        "path": ".cache/tulu-wave/metadata/statistics.json",
+        "sha256": "b72d64d1cb064a1b8787e1f661ff96b93d408ce77e2aa8aafd3d8365185a4e4f"
+      }
+    ],
+    "parquet_payload_bytes": 1412954868,
+    "shards": [
+      {
+        "filename": "data/train-00000-of-00006.parquet",
+        "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+        "size_bytes": 361046463,
+        "sha256": "41d4524345443ccca4202df2f01d84d84371afcde36f637178e0e2bcd14f79c7"
+      },
+      {
+        "filename": "data/train-00001-of-00006.parquet",
+        "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+        "size_bytes": 477019443,
+        "sha256": "c612164eabfacb99e37de582bf91712f878602755cf87daaa514bdeebec71f56"
+      },
+      {
+        "filename": "data/train-00002-of-00006.parquet",
+        "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+        "size_bytes": 146926607,
+        "sha256": "e15d19cb441578dacefa251e18023e2612497eaead1191c8b31acebf1a45260b"
+      },
+      {
+        "filename": "data/train-00003-of-00006.parquet",
+        "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+        "size_bytes": 162138577,
+        "sha256": "b9e312d1a0e777a3a64450cb89d2e28116ef96b4f85875157deddc811599be79"
+      },
+      {
+        "filename": "data/train-00004-of-00006.parquet",
+        "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+        "size_bytes": 149552548,
+        "sha256": "44ddad0bc45d272c4be32bd78a1473c0902e153d42178366414e0532ab29dd27"
+      },
+      {
+        "filename": "data/train-00005-of-00006.parquet",
+        "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+        "size_bytes": 116271230,
+        "sha256": "244ec7ec0591fc67553ca0c9f42a0cba2b34a100438369bd323267a93b3b34ca"
+      }
+    ],
+    "metadata_identity_verified": true,
+    "full_real_shard_content_downloaded_or_verified": false,
+    "card_sha256": "1b6fff37d3f206b70086d9d65015a75dfb98b603a99af7330b0d44cd198464d6",
+    "content_verification": "Operator acquisition checks complete content, including cached files. Public statistics are not a versioned lock."
+  },
+  "configured_real_objectives": {
+    "phase_id": "tulu3-extension-v1",
+    "codec": {
+      "objective": "epochs",
+      "optimizer_policy": "fp32_moments_bf16_stochastic_v1",
+      "optimizer_seed": 1729,
+      "optimizer_tile_elements": 1048576,
+      "validation_seed": 20261029,
+      "steps": 2000000,
+      "epochs": 3,
+      "batch_size": 1,
+      "accumulation": 1,
+      "learning_rate": 1e-05,
+      "new_learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "auxiliary_weight": 0.1,
+      "gradient_clip": 1.0,
+      "prediction_weight": 0.1,
+      "head_positions": 32,
+      "head_chunk": 8,
+      "validation_interval": 100,
+      "checkpoint_interval": 100,
+      "shard_bytes": 67108864,
+      "warmup_processed_tokens": 0,
+      "max_validation_examples": 32,
+      "minimum_unique_answer_positions": 10000000,
+      "max_processed_tokens": 100000000,
+      "recovery_probe": false,
+      "seed": 17
+    },
+    "generator": {
+      "objective": "tokens",
+      "optimizer_policy": "fp32_moments_bf16_stochastic_v1",
+      "optimizer_seed": 1729,
+      "optimizer_tile_elements": 1048576,
+      "validation_seed": 20261029,
+      "steps": 2000000,
+      "epochs": 1000,
+      "batch_size": 1,
+      "accumulation": 1,
+      "learning_rate": 1e-05,
+      "new_learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "auxiliary_weight": 0.1,
+      "gradient_clip": 1.0,
+      "prediction_weight": 0.1,
+      "head_positions": 32,
+      "head_chunk": 8,
+      "validation_interval": 100,
+      "checkpoint_interval": 100,
+      "shard_bytes": 67108864,
+      "warmup_processed_tokens": 1000000,
+      "max_validation_examples": 32,
+      "minimum_unique_answer_positions": 0,
+      "max_processed_tokens": 100000000,
+      "recovery_probe": false,
+      "seed": 17
+    },
+    "stage_budgets": {
+      "data": {
+        "phase_id": "tulu3-extension-v1",
+        "max_wall_seconds": 86400,
+        "max_steps": 1500000,
+        "max_source_tokens": 2000000000,
+        "max_answer_positions": 1200000000,
+        "max_canvas_positions": 3000000000,
+        "max_storage_bytes": 20000000000,
+        "max_phase_wall_seconds": 12096000,
+        "max_phase_steps": 20000000,
+        "max_phase_source_tokens": 5000000000,
+        "max_phase_answer_positions": 5000000000,
+        "max_phase_canvas_positions": 20000000000,
+        "max_phase_storage_bytes": 3000000000000
+      },
+      "teacher": {
+        "phase_id": "tulu3-extension-v1",
+        "max_wall_seconds": 604800,
+        "max_steps": 2000000,
+        "max_source_tokens": 100000000,
+        "max_answer_positions": 11000000,
+        "max_canvas_positions": 3000000000,
+        "max_storage_bytes": 150000000000,
+        "max_phase_wall_seconds": 12096000,
+        "max_phase_steps": 20000000,
+        "max_phase_source_tokens": 5000000000,
+        "max_phase_answer_positions": 5000000000,
+        "max_phase_canvas_positions": 20000000000,
+        "max_phase_storage_bytes": 3000000000000
+      },
+      "codec": {
+        "phase_id": "tulu3-extension-v1",
+        "max_wall_seconds": 604800,
+        "max_steps": 2000000,
+        "max_source_tokens": 1000000000,
+        "max_answer_positions": 1000000000,
+        "max_canvas_positions": 3000000000,
+        "max_storage_bytes": 10000000000,
+        "max_phase_wall_seconds": 12096000,
+        "max_phase_steps": 20000000,
+        "max_phase_source_tokens": 5000000000,
+        "max_phase_answer_positions": 5000000000,
+        "max_phase_canvas_positions": 20000000000,
+        "max_phase_storage_bytes": 3000000000000
+      },
+      "targets": {
+        "phase_id": "tulu3-extension-v1",
+        "max_wall_seconds": 604800,
+        "max_steps": 2000000,
+        "max_source_tokens": 110000000,
+        "max_answer_positions": 100000000,
+        "max_canvas_positions": 3000000000,
+        "max_storage_bytes": 120000000000,
+        "max_phase_wall_seconds": 12096000,
+        "max_phase_steps": 20000000,
+        "max_phase_source_tokens": 5000000000,
+        "max_phase_answer_positions": 5000000000,
+        "max_phase_canvas_positions": 20000000000,
+        "max_phase_storage_bytes": 3000000000000
+      },
+      "generator": {
+        "phase_id": "tulu3-extension-v1",
+        "max_wall_seconds": 1209600,
+        "max_steps": 2000000,
+        "max_source_tokens": 1000000000,
+        "max_answer_positions": 1000000000,
+        "max_canvas_positions": 3000000000,
+        "max_storage_bytes": 750000000000,
+        "max_phase_wall_seconds": 12096000,
+        "max_phase_steps": 20000000,
+        "max_phase_source_tokens": 5000000000,
+        "max_phase_answer_positions": 5000000000,
+        "max_phase_canvas_positions": 20000000000,
+        "max_phase_storage_bytes": 3000000000000
+      }
+    },
+    "controller_limits": {
+      "max_wave_wall_seconds": 4000000,
+      "max_controller_seconds": 7200,
+      "max_phase_controller_seconds": 28800,
+      "max_log_bytes": 4194304,
+      "reserve_free_bytes": 128000000000,
+      "max_phase_attempts": 32
+    }
+  },
+  "clean_cpu_wave": {
+    "manifest": {
+      "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/manifest.json",
+      "sha256": "dfb15275ebcc9f9f75a9e2010afe7909c62476c0ccf2804833eec253ee84ee41"
+    },
+    "status": "completed",
+    "config_sha256": "2244b5343e5342ce627f670e39bd12c687be194fcbc3c7047da216914ac30685",
+    "attempts": [
+      {
+        "receipt": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/attempts/1/result.json",
+          "sha256": "09bc81e084ce89011ee5fb002bd7e245daac18702d423674abe1e2d575d2008f"
+        },
+        "status": "budget_stopped",
+        "stage": "generator",
+        "objective_progress": {
+          "mode": "tokens",
+          "target": 100,
+          "completed": 45,
+          "remaining": 55,
+          "scope": "last controller-verified complete boundary; child canonical metrics provide live progress"
+        },
+        "last_valid_recovery": {
+          "schema": "native_reference_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\tulu-wave\\full-tests-release\\test_wave_resumes_explicit_com0\\tulu-fixture\\runs\\generator\\20261030T023724Z-a5c154cacd\\checkpoints\\version-8a6bccf161d64622a70965c05cef76ae\\manifest.json",
+          "sha256": "0adbf91152154f5d6b86f4595a872a33eaa73097292b63455e07e0fd5ff112dc"
+        }
+      },
+      {
+        "receipt": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/attempts/2/result.json",
+          "sha256": "d39f985f83b42f83c39cf5f1088b7f55a8b116347e8d7e2aeae8504d041277f2"
+        },
+        "status": "budget_stopped",
+        "stage": "generator",
+        "objective_progress": {
+          "mode": "tokens",
+          "target": 100,
+          "completed": 90,
+          "remaining": 10,
+          "scope": "last controller-verified complete boundary; child canonical metrics provide live progress"
+        },
+        "last_valid_recovery": {
+          "schema": "native_reference_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\tulu-wave\\full-tests-release\\test_wave_resumes_explicit_com0\\tulu-fixture\\runs\\generator\\20261030T023728Z-fe25787bd8\\checkpoints\\version-be288ba58eb24560a2b455b75978a6e0\\manifest.json",
+          "sha256": "f7b5f5f112eb4f8cf84ac2084fbb8a6a46fa52df8fd32c1c3fc7d3a955469020"
+        }
+      },
+      {
+        "receipt": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/attempts/3/result.json",
+          "sha256": "50192f4fa90283c0d2248d9866f27f473f68fed41942e30779eebfd5b87b8e13"
+        },
+        "status": "completed",
+        "stage": null,
+        "objective_progress": {
+          "mode": "tokens",
+          "target": 100,
+          "completed": 135,
+          "remaining": 0,
+          "scope": "last controller-verified complete boundary; child canonical metrics provide live progress"
+        },
+        "last_valid_recovery": {
+          "schema": "native_reference_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\tulu-wave\\full-tests-release\\test_wave_resumes_explicit_com0\\tulu-fixture\\runs\\generator\\20261030T023734Z-55794f0d45\\checkpoints\\version-2814c5a187334e8fa7100d922138d3d0\\manifest.json",
+          "sha256": "1fad6d4a9c075680374e95436b38142cf845bad1c7d5e6e53a76bd9db5437bd0"
+        }
+      }
+    ],
+    "children": [
+      {
+        "stage": "prepare_sources",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/prepare_sources.json",
+          "sha256": "48b8818060879fb94cac4dd0e7963fe49884d0f06445385adabf6266763b6e6e"
+        },
+        "child_pid": 28680,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 0.7190000000409782
+        },
+        "outputs": [
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/attempts/1/prepare_sources/acquisition.json",
+            "sha256": "786769f68ff368ab418d4e0a546dd99c1e6b08893e8e57b93bc4cf64e8778f41"
+          }
+        ]
+      },
+      {
+        "stage": "data",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/data.json",
+          "sha256": "7e2dd14a2c53a678bfb7345186d7ea097b8343110a91640ff9e36b0a02916702"
+        },
+        "child_pid": 49448,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 6.1560000001918525
+        },
+        "outputs": [
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/data/20261030T023658Z-a64549ad1c/artifacts/data/manifest.json",
+            "sha256": "4270b34990970e7efc6dd31ca96a41ca79d790304e562c537d2cdc04c9dde7f3"
+          },
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/data/20261030T023658Z-a64549ad1c/artifacts/data/capacity.json",
+            "sha256": "3d065f04755889ed3099ebfe3728f786bed77ce5a1013ca0282d70c004edffa8"
+          }
+        ],
+        "run_id": "20261030T023658Z-a64549ad1c",
+        "run": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/data/20261030T023658Z-a64549ad1c/manifest.json",
+          "sha256": "0a805d885c3204dc7b330e0608b055a8600f20ea587c945a37e0a3bd2cfcee87"
+        },
+        "summary": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/data/20261030T023658Z-a64549ad1c/summary.json",
+          "sha256": "7157d69122e4f85ce6c95258620cceb0cc30abc9aa9e60040831635d045cd9b5"
+        },
+        "implementation_sha256": "72be9a1161fcfe7d9a8c8ee7ba556fda19af49f48f0e5bc0ea5c6de7a1a76c63",
+        "origin": "software_fixture"
+      },
+      {
+        "stage": "prepare_model",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/prepare_model.json",
+          "sha256": "97986c0a0b3c0e3545a6685a33467ad1c2f58cbb875732a391cd7ea8762c91b0"
+        },
+        "child_pid": 36512,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 0.2190000000409782
+        },
+        "outputs": [
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/attempts/1/prepare_model/acquisition.json",
+            "sha256": "e0bb7649c3d2908a9bbcdcfbe42a88ceaf25c600feb692326456010328b1cb8f"
+          }
+        ]
+      },
+      {
+        "stage": "preflight",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/generator.json",
+          "sha256": "7b11d220a87ef9120b13a51c4d8e2c4a8111580769dedae7f95e0e78926fbbdb"
+        },
+        "child_pid": 39928,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 4.5310000001918525
+        },
+        "outputs": []
+      },
+      {
+        "stage": "teacher",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/teacher.json",
+          "sha256": "9606547279677ae6cbbbf6bb3acbbdc6f9f0d916e5488659c387bc31d5cd6c69"
+        },
+        "child_pid": 22132,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 4.452999999979511
+        },
+        "outputs": [
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/teacher/20261030T023709Z-70a6854c00/artifacts/features/manifest.json",
+            "sha256": "128aa03c83f1a12b555754aa62286243d29e195f763a4dfa30181cdc334e2672"
+          }
+        ],
+        "run_id": "20261030T023709Z-70a6854c00",
+        "run": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/teacher/20261030T023709Z-70a6854c00/manifest.json",
+          "sha256": "bb70526b95e76b9045b3d9d70709556d2e41375ca1e4bca12094a1552ae9a371"
+        },
+        "summary": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/teacher/20261030T023709Z-70a6854c00/summary.json",
+          "sha256": "781b1efd827c03542da073f9c2109107a1b5083b181f831bda3c57014bdf731f"
+        },
+        "implementation_sha256": "72be9a1161fcfe7d9a8c8ee7ba556fda19af49f48f0e5bc0ea5c6de7a1a76c63",
+        "origin": "software_fixture"
+      },
+      {
+        "stage": "codec",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/codec.json",
+          "sha256": "ee97e01e0657490d10d129c08f11e3ab7beac599d75fe63815649e2f188afa56"
+        },
+        "child_pid": 26060,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 4.547000000020489
+        },
+        "outputs": [
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/codec/20261030T023713Z-934b1fb5f7/artifacts/codec/manifest.json",
+            "sha256": "40356da4ee9f82c73cb5440cc579bb0a93403542ffcee75c29c1fe5c503d7914"
+          }
+        ],
+        "run_id": "20261030T023713Z-934b1fb5f7",
+        "run": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/codec/20261030T023713Z-934b1fb5f7/manifest.json",
+          "sha256": "becd3d63225ae5f92f73a24145c0325e9107d9cdf498b52f25a1fa4cb012c6e5"
+        },
+        "summary": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/codec/20261030T023713Z-934b1fb5f7/summary.json",
+          "sha256": "8bdfe3035b48f1205ce5b73b942670c263250bfe17ad495d6d8a908c3d876d64"
+        },
+        "implementation_sha256": "72be9a1161fcfe7d9a8c8ee7ba556fda19af49f48f0e5bc0ea5c6de7a1a76c63",
+        "origin": "software_fixture",
+        "optimizer_steps": 2,
+        "processed_source_tokens": 22,
+        "answer_position_exposures": 22,
+        "unique_available_answer_positions": 22,
+        "last_executed_phase": "full",
+        "completion": {
+          "code": "objective_attained",
+          "objective": "epochs",
+          "max_whole_update_tokens": 11,
+          "token_overshoot": null,
+          "maximum_token_overshoot": null
+        },
+        "terminal_recovery": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/codec/20261030T023713Z-934b1fb5f7/checkpoints/version-84afd46e207e4df19aad54eeb72bb3eb/manifest.json",
+          "sha256": "2711e542aea84f853f7ab5e36bc4a605d2edbd74d9b7d84af58904d4c1c399f9"
+        }
+      },
+      {
+        "stage": "targets",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/targets.json",
+          "sha256": "0192d46a925d8922300cc87892e12aee82becf20bb60300b26e6378d17119a0f"
+        },
+        "child_pid": 23600,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 5.844000000040978
+        },
+        "outputs": [
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/targets/20261030T023718Z-0396a0cafe/artifacts/targets/manifest.json",
+            "sha256": "bb52bc44e813618d80cdc2d5482a5d0ae345a3a3bcbcc661a544f14833e9b343"
+          }
+        ],
+        "run_id": "20261030T023718Z-0396a0cafe",
+        "run": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/targets/20261030T023718Z-0396a0cafe/manifest.json",
+          "sha256": "22b0cbcd8c7b54e4cb1ba7902151ebbed938f15c56cdb46332c7ac74ce1dd936"
+        },
+        "summary": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/targets/20261030T023718Z-0396a0cafe/summary.json",
+          "sha256": "686ebc2cd1c0058dfa42be0eb853fcd581e00dff6b354b75f7c61d629c8eb912"
+        },
+        "implementation_sha256": "72be9a1161fcfe7d9a8c8ee7ba556fda19af49f48f0e5bc0ea5c6de7a1a76c63",
+        "origin": "software_fixture"
+      },
+      {
+        "stage": "generator",
+        "status": "completed",
+        "exit_status": 0,
+        "config": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/waves/20261030T023655Z-80827da859/resolved/generator.json",
+          "sha256": "7b11d220a87ef9120b13a51c4d8e2c4a8111580769dedae7f95e0e78926fbbdb"
+        },
+        "child_pid": 43420,
+        "exit": {
+          "exit_status": 0,
+          "elapsed_seconds": 5.234999999869615
+        },
+        "outputs": [
+          {
+            "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/generator/20261030T023734Z-55794f0d45/artifacts/generator/manifest.json",
+            "sha256": "1b77554423314c124adf784a7fdd612603e4b320fdb9de547247298ebc226b36"
+          }
+        ],
+        "run_id": "20261030T023734Z-55794f0d45",
+        "run": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/generator/20261030T023734Z-55794f0d45/manifest.json",
+          "sha256": "28834e00a82900b26c4e74738776d6decb6edb080c6618de1c17486c09f0382d"
+        },
+        "summary": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/generator/20261030T023734Z-55794f0d45/summary.json",
+          "sha256": "ebedc7787eef785e6c79f4a4a8a46318022e5a02e5d1894055c774ff8c853360"
+        },
+        "implementation_sha256": "72be9a1161fcfe7d9a8c8ee7ba556fda19af49f48f0e5bc0ea5c6de7a1a76c63",
+        "origin": "software_fixture",
+        "optimizer_steps": 3,
+        "processed_source_tokens": 135,
+        "answer_position_exposures": 33,
+        "unique_available_answer_positions": 484,
+        "last_executed_phase": "full",
+        "completion": {
+          "code": "objective_attained",
+          "objective": "tokens",
+          "max_whole_update_tokens": 45,
+          "token_overshoot": 35,
+          "maximum_token_overshoot": 44
+        },
+        "terminal_recovery": {
+          "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/generator/20261030T023734Z-55794f0d45/checkpoints/version-2814c5a187334e8fa7100d922138d3d0/manifest.json",
+          "sha256": "1fad6d4a9c075680374e95436b38142cf845bad1c7d5e6e53a76bd9db5437bd0"
+        }
+      }
+    ],
+    "objective_progress": {
+      "mode": "tokens",
+      "target": 100,
+      "completed": 135,
+      "remaining": 0,
+      "scope": "last controller-verified complete boundary; child canonical metrics provide live progress"
+    },
+    "capacity_report": {
+      "path": ".cache/tulu-wave/full-tests-release/test_wave_resumes_explicit_com0/tulu-fixture/runs/data/20261030T023658Z-a64549ad1c/artifacts/data/capacity.json",
+      "sha256": "3d065f04755889ed3099ebfe3728f786bed77ce5a1013ca0282d70c004edffa8"
+    },
+    "capacity_fixture_minimum": 20,
+    "scan": {
+      "complete": true,
+      "rows_read": 50,
+      "excluded": {
+        "canonical_duplicate": 1
+      },
+      "source_inventory": {
+        "ai2-adapt-dev/no_robots_converted": 50
+      },
+      "admission_order": [
+        "row_identity",
+        "source_inventory",
+        "source_policy",
+        "message_bounds_and_roles",
+        "special_delimiters",
+        "language",
+        "render",
+        "interior_eos",
+        "lengths",
+        "oasst_overlap",
+        "canonical_dedup_and_group_union",
+        "group_split",
+        "pool_selection"
+      ],
+      "release_rows": 50,
+      "eligible": {
+        "train": {
+          "examples": 44,
+          "bands": [
+            44,
+            0,
+            0,
+            0,
+            0
+          ],
+          "sources": {
+            "ai2-adapt-dev/no_robots_converted": 44
+          },
+          "groups": 43,
+          "prompt_tokens": 1496,
+          "answer_positions": 484,
+          "combined_tokens": 1980,
+          "origins": {
+            "unknown": 44
+          }
+        },
+        "dev": {
+          "examples": 5,
+          "bands": [
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          "sources": {
+            "ai2-adapt-dev/no_robots_converted": 5
+          },
+          "groups": 5,
+          "prompt_tokens": 170,
+          "answer_positions": 55,
+          "combined_tokens": 225,
+          "origins": {
+            "unknown": 5
+          }
+        }
+      },
+      "connected_groups": 48
+    },
+    "selected": {
+      "train": {
+        "examples": 44,
+        "groups": 43,
+        "prompt_tokens": 1496,
+        "answer_positions": 484,
+        "combined_tokens": 1980,
+        "sources": {
+          "ai2-adapt-dev/no_robots_converted": 44
+        },
+        "origins": {
+          "unknown": 44
+        },
+        "bands": [
+          44,
+          0,
+          0,
+          0,
+          0
+        ],
+        "achieved_band_shares": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "dev": {
+        "examples": 5,
+        "groups": 5,
+        "prompt_tokens": 170,
+        "answer_positions": 55,
+        "combined_tokens": 225,
+        "sources": {
+          "ai2-adapt-dev/no_robots_converted": 5
+        },
+        "origins": {
+          "unknown": 5
+        },
+        "bands": [
+          5,
+          0,
+          0,
+          0,
+          0
+        ],
+        "achieved_band_shares": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "codec_selection": {
+      "policy": "source_length_whole_example_codec_v1",
+      "minimum_training_answer_positions": 20,
+      "available_training_answer_positions": 484,
+      "selected_training_answer_positions": 22,
+      "train_ids": [
+        "allenai/tulu-3-sft-mixture:ai2-adapt-dev/no_robots_converted:1",
+        "allenai/tulu-3-sft-mixture:ai2-adapt-dev/no_robots_converted:0"
+      ],
+      "dev_ids": [
+        "allenai/tulu-3-sft-mixture:ai2-adapt-dev/no_robots_converted:5",
+        "allenai/tulu-3-sft-mixture:ai2-adapt-dev/no_robots_converted:31",
+        "allenai/tulu-3-sft-mixture:ai2-adapt-dev/no_robots_converted:4"
+      ],
+      "train_indices": [
+        0,
+        1
+      ],
+      "dev_indices": [
+        44,
+        45,
+        46
+      ],
+      "order_sha256": "cd574e06a1c599c86d82ccdafb4d9a41a466d60db7b1f609da86d1963eab5f9c",
+      "whole_example_overshoot": 2,
+      "maximum_whole_example_overshoot": 15
+    },
+    "note": "Real configuration requires 10M; fixture qualification at 20 positions is a software test only.",
+    "fixture_objectives": {
+      "codec_passes": 1,
+      "minimum_training_answer_positions": 20,
+      "generator_token_target": 100,
+      "actual_generator_processed_tokens": 135,
+      "not_real_training": true
+    }
+  },
+  "connected_terminal_between_cadences": {
+    "manifest": {
+      "path": ".cache/tulu-wave/full-tests-release/test_connected_wave_sequential0/tulu-fixture/runs/waves/20261030T023621Z-7d0f47b628/manifest.json",
+      "sha256": "acb1940b9dba9ad811a0ad9b22b0b0854f680c3540f0cfd17a781b8f6d4692ce"
+    },
+    "completed_attempt": {
+      "path": ".cache/tulu-wave/full-tests-release/test_connected_wave_sequential0/tulu-fixture/runs/waves/20261030T023621Z-7d0f47b628/attempts/1/result.json",
+      "sha256": "2cad1f7e63664ef18aa7502b56032ee95e1fbb101d639b494ccf88b64ff998ea"
+    },
+    "generator_result": {
+      "run_id": "20261030T023649Z-1a376d7032",
+      "optimizer_steps": 3,
+      "processed_source_tokens": 135,
+      "completion": {
+        "code": "objective_attained",
+        "objective": "tokens",
+        "max_whole_update_tokens": 45,
+        "token_overshoot": 35,
+        "maximum_token_overshoot": 44
+      },
+      "last_executed_phase": "full"
+    },
+    "later_negative_check": "After complete execution and verified reuse, the test intentionally corrupts its target index and asserts resume fails. The final test wave status is failed; these fault-injected outputs are not reusable."
+  },
+  "bf16_fp32_lifetime_exact_continuation": [
+    {
+      "observation": {
+        "path": ".cache/tulu-wave/full-tests-release/test_in_process_recovery_relea0/lifetime_observations.json",
+        "sha256": "27bf5fb81d7a06f744c54d725f3a27517d6bfccfa10fe7179d02f21c2167c311"
+      },
+      "dtype": "bfloat16",
+      "captured": {
+        "parameters": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "gradients": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 191328
+        },
+        "moments": {
+          "tensors": 1156,
+          "elements": 191328,
+          "bytes": 765312
+        }
+      },
+      "before_allocation": {
+        "parameters": 0,
+        "gradients": 0,
+        "moments": 0
+      },
+      "replacement_forwards": [
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        }
+      ],
+      "exact_continuation": true,
+      "probe": {
+        "run_id": "20261030T023556Z-dd91dee215",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\tulu-wave\\full-tests-release\\native-production5\\runs\\profile\\20261030T023556Z-dd91dee215",
+        "status": "completed"
+      },
+      "uninterrupted": {
+        "run_id": "20261030T023554Z-5227c79ef1",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\tulu-wave\\full-tests-release\\native-production5\\runs\\profile\\20261030T023554Z-5227c79ef1",
+        "status": "completed"
+      },
+      "third_step_loss": 3.8125383853912354,
+      "optimizer_rounding_draws": 286992
+    },
+    {
+      "observation": {
+        "path": ".cache/tulu-wave/full-tests-release/test_in_process_recovery_relea1/lifetime_observations.json",
+        "sha256": "20dd0e65ca7635456912581ca9f4eed4a35642c7aa3b1fcb524b4a58ccab4a8c"
+      },
+      "dtype": "float32",
+      "captured": {
+        "parameters": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 382656
+        },
+        "gradients": {
+          "tensors": 578,
+          "elements": 95664,
+          "bytes": 382656
+        },
+        "moments": {
+          "tensors": 1156,
+          "elements": 191328,
+          "bytes": 765312
+        }
+      },
+      "before_allocation": {
+        "parameters": 0,
+        "gradients": 0,
+        "moments": 0
+      },
+      "replacement_forwards": [
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        },
+        {
+          "parameters": 0,
+          "gradients": 0,
+          "moments": 0
+        }
+      ],
+      "exact_continuation": true,
+      "probe": {
+        "run_id": "20261030T023601Z-dcfc1623d8",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\tulu-wave\\full-tests-release\\native-production5\\runs\\profile\\20261030T023601Z-dcfc1623d8",
+        "status": "completed"
+      },
+      "uninterrupted": {
+        "run_id": "20261030T023559Z-cdef56b484",
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\tulu-wave\\full-tests-release\\native-production5\\runs\\profile\\20261030T023559Z-cdef56b484",
+        "status": "completed"
+      },
+      "third_step_loss": 3.810925245285034,
+      "optimizer_rounding_draws": 0
+    }
+  ],
+  "preserved_failures": [
+    {
+      "log": {
+        "path": ".cache/tulu-wave/data-tests-1.txt",
+        "sha256": "96b0579f565e715ad2b1299f1f19009a7cdee97ca745a8da8747e8e65757e878"
+      },
+      "result": "3 failed, 1 passed in 8.33s",
+      "cause": "Windows sandbox Temp denied SQLite scratch access; unchanged assertions passed with normal permissions."
+    },
+    {
+      "log": {
+        "path": ".cache/tulu-wave/focused-1.txt",
+        "sha256": "27769fea355e3765b40caa9112b7a56ec76f73f200274cc395311a8977127904"
+      },
+      "result": "1 failed, 24 passed in 142.20s",
+      "cause": "Fixture incorrectly expected two updates to reach 100 tokens; its 45-token whole updates require three. Bounded resume expectation corrected; outcomes were not edited."
+    },
+    {
+      "log": {
+        "path": ".cache/tulu-wave/full-tests-final.txt",
+        "sha256": "16b76ec660ad13b68d03f2ab09c9580ec8624533c9bd837bbdb23846c2a0bfa3"
+      },
+      "result": "Interrupted validation attempt after lint detected a misplaced block in the new log-limit test. Task-owned pytest launcher/child stopped; no child remained. Corrected test then full suite reran."
+    }
+  ],
+  "verification_envelope": {
+    "test_exit": 0,
+    "smoke_exit": 0,
+    "combined_wall_seconds": 255.0007007000968,
+    "implementation_sha256": "72be9a1161fcfe7d9a8c8ee7ba556fda19af49f48f0e5bc0ea5c6de7a1a76c63",
+    "aggregate_verification_ceiling_seconds": 1800,
+    "prior_checks_conservative_charge_seconds": 1200,
+    "test_timeout_seconds": 450,
+    "smoke_timeout_seconds": 120,
+    "reserved_ceiling_seconds": 1770,
+    "conservatively_charged_actual_seconds": 1455.0007007000968,
+    "accounting": "Prior 1200-second conservative reservation covers completed/failed/interrupted checks; successful reservations release unused allowance. Final 450+120 seconds keeps the remaining reserved total at 1770 <= 1800."
+  },
+  "skip": {
+    "test": "tests/cuda/test_native_cuda.py::test_tiny_native_cuda_kernel_forward_backward",
+    "reason": "CUDA unavailable in installed CPU Torch build"
+  },
+  "not_executed": [
+    "real Tulu corpus acquisition/preparation/capacity audit",
+    "full Qwen weight download",
+    "10M-position real codec fit",
+    "100M-token real generator wave",
+    "CUDA/Spark full-model fit/kernels/recovery",
+    "quality, throughput or speed study",
+    "formal ACL/IS/financial benchmark or publication"
+  ],
+  "publication_authorization": "User explicitly requested test, commit, local main fast-forward and push origin/main after verification.",
+  "process_tree_regression": {
+    "platform": "Windows",
+    "controller_timeout_seconds": 3,
+    "authored_nested_helper_max_seconds": 12,
+    "observation": "Actual nested interpreter PID terminated; WaitForSingleObject signaled. No model-generated Python executed."
+  },
+  "changed_files": [
+    "README.md",
+    "configs/budgets/tulu3_extension.yaml",
+    "configs/codec/tulu3_10m_answer_tokens.yaml",
+    "configs/data/tulu3_extension.assets.lock.json",
+    "configs/data/tulu3_extension.yaml",
+    "configs/data/tulu3_sources.yaml",
+    "configs/generator/tulu3_100m_processed_tokens.yaml",
+    "configs/preparation/tulu3_model.yaml",
+    "configs/preparation/tulu3_sources.yaml",
+    "configs/targets/tulu3_extension.yaml",
+    "configs/teacher/tulu3_codec_10m.yaml",
+    "configs/waves/tulu3_extension.yaml",
+    "docs/contributions.json",
+    "docs/data_contracts.md",
+    "docs/decision_log.md",
+    "docs/extension_training.md",
+    "docs/implementation_status.md",
+    "docs/spark_setup.md",
+    "docs/training.md",
+    "docs/tulu3_extension_validation_2026-10-29.json",
+    "pyproject.toml",
+    "src/ncm_lab/cli.py",
+    "src/ncm_lab/config/stages.py",
+    "src/ncm_lab/config/waves.py",
+    "src/ncm_lab/data/artifacts.py",
+    "src/ncm_lab/data/capacity.py",
+    "src/ncm_lab/data/download.py",
+    "src/ncm_lab/data/language.py",
+    "src/ncm_lab/data/prepare.py",
+    "src/ncm_lab/data/selection.py",
+    "src/ncm_lab/data/sources/__init__.py",
+    "src/ncm_lab/data/sources/tulu.py",
+    "src/ncm_lab/data/tokenization.py",
+    "src/ncm_lab/inference/export.py",
+    "src/ncm_lab/runtime/generation.py",
+    "src/ncm_lab/runtime/prepare.py",
+    "src/ncm_lab/runtime/provenance.py",
+    "src/ncm_lab/runtime/runner.py",
+    "src/ncm_lab/runtime/wave.py",
+    "src/ncm_lab/teacher/stages.py",
+    "src/ncm_lab/training/engine.py",
+    "tests/conftest.py",
+    "tests/fixtures/process_tree.py",
+    "tests/integration/test_optimizer_recovery.py",
+    "tests/integration/test_tulu_data.py",
+    "tests/integration/test_tulu_wave.py",
+    "tests/unit/test_extension_selection.py",
+    "uv.lock",
+    "workflows/01_data/README.md",
+    "workflows/02_teacher_features/README.md",
+    "workflows/03_codec/README.md",
+    "workflows/04_latent_targets/README.md",
+    "workflows/05_generator/README.md",
+    "workflows/06_generation/README.md",
+    "workflows/07_extension_training/README.md"
+  ]
+}

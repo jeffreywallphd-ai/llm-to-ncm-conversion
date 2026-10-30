@@ -1,0 +1,160 @@
+{
+  "schema": "tulu_component_policy_v1",
+  "dataset_revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+  "card_sha256": "1b6fff37d3f206b70086d9d65015a75dfb98b603a99af7330b0d44cd198464d6",
+  "label_inventory_origin": "Unversioned public statistics observed 2026-10-29; actual pinned-file inventory is mandatory during preparation; unmapped labels fail closed.",
+  "components": {
+    "ai2-adapt-dev/coconot_converted": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai/coconot; Brahman et al. 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/evol_codealpaca_heval_decontaminated": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "Apache-2.0",
+      "answer_origin": "unknown",
+      "attribution": "theblackcat102/evol-codealpaca-v1; Luo et al. 2023",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/flan_v2_converted": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "component-specific; see FLAN v2",
+      "answer_origin": "unknown",
+      "attribution": "FLAN v2; Longpre et al. 2023",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/no_robots_converted": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "CC-BY-NC-4.0",
+      "answer_origin": "unknown",
+      "attribution": "HuggingFaceH4/no_robots; Rajani et al. 2023",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/numinamath_tir_math_decontaminated": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "Apache-2.0",
+      "answer_origin": "unknown",
+      "attribution": "AI-MO/NuminaMath-TIR; Beeching et al. 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/oasst1_converted": {
+      "include": false,
+      "exclusion_reason": "oasst_component",
+      "license": "Apache-2.0",
+      "answer_origin": "unknown",
+      "attribution": "OpenAssistant/oasst1; Kopf et al. 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/personahub_code_v2_34999": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai Tulu 3 Persona component; pinned collection card",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/personahub_ifdata_manual_seed_v3_29980": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai Tulu 3 Persona component; pinned collection card",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/personahub_math_v5_regen_149960": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai Tulu 3 Persona component; pinned collection card",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_hard_coded_repeated_10": {
+      "include": false,
+      "exclusion_reason": "repeated_identity_component",
+      "license": "CC-BY-4.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai/tulu-3-hard-coded",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_aya_100k": {
+      "include": false,
+      "exclusion_reason": "multilingual_component",
+      "license": "Apache-2.0",
+      "answer_origin": "unknown",
+      "attribution": "CohereForAI/aya_dataset; Singh et al. 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_open_math_2_gsm8k_50k": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "unknown; component-specific terms apply",
+      "answer_origin": "unknown",
+      "attribution": "ai2-adapt-dev/tulu_v3.9_open_math_2_gsm8k_50k",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_personahub_math_interm_algebra_20k": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai Tulu 3 Persona component; pinned collection card",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_sciriff_10k": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai/SciRIFF; Wadden et al. 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_synthetic_finalresp_wildguardmixtrain_decontaminated_50k": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "Apache-2.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai/wildguardmix; Han et al. 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_table_gpt_5k": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "MIT",
+      "answer_origin": "unknown",
+      "attribution": "LipengCS/Table-GPT; Zha et al. 2023",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_wildchat_100k": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "synthetic",
+      "attribution": "allenai/WildChat-1M GPT-4; Zhao et al. 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "ai2-adapt-dev/tulu_v3.9_wildjailbreak_decontaminated_50k": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai/wildjailbreak; Wildteaming 2024",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    },
+    "allenai/tulu-3-sft-personas-math-grade": {
+      "include": true,
+      "exclusion_reason": null,
+      "license": "ODC-BY-1.0",
+      "answer_origin": "unknown",
+      "attribution": "allenai/tulu-3-sft-personas-math-grade",
+      "terms": "Consult pinned collection card and linked upstream component; collection ODC-BY does not replace component terms."
+    }
+  }
+}

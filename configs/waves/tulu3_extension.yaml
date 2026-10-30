@@ -1,0 +1,23 @@
+{
+  "schema": "native_wave_v1",
+  "phase_id": "tulu3-extension-v1",
+  "run_root": "runs",
+  "limits": {
+    "max_wave_wall_seconds": 4000000,
+    "max_controller_seconds": 7200,
+    "max_phase_controller_seconds": 28800,
+    "max_log_bytes": 4194304,
+    "reserve_free_bytes": 128000000000,
+    "max_phase_attempts": 32
+  },
+  "stages": {
+    "prepare_sources": "configs/preparation/tulu3_sources.yaml",
+    "data": "configs/data/tulu3_extension.yaml",
+    "prepare_model": "configs/preparation/tulu3_model.yaml",
+    "teacher": "configs/teacher/tulu3_codec_10m.yaml",
+    "codec": "configs/codec/tulu3_10m_answer_tokens.yaml",
+    "targets": "configs/targets/tulu3_extension.yaml",
+    "generator": "configs/generator/tulu3_100m_processed_tokens.yaml"
+  },
+  "notes": "Operator starts explicitly after inspecting OASST initial testing and Spark feasibility; fresh extension initialization, never pilot transfer. Bounds are safety limits, not time forecasts."
+}

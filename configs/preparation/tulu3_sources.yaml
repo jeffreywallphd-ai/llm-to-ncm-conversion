@@ -1,0 +1,50 @@
+{
+  "schema": "native_stage_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": "configs/budgets/tulu3_extension.yaml",
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "hardware_profile": "spark",
+  "threads": 8,
+  "monitoring": "configs/monitoring/default.yaml",
+  "stage": "prepare",
+  "preparation": {
+    "asset_lock": "configs/data/tulu3_extension.assets.lock.json",
+    "assets_root": "runs/assets",
+    "asset_ids": [
+      "target:LICENSE",
+      "target:README.md",
+      "target:config.json",
+      "target:generation_config.json",
+      "target:merges.txt",
+      "target:tokenizer.json",
+      "target:tokenizer_config.json",
+      "target:vocab.json",
+      "oasst1:LICENSE",
+      "oasst1:README.md",
+      "oasst1:data/train-00000-of-00001-b42a775f407cee45.parquet",
+      "tulu3:README.md",
+      "tulu3:data/train-00000-of-00006.parquet",
+      "tulu3:data/train-00001-of-00006.parquet",
+      "tulu3:data/train-00002-of-00006.parquet",
+      "tulu3:data/train-00003-of-00006.parquet",
+      "tulu3:data/train-00004-of-00006.parquet",
+      "tulu3:data/train-00005-of-00006.parquet"
+    ],
+    "stages": {},
+    "budget": {
+      "schema_version": 1,
+      "phase_budget_id": "tulu3-extension-sources-v1",
+      "max_download_bytes": 2500000000,
+      "max_storage_bytes": 20000000000,
+      "max_wall_seconds": 21600,
+      "max_phase_wall_seconds": 86400,
+      "reserve_free_bytes": 128000000000,
+      "max_processed_bytes": 20000000000,
+      "max_prompt_examples": 1000000,
+      "max_prompt_chars": 131072,
+      "dev_fraction": 0.15
+    }
+  }
+}

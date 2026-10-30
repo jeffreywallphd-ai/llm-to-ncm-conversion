@@ -49,3 +49,14 @@ Old nearest-write recovery cannot resume under the new numerical contract; histo
 files/scores remain intact. Compatible inference exports remain optimizer-independent.
 Current CPU/BF16 evidence is in the [new receipt](../../docs/native_corrections_validation.json);
 no full-8B, Spark or GPU speed claim follows from those fixtures.
+
+## Message-history input
+
+```sh
+ncm generate --checkpoint /ABS/EXPORT/manifest.json --messages-file /ABS/messages.json
+```
+
+The JSON list preserves an optional leading system message and alternating text
+user/assistant turns ending with a user. This option and `--prompt-file` are mutually
+exclusive and share the preparation renderer. The reference target is never an
+input. See [extension data policy](../../docs/extension_training.md).

@@ -12,6 +12,10 @@ from ncm_lab.data.tokenization import prompt_tokens
 def validate_source_binding(settings, lock=None):
     """Validate metadata before tokenizer loading, content IO or dataset parsing."""
     format_name = settings.get("format", "jsonl")
+    if format_name == "tulu_parquet":
+        from ncm_lab.data.sources.tulu import source_assets
+
+        return source_assets(settings, lock)
     if format_name not in {"jsonl", "oasst_parquet"}:
         raise ValueError("unsupported source format: " + format_name)
     if not settings.get("source_asset_id"):
@@ -122,6 +126,10 @@ def raw_examples(settings, index_path=None, check=None):
 
 def prepare_data(run, value):
     settings = value["data"]
+    if settings.get("format") == "tulu_parquet":
+        from ncm_lab.data.sources.tulu import prepare_tulu
+
+        return prepare_tulu(run, value)
     validate_source_binding(settings)
     path = root() / settings["source_path"]
     source_sha = digest(path, run.meter.check)

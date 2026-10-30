@@ -12,7 +12,7 @@ From the repository root, after preceding dependencies and explicit asset prepar
 ncm data prepare --config configs/data/real_pilot.yaml
 ```
 
-The separate future budget configuration is `configs/data/initial_100m_source_pool.yaml`; it is excluded from automatic validation.
+The preserved historical budget configuration is `configs/data/initial_100m_source_pool.yaml`; it is excluded from automatic validation.
 
 Budget: pilot stages use finite per-run time/work/disk caps from
 `configs/budgets/real_pilot.yaml`, with a persistent shared aggregate ledger.
@@ -36,3 +36,19 @@ and [Spark prerequisites](../../docs/spark_setup.md) for stage-specific limitati
 <!-- BEGIN STAGE RESULTS -->
 The connected CPU fixture dataset has identity `0966c13f6a461872a737de7e59f8a9b213ed4f15154fd5fcd5c28e6493b210aa` (8 train, 4 dev examples; split by whole group). Bounded raw-JSON preparation and grouped splitting are separately covered by the test suite. Real OASST preparation was not executed.
 <!-- END STAGE RESULTS -->
+
+## Tulu extension stage
+
+Complete-context Tulu data, capacity report and OASST overlap index; no teacher allocation.
+
+```sh
+ncm data prepare --config configs/data/tulu3_extension.yaml
+```
+
+These independent configs use `runs/handoffs/tulu3-standalone/`. For per-wave
+resolved handoffs and sequential processes, use the complete
+[extension wave](../07_extension_training/README.md) after initial testing.
+Resource/safety interruption remains incomplete; native training resumes only
+a complete checkpoint, while partial preprocessing restarts with retained charges.
+Actual extension software results and real-data/GPU unknowns are recorded in the
+[dated receipt](../../docs/tulu3_extension_validation_2026-10-29.json).

@@ -82,7 +82,9 @@ stage/phase. Per-run and retained aggregate disk caps include pending writes.
 Budget checks occur at primitive boundaries; an executing kernel/file operation
 may finish before the stop is observed. No budget is silently expanded.
 
-The larger sequence is explicitly separate from smoke validation:
+The old OASST-only larger configs below are preserved historical envelopes. Their
+source capacity was not established; the recommended larger route is now the
+[qualified Tülu wave](extension_training.md), explicitly separate from smoke validation:
 
 ```sh
 ncm data prepare --config configs/data/initial_100m_source_pool.yaml
@@ -111,3 +113,41 @@ through tiles, with bounded aggregate transfers before committing. Intended/stor
 update norms and active scalar counts are distinct; a short BF16 run need not move
 every representative scalar. Numerical tests and incompatible recovery policy are
 documented in [native corrections](native_corrections.md).
+
+## Tülu extension and objective completion
+
+Use `ncm wave plan --config configs/waves/tulu3_extension.yaml` for offline read-only
+inspection, then explicitly `ncm wave run --config configs/waves/tulu3_extension.yaml`
+after inspecting initial testing and hardware feasibility. Resume with the same
+command plus `--resume /ABS/WAVE/manifest.json`. Child stages run sequentially in
+separate processes, use exact per-wave references, and remain discoverable by
+`ncm monitor serve --runs-dir runs --host 127.0.0.1 --port 6006`.
+
+The default extension fits a new codec and initializes a new embedded generator
+from the pinned Qwen backbone. Pilot recovery is not a transfer feature. Extension
+resume verifies software/config/data/codec and complete native recovery state in
+that exact wave. Inference exports cannot resume training. Interrupted preprocessing
+restarts into a fresh immutable run; failed work, crash reservations and charges stay.
+
+Teacher allocation requires the committed source/length-aware codec subset to reach
+10M distinct **training** answer positions; dev never fills that minimum. The same
+selector gates the controller and standalone teacher extraction. Codec normalization
+and scales remain train-only. Normalization/scale forwards are charged separately
+from training counters. The streaming broader target route keeps no permanent full
+teacher cache and adds no teacher fallback to generator training.
+
+Training objectives are explicit: step-based pilot/fixture, three-pass extension
+codec, token-based extension generator. Target attainment succeeds only after final
+held-out selection, complete terminal recovery and selected inference export.
+Terminal updates force validation/checkpointing between normal cadences. Resource
+interruption, cancellation, finalization failure and premature safety caps remain
+incomplete even if an earlier selection exists. Token rounding occurs at whole
+updates; completion reports actual overshoot and its maximum, rather than claiming
+an exactly 100M count. Warmup is included in that objective, while held-out work,
+teacher work and padding remain separate.
+
+Native attempts share the deliberate extension ledger across wave IDs. Controller
+overhead excludes waiting for children; child time is reserved/charged only by the
+existing stage meters. Acquisition also retains conservative crash wall reservations.
+The [operator guide](extension_training.md) lists every finite wall/work/storage
+ceiling, partial-preprocessing behavior and simultaneous storage estimates.

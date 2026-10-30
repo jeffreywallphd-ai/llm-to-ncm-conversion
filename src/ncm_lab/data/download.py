@@ -85,13 +85,28 @@ class AcquisitionMeter:
             raise ValueError(
                 "preparation phase budget/asset selection changed; select a deliberate new phase_budget_id"
             )
+        self.lock = self.path.with_suffix(".lock")
+        with self.lock.open("x"):
+            pass
+        # Read again while locked so another invocation cannot lose its final charge.
+        if self.path.exists():
+            self.state = json.loads(self.path.read_text(encoding="utf-8"))
+        if self.state["budget_hash"] != config_hash or self.state["selection_hash"] != selection_hash:
+            self.lock.unlink()
+            raise ValueError("preparation phase budget/selection changed while acquiring lock")
+        if self.state["elapsed_seconds"] + budget.max_wall_seconds > budget.max_phase_wall_seconds:
+            self.lock.unlink()
+            raise ValueError("aggregate preparation wall reservation exhausted")
+        self.reserved = budget.max_wall_seconds
+        self.state["elapsed_seconds"] += self.reserved
+        self.closed = False
         self.started = self.saved_at = time.monotonic()
         self.save()
 
     def check(self):
         now = time.monotonic()
         elapsed = now - self.started
-        phase = self.state["elapsed_seconds"] + now - self.saved_at
+        phase = self.state["elapsed_seconds"] - self.reserved + now - self.saved_at
         if elapsed >= self.budget.max_wall_seconds or phase >= self.budget.max_phase_wall_seconds:
             raise ValueError("preparation wall-time budget reached; partial files retained for recovery")
 
@@ -110,6 +125,14 @@ class AcquisitionMeter:
         # Persist before reading. Interrupted reads conservatively consume their reservation.
         self.state["charged_download_bytes"] += count
         self.save()
+
+    def close(self):
+        if not self.closed:
+            self.save()
+            self.state["elapsed_seconds"] -= self.reserved
+            atomic_json(self.path, self.state)
+            self.closed = True
+            self.lock.unlink()
 
 
 def verify_asset(path, asset, meter=None):

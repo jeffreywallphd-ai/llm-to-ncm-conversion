@@ -12,7 +12,7 @@ From the repository root, after preceding dependencies and explicit asset prepar
 ncm generator train --config configs/validation/generator_pilot.yaml
 ```
 
-The separate future budget configuration is `configs/generator/initial_100m_processed_tokens.yaml`; it is excluded from automatic validation.
+The preserved historical budget configuration is `configs/generator/initial_100m_processed_tokens.yaml`; it is excluded from automatic validation.
 
 Budget: pilot stages use finite per-run time/work/disk caps from
 `configs/budgets/real_pilot.yaml`, with a persistent shared aggregate ledger.
@@ -64,3 +64,19 @@ Old nearest-write recovery cannot resume under the new numerical contract; histo
 files/scores remain intact. Compatible inference exports remain optimizer-independent.
 Current CPU/BF16 evidence is in the [new receipt](../../docs/native_corrections_validation.json);
 no full-8B, Spark or GPU speed claim follows from those fixtures.
+
+## Tulu extension stage
+
+Fresh pinned-Qwen initialization; nominal 100M processed training tokens including 1M warmup, then full fine tuning and terminal recovery/export.
+
+```sh
+ncm generator train --config configs/generator/tulu3_100m_processed_tokens.yaml
+```
+
+These independent configs use `runs/handoffs/tulu3-standalone/`. For per-wave
+resolved handoffs and sequential processes, use the complete
+[extension wave](../07_extension_training/README.md) after initial testing.
+Resource/safety interruption remains incomplete; native training resumes only
+a complete checkpoint, while partial preprocessing restarts with retained charges.
+Actual extension software results and real-data/GPU unknowns are recorded in the
+[dated receipt](../../docs/tulu3_extension_validation_2026-10-29.json).

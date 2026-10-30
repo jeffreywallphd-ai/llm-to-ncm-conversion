@@ -145,7 +145,12 @@ class Dataset:
         return row
 
     def indices(self, split):
-        return [i for i in range(len(self)) if self.metadata(i)["example"]["split"] == split]
+        return [i for i, row in self.iter_metadata() if row["example"]["split"] == split]
+
+    def iter_metadata(self):
+        with (self.path / "records.jsonl").open(encoding="utf-8") as stream:
+            for index, line in enumerate(stream):
+                yield index, json.loads(line)
 
 
 class Cursor:

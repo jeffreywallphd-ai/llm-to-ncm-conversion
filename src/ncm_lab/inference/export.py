@@ -21,7 +21,7 @@ def fixture_tokenizer():
     result = PreTrainedTokenizerFast(
         tokenizer_object=tokenizer, bos_token="<bos>", eos_token="<eos>", pad_token="<pad>", unk_token="<unk>"
     )
-    result.chat_template = "{{ bos_token }} {{ messages[0]['content'] }}"
+    result.chat_template = "{{ bos_token }} {% for message in messages %}{{ message['content'] }}{% if not loop.last %} {% endif %}{% endfor %}"
     return result
 
 
@@ -152,13 +152,24 @@ def transfer_token_ids(ids):
     return ids.to(device="cpu").tolist()
 
 
-def generate(path, prompt_file, device="cpu", meter=None, inference=None):
-    model, tokenizer, manifest = load_export(path, device, meter.check if meter else None)
-    text = Path(prompt_file).read_text(encoding="utf-8")
-    if len(text) > 32768:
+def generate(path, prompt_file=None, device="cpu", meter=None, inference=None, *, messages_file=None):
+    import json
+
+    if (prompt_file is None) == (messages_file is None):
+        raise ValueError("choose exactly one prompt-file or messages-file")
+    input_path = Path(prompt_file or messages_file)
+    if input_path.stat().st_size > 524288:
+        raise ValueError("bounded generation input byte limit exceeded")
+    text = input_path.read_text(encoding="utf-8")
+    if len(text) > (131072 if messages_file else 32768):
         raise ValueError("bounded initial prompt character limit exceeded")
     from ncm_lab.data.tokenization import prompt_tokens
 
+    if messages_file:
+        from ncm_lab.data.tokenization import validated_messages
+
+        text = validated_messages(json.loads(text))
+    model, tokenizer, manifest = load_export(path, device, meter.check if meter else None)
     ids = prompt_tokens(tokenizer, text)
     if len(ids) > 512:
         raise ValueError("initial generation prompt token limit is 512")

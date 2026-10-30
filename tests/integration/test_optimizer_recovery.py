@@ -145,6 +145,77 @@ def assert_same_recovery_state(left, right):
         assert left == right
 
 
+def test_token_objective_terminal_finalization_and_near_endpoint_resume(native_artifacts):
+    cfg = copy.deepcopy(native_artifacts["configs"]["generator"])
+    cfg["output_ref"] = None
+    cfg["dtype"] = "bfloat16"
+    cfg["training"].update(
+        objective="tokens",
+        max_processed_tokens=11,
+        steps=20,
+        epochs=100,
+        validation_interval=100,
+        checkpoint_interval=100,
+        warmup_processed_tokens=0,
+    )
+    full = execute(cfg)
+    assert full["status"] == "completed" and full["optimizer_steps"] == 3, full
+    assert full["processed_source_tokens"] == 15
+    assert full["completion"]["token_overshoot"] == full["completion"]["maximum_token_overshoot"] == 4
+    stopped = execute(cfg, stop_after=2)
+    assert stopped["status"] == "completed" and stopped["completion"]["code"] == "diagnostic_boundary"
+    resumed = execute(cfg, stopped["checkpoint"])
+    assert resumed["status"] == "completed" and resumed["processed_source_tokens"] == 15, resumed
+    left, lo, ls, lr = terminal(full["checkpoint"])
+    right, ro, rs, rr = terminal(resumed["checkpoint"])
+    assert_same_recovery_state(left.state_dict(), right.state_dict())
+    assert_same_recovery_state(lo.state_dict(), ro.state_dict())
+    assert_same_recovery_state(lr, rr)
+    assert ls["cursor"] == rs["cursor"] and ls["optimizer_steps"] == rs["optimizer_steps"] == 3
+    assert ls["best_dev_loss"] is not None and Path(full["artifact"]).is_file()
+
+
+def test_resource_interruption_is_incomplete_despite_prior_selection(native_artifacts):
+    cfg = copy.deepcopy(native_artifacts["configs"]["generator"])
+    cfg["output_ref"] = None
+    cfg["training"].update(
+        objective="tokens",
+        max_processed_tokens=11,
+        steps=20,
+        epochs=100,
+        validation_interval=1,
+        checkpoint_interval=1,
+        warmup_processed_tokens=0,
+    )
+    cfg["budget"]["max_steps"] = 1
+    stopped = execute(cfg)
+    assert stopped["status"] == "budget_stopped" and not stopped["artifact_published"], stopped
+    assert stopped["completion"]["code"] == "resource_interrupted" and Path(stopped["checkpoint"]).is_file()
+    _, _, state, _ = terminal(stopped["checkpoint"])
+    assert state["optimizer_steps"] == 1 and state["processed_source_tokens"] == 5
+    assert not list(Path(stopped["path"]).glob("artifacts/generator/manifest.json"))
+    continued = execute(cfg, stopped["checkpoint"])
+    assert continued["status"] == "budget_stopped" and continued["processed_source_tokens"] == 10, continued
+    completed = execute(cfg, continued["checkpoint"])
+    assert completed["status"] == "completed" and completed["processed_source_tokens"] == 15, completed
+
+
+def test_safety_steps_do_not_complete_token_objective(native_artifacts):
+    cfg = copy.deepcopy(native_artifacts["configs"]["generator"])
+    cfg["output_ref"] = None
+    cfg["training"].update(
+        objective="tokens",
+        max_processed_tokens=100,
+        steps=1,
+        epochs=100,
+        validation_interval=100,
+        checkpoint_interval=100,
+    )
+    result = execute(cfg)
+    assert result["status"] == "incomplete" and result["completion"]["code"] == "objective_incomplete", result
+    assert Path(result["checkpoint"]).is_file() and not result["artifact_published"]
+
+
 @pytest.mark.parametrize("dtype", ["bfloat16", "float32"])
 def test_in_process_recovery_releases_old_tensors_and_matches_uninterrupted(
     native_artifacts, monkeypatch, tmp_path, dtype
