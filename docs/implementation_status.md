@@ -53,3 +53,17 @@ connected monitoring smoke passed. Local two-shard Tülu-shaped waves exercised
 qualification, separate stage processes, terminal export, exact same-wave recovery,
 retained preprocessing charges, corrupted-output rejection and Windows child-tree
 cancellation. These are software fixtures, not measurements of released Tülu capacity.
+
+## Spark memory-accounting correction — 2026-11-02
+
+Reclaim-aware host snapshots, bounded read-only cgroup-v2 headroom, selected-device
+capacity operands, explicit unknown/zero diagnostics and compatible metric
+projection are implemented. See [implementation/validation](memory_accounting_fix.md).
+Synthetic reproduction and safety tests do not establish Spark fit. Actual GB10
+training/recovery, activation/allocator peaks and namespace-hidden constraints
+remain unverified; this local CPU environment still lacks CUDA and adequate full
+checkpoint disk space. Historical blocked runs/handoffs/checkpoints remain intact.
+
+Final software verification: 214 passed, one CUDA skip, Ruff and whitespace checks
+passed; [dated receipt](memory_accounting_validation_2026-11-02.json) includes the
+preserved initial integration failure and successful corrected rerun.

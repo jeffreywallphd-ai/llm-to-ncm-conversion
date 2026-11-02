@@ -55,3 +55,19 @@ RoPE buffers in their declared dtype. See the C1–C8 correction report/receipt.
 - Thin wave control invokes separate existing CLI stage processes, with per-wave snapshots/handoffs, persistent phase ledgers and explicit native recovery. Preprocessing retries restart and remain charged. Controller waiting is excluded from overhead accounting.
 - Explicit objective completion forces terminal validation/recovery/export; resource and safety stops remain incomplete. Preserve stochastic BF16 policy, private RNG and the completed-gradient-report lifetime fix.
 - Engineering token/work/storage ceilings are declared in extension configs, not automatically increased or treated as performance forecasts. No architecture deviation or formal benchmark study was introduced.
+
+## 2026-11-02 — Spark availability accounting
+
+Use Linux MemAvailable for raw host availability instead of immediately free pages.
+Keep byte-accurate host totals/free/availability separate from conservative visible
+cgroup-v2 limit-minus-current headroom and the selected CUDA device total. Never
+add shared pools, swap/cache estimates or a CUDA free-memory ceiling. Preserve zero,
+unknown capacity, the existing zero RAM reserve, all baseline inventory and disk
+guards, and distinguish unsupported discovery from a known unreadable finite limit.
+
+Keep parsing/probing in one standard-library module and numeric metric projection
+separate from structured diagnostics. A failed integration run exposed the old
+metric-only assumption; preserve that evidence and test the corrected consumer.
+The optional verified-hash reuse is a separate I/O change, not a memory-capacity
+claim. No architecture, dataset, optimizer, loss, schedule or resource-cap deviation
+was introduced; real Spark/full-model peak validation remains unexecuted.

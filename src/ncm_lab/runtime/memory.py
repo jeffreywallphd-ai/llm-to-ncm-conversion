@@ -3,10 +3,10 @@
 import ctypes
 import os
 import sys
-from ncm_lab.runtime.doctor import host_available
+from ncm_lab.runtime.host_memory import memory_snapshot, host_available as host_available
 
 
-def observe():
+def _process_memory():
     current = peak = None
     if os.name == "nt":
 
@@ -41,8 +41,20 @@ def observe():
         if os.path.exists("/proc/self/statm"):
             with open("/proc/self/statm") as stream:
                 current = int(stream.read().split()[1]) * os.sysconf("SC_PAGE_SIZE")
+    return current, peak
+
+
+def observe(*, memory=None, process_memory=None):
+    snapshot = memory_snapshot() if memory is None else memory
+    warnings = list(snapshot["memory_warnings"])
+    try:
+        current, peak = (process_memory or _process_memory)()
+    except (OSError, ValueError, AttributeError, IndexError, OverflowError, ImportError, NotImplementedError):
+        current = peak = None
+        warnings.append("process RSS observation unavailable; not used as host capacity")
     return {
-        "host_available_bytes": host_available(),
+        **snapshot,
+        "memory_warnings": warnings,
         "process_rss_bytes": current,
         "process_lifetime_peak_rss_bytes": peak,
         "scope": "observed process memory; Spark host/device capacities must not be summed",

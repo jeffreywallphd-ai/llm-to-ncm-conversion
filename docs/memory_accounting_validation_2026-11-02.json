@@ -1,0 +1,301 @@
+{
+  "schema": "spark_memory_accounting_validation_v1",
+  "date": "2026-11-02",
+  "date_timezone": "America/New_York; run IDs use UTC",
+  "recorded_at_utc": "2026-11-02T20:35:56.789680+00:00",
+  "reviewed_base": "aa28fa605cc4030960bd4509e3375f0d56fbb798",
+  "implementation_sha256": "9404148f14f0496952e919c77119119b3c32e90b0c74b3947847f0cdce111ab6",
+  "scope": "Offline CPU software tests and non-training diagnostics only; synthetic Linux/cgroup/CUDA inputs plus tiny production trainer/recovery fixtures. No real Spark or full-model feasibility evidence.",
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.14",
+    "packages": {
+      "torch": "2.13.0+cpu",
+      "transformers": "5.15.0",
+      "pytest": "9.0.2",
+      "ruff": "0.14.14"
+    },
+    "cuda_available": false,
+    "dependencies_synced_or_installed": false,
+    "psutil_dependency_added": false
+  },
+  "archive_preserved": {
+    "branch": "archive/hierarchical-drafter",
+    "sha": "c5e5329172e63026995a440aa0591a5e15804ab4"
+  },
+  "cpu_validation_envelope": {
+    "exit_status": 0,
+    "wall_seconds": 242.63256350019947,
+    "timeout_seconds": 600,
+    "implementation_sha256": "9404148f14f0496952e919c77119119b3c32e90b0c74b3947847f0cdce111ab6",
+    "aggregate_cpu_validation_ceiling_seconds": 1200,
+    "prior_completed_checks_conservative_seconds": 300,
+    "postcheck_reserved_seconds": 120,
+    "reserved_ceiling_seconds": 1020,
+    "meaning": "1200-second aggregate wall envelope; prior completed checks conservatively charged 300 seconds, final suite capped at 600 seconds, all postchecks reserved 120 seconds. Actual final suite wall 242.63 seconds; no real model run.",
+    "remaining_postchecks_include": "30-second reproduction and bounded lint/metadata commands"
+  },
+  "test_commands": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/unit/test_memory_accounting.py tests/unit/test_spark_memory_preflight.py --basetemp=.cache/spark-memory/focused-1",
+      "exit_status": 0,
+      "passed": 57,
+      "pytest_seconds": 1.08,
+      "timeout_seconds": 120,
+      "log": {
+        "path": ".cache/spark-memory/focused-1.txt",
+        "sha256": "6c8d23b1e3089d28e8bfd135665876a0883b897365b015a154254a81e54cda20"
+      },
+      "scope": "focused implementation-stage check; final implementation covered by full-final"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/unit/test_memory_accounting.py tests/unit/test_spark_memory_preflight.py tests/unit/test_asset_hash_reuse.py --basetemp=.cache/spark-memory/focused-2",
+      "exit_status": 0,
+      "passed": 62,
+      "pytest_seconds": 0.91,
+      "timeout_seconds": 120,
+      "log": {
+        "path": ".cache/spark-memory/focused-2.txt",
+        "sha256": "be48947d972cc5630ea1228a336b2bb9cda251dbc95c9c04913f503505e05661"
+      },
+      "scope": "focused implementation-stage check; final implementation covered by full-final"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/unit/test_memory_accounting.py tests/unit/test_spark_memory_preflight.py tests/unit/test_asset_hash_reuse.py --basetemp=.cache/spark-memory/focused-final",
+      "exit_status": 0,
+      "passed": 70,
+      "pytest_seconds": 1.44,
+      "timeout_seconds": 120,
+      "log": {
+        "path": ".cache/spark-memory/focused-final.txt",
+        "sha256": "6931840b9c3185f91a8055af7df3a597478f984cf2b78db35b3327926931af62"
+      },
+      "scope": "focused implementation-stage check; final implementation covered by full-final"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/spark-memory/full-tests",
+      "exit_status": 1,
+      "failed": 3,
+      "passed": 178,
+      "skipped": 1,
+      "setup_errors": 32,
+      "pytest_seconds": 105.66,
+      "timeout_seconds": 600,
+      "gate": {
+        "exit_status": 1,
+        "wall_seconds": 110.68278199993074,
+        "timeout_seconds": 600,
+        "implementation_sha256": "33d2b2dc44fe47c1c5314913fc645ac185b42fd30e6fa05e518194be7b30ce87",
+        "aggregate_cpu_validation_ceiling_seconds": 1200,
+        "prior_checks_conservative_charge_seconds": 120,
+        "nontraining_cli_reserved_seconds": 90,
+        "lint_metadata_reserved_seconds": 60,
+        "total_reserved_ceiling_seconds": 870
+      },
+      "log": {
+        "path": ".cache/spark-memory/full-tests.txt",
+        "sha256": "2291fb112c93667dee78cc2e3f0ee4366feec62c8b97ff8485da72d6890d1500"
+      },
+      "cause": "Trainer tried to wrap new structured/string memory diagnostics in numeric Measure records; fixed byte-scalar projection in training/engine.py and added production trainer integration coverage.",
+      "preservation": "Failed fixture runs and immutable resolved configurations retained under .cache/spark-memory/full-tests; no historical result rewritten."
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/integration/test_memory_monitoring.py --basetemp=.cache/spark-memory/monitoring-regression",
+      "exit_status": 0,
+      "passed": 1,
+      "pytest_seconds": 4.05,
+      "timeout_seconds": 120,
+      "log": {
+        "path": ".cache/spark-memory/monitoring-regression.txt",
+        "sha256": "b6e48fe0ec8916c16ac468a3fcd5c959065c886cbfe4cb7df367de86fd47fb50"
+      }
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/spark-memory/full-final",
+      "exit_status": 0,
+      "passed": 214,
+      "skipped": 1,
+      "failed": 0,
+      "pytest_seconds": 237.57,
+      "wall_seconds": 242.63256350019947,
+      "timeout_seconds": 600,
+      "log": {
+        "path": ".cache/spark-memory/full-final.txt",
+        "sha256": "5016b05843812f2a129ae960766293a43120d9cb86cf6cbe55e7d15af55339f9"
+      },
+      "implementation_sha256": "9404148f14f0496952e919c77119119b3c32e90b0c74b3947847f0cdce111ab6",
+      "skip": {
+        "test": "tests/cuda/test_native_cuda.py::test_tiny_native_cuda_kernel_forward_backward",
+        "reason": "CUDA is not available; no real-8B validation implied"
+      }
+    }
+  ],
+  "final_checks": [
+    {
+      "command": ".venv/Scripts/ruff.exe check .",
+      "exit_status": 0,
+      "stdout": "All checks passed!",
+      "stderr": "",
+      "timeout_seconds": 30
+    },
+    {
+      "command": "git diff --check",
+      "exit_status": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'docs/contributions.json', LF will be replaced by CRLF the next time Git touches it",
+      "timeout_seconds": 30
+    }
+  ],
+  "nontraining_cli_checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab doctor --profile spark",
+      "exit_status": 0,
+      "seconds": 3.9393108999356627,
+      "output": {
+        "path": ".cache/spark-memory/doctor-spark.json",
+        "sha256": "6a1ed85e4b61636c0da814d4f95ad070ac4860e388037d31a604bafd7fcd862b"
+      },
+      "status": null,
+      "blockers": [],
+      "timeout_seconds": 30,
+      "scope": "Actual non-training JSON command on existing Windows CPU development environment, not Spark execution"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab preflight --config configs/validation/spark_8b_profile.yaml",
+      "exit_status": 2,
+      "seconds": 6.557803800096735,
+      "output": {
+        "path": ".cache/spark-memory/preflight-profile.json",
+        "sha256": "e69e0b118d1c9850d4e31265f9eff1fdc826a84ac2dd203e2d86160109847954"
+      },
+      "status": "blocked",
+      "blockers": [
+        "CUDA unavailable in this PyTorch build",
+        "memory capacity measurement/constraint assessment unavailable: device_total_bytes",
+        "free disk cannot cover retained/new full recovery shards"
+      ],
+      "timeout_seconds": 30,
+      "scope": "Actual non-training JSON command on existing Windows CPU development environment, not Spark execution"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab preflight --config configs/validation/generator_pilot.yaml",
+      "exit_status": 2,
+      "seconds": 7.125301799969748,
+      "output": {
+        "path": ".cache/spark-memory/preflight-pilot.json",
+        "sha256": "d71d80f6478e8508ac95dcefb99b81a765345feb7e0f7e2ac02cb96f84bb9d27"
+      },
+      "status": "blocked",
+      "blockers": [
+        "CUDA unavailable in this PyTorch build",
+        "memory capacity measurement/constraint assessment unavailable: device_total_bytes",
+        "free disk cannot cover retained/new full recovery shards"
+      ],
+      "timeout_seconds": 30,
+      "scope": "Actual non-training JSON command on existing Windows CPU development environment, not Spark execution"
+    }
+  ],
+  "synthetic_reproduction": {
+    "scope": "synthetic software fixture; actual meta-only parameter inventory; all hardware/OS/disk inputs mocked",
+    "command": {
+      "command": ".venv/Scripts/python.exe .cache/spark-memory/reproduce.py",
+      "exit_status": 0,
+      "wall_seconds": 7.344000000040978,
+      "timeout_seconds": 30
+    },
+    "input_meminfo": "MemTotal: 125514547 kB\nMemFree: 54488524 kB\nMemAvailable: 117125939 kB\n",
+    "before_free_bytes": 55796248576,
+    "before_baseline_rejected": true,
+    "after_available_bytes": 119936961536,
+    "after_baseline_admitted": true,
+    "baseline_bytes": 99007205760,
+    "remaining_after_baseline_bytes": 20929755776,
+    "limiting_source": "proc_meminfo.MemAvailable",
+    "selected_device_index": 1,
+    "mock_selected_device_total_bytes": 137438953472,
+    "memory_reserve_bytes": 0,
+    "fixture_file_reads": {
+      "/proc/meminfo": 1,
+      "/proc/self/cgroup": 1,
+      "/proc/self/mountinfo": 1,
+      "/sys/fs/cgroup/memory.max": 1
+    },
+    "output": {
+      "path": ".cache/spark-memory/reproduction.json",
+      "sha256": "c8b4738d3c3b90cc876ce7f6872db1f50d36c9ffdf1b46d481e04286e53679fa"
+    },
+    "script": {
+      "path": ".cache/spark-memory/reproduce.py",
+      "sha256": "4fe1d690977ce71a7bb2b9958853d7306efae1bc28d97d618d4960b8868915c8"
+    }
+  },
+  "required_safety_coverage": [
+    "zero versus unknown",
+    "malformed/contradictory core input",
+    "1024 conversion and single fresh snapshot",
+    "conservative fallback/OS failure/Windows/other POSIX mocks",
+    "cgroup2 child and ancestor own-group max/current pairs",
+    "unlimited leaf, zero limit, over-limit current",
+    "unknown usage blocks finite limit",
+    "missing root interface versus legacy discovery",
+    "mount roots/escapes/namespace membership proof/widest view/bounded ancestors",
+    "no cgroup cache credit, no swap/cache/pool addition",
+    "current selected CUDA device total, no CUDA free ceiling",
+    "CPU/discrete GPU policy and independent CUDA/disk guards",
+    "CLI strict JSON with forbidden training/acquisition",
+    "immutable saved decision versus later close observation",
+    "historical monitor records and actual trainer scalar projection"
+  ],
+  "separate_optional_hash_reuse": {
+    "files": [
+      "src/ncm_lab/teacher/model.py",
+      "tests/unit/test_asset_hash_reuse.py"
+    ],
+    "tests": 5,
+    "result": "Same filename-to-SHA256 map, one read per asset per invocation, repeated invocation still verifies; SHA256, Git-blob, size and missing-file failures preserved.",
+    "scope": "Redundant I/O removal only; no physical RAM or duplicate page-cache claim"
+  },
+  "unchanged": [
+    "model/architecture/pin",
+    "trainable backbone",
+    "dataset/splits",
+    "optimizer precision and baseline counts",
+    "loss/schedule",
+    "resource caps",
+    "prior handoffs/checkpoints/ledgers/manifests",
+    "GPL and third-party notices"
+  ],
+  "manual_hardware_probe": {
+    "command": "ncm profile train --config configs/validation/spark_8b_profile.yaml",
+    "executed": false,
+    "inputs": {
+      "targets": "runs/handoffs/targets.json"
+    },
+    "output_ref_may_replace": "runs/handoffs/generator.json",
+    "optimizer_steps": 3,
+    "batch_size": 1,
+    "warmup_steps": 0,
+    "recovery_after_step": 2,
+    "per_run_wall_seconds": 3600,
+    "phase_id": "native-real-pilot-v1",
+    "phase_wall_seconds": 10800,
+    "requirement": "Separate explicit operator authorization; inspect/preserve existing handoff first; persistent other work/storage caps remain unchanged."
+  },
+  "not_executed": [
+    "real model/data acquisition",
+    "Spark/GB10/CUDA tests",
+    "full-8B training/recovery or extension wave",
+    "system tuning/cache dropping/swap/driver changes",
+    "large tensor stress allocation",
+    "quality/speed study"
+  ],
+  "limitations": [
+    "Meminfo/cgroup measurements race workloads and process migration; snapshot is not a reservation",
+    "Namespace-hidden higher ancestor limits remain unverified; legacy cgroup-v1 not newly implemented",
+    "Headroom conservatively subtracts charged cache without reclaim credit",
+    "Activation/allocator/recovery peaks and full-model fit remain unmeasured",
+    "Local preflights retain CUDA-unavailable, unknown device-total and insufficient full-checkpoint disk blockers",
+    "Implementation hashes intentionally change; historical recovery compatibility not bypassed"
+  ],
+  "authorization": "User separately requested implementation, tests, commit and push to main; document's prohibition without separate authorization is satisfied. No hardware experiment authorized by this implementation request."
+}

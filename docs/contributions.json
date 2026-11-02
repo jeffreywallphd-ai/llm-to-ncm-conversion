@@ -13,5 +13,7 @@
   "recovery_lifetime_human_request": "User supplied the focused recovery ownership fix and requested tests, commit, local main fast-forward, no push, and clear README test instructions",
   "recovery_lifetime_ai_assistance": "Codex weak-reference production-path reproduction, narrow completed-report release, BF16/FP32 exact-continuation checks and documentation",
   "tulu_extension_human_request": "User supplied the Tulu extension/training wave requirements and requested clear README stages, tests, commit, fast-forward main and push origin/main.",
-  "tulu_extension_ai_assistance": "Codex implementation of pinned metadata/acquisition selection, complete-context preparation/qualification, sequential wave control, completion semantics, bounded CPU fixtures and documentation. No human experiment execution or real-data/GPU result inferred."
+  "tulu_extension_ai_assistance": "Codex implementation of pinned metadata/acquisition selection, complete-context preparation/qualification, sequential wave control, completion semantics, bounded CPU fixtures and documentation. No human experiment execution or real-data/GPU result inferred.",
+  "spark_memory_human_request": "User supplied a task document reporting Spark terminal observations and requested implementation, testing, commit and push to main; no new hardware execution or independent review is inferred.",
+  "spark_memory_ai_assistance": "Codex source/primary-document inspection, shared host/cgroup accounting, selected-device diagnostics, structured-metric compatibility, independent verified-hash I/O optimization and bounded offline CPU regression tests; no Spark/model training or system tuning."
 }

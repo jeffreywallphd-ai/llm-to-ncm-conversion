@@ -249,6 +249,12 @@ and CPU validation remain separate explicit operations.
 
 ## Current limitations and extension
 
+Spark's memory preflight uses reclaim-aware Linux `MemAvailable`, separately
+reported cgroup headroom and the selected device's total. Passing this unchanged
+baseline-state check does not establish a full training/recovery fit. The
+[memory-accounting note](docs/memory_accounting_fix.md) explains the correction,
+source diagnostics, non-training checks, fallback/visibility limits and validation.
+
 The available development environment has CPU PyTorch, no usable CUDA training
 runtime, no cached full Qwen3-8B assets, and no DGX Spark. Real head/kernel,
 memory, optimizer, checkpoint restoration, quality, and speed require the separate

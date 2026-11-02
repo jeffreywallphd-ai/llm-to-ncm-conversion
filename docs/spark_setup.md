@@ -26,6 +26,35 @@ Activations/kernels/allocator/OS remain additional. No-master recovery weights a
 moments alone are 82,506,004,800 bytes; four retained/new versions are about 330.02
 GB. Preflight uses the configured module inventory and selected precision policy.
 
+Linux host availability comes from `/proc/meminfo` **MemAvailable**, rather than
+immediately free pages from `SC_AVPHYS_PAGES`. `MemTotal`, `MemFree` and
+`MemAvailable` are separate byte diagnostics (`kB * 1024`). Cache, buffers, swap
+and device capacity are never added to that estimate. Missing `MemAvailable` can
+use an explicitly warned conservative free-memory fallback; invalid/unavailable
+required measurements stay unknown and cannot silently authorize a real workload.
+
+The read-only probe resolves this process's cgroup-v2 membership/mount and pairs
+each visible finite `memory.max` with its own `memory.current`. Spark uses the
+tightest conservative headroom, host availability and current CUDA device total.
+CUDA free memory is not an additional ceiling; charged cgroup cache gets no reclaim
+credit. A finite limit with unreadable usage blocks as indeterminate. A missing
+root `memory.max` alone neither implies cgroup v1 nor proves no higher limit exists.
+Unsupported discovery and namespace-hidden ancestors remain explicit limitations.
+No cgroups, privileges, cache or system settings are modified.
+
+`preflight.json` records operands, limiting source, warnings and the signed baseline
+margin. The existing RAM reserve is zero; tile scratch, activations, allocator and
+recovery peaks remain additional requirements. A later run-close observation may
+differ from the decision snapshot. See [the correction and validation](memory_accounting_fix.md).
+
+Non-training checks, which can still report legitimate blockers:
+
+```sh
+ncm doctor --profile spark
+ncm preflight --config configs/validation/spark_8b_profile.yaml
+ncm preflight --config configs/validation/generator_pilot.yaml
+```
+
 Acquire assets only when explicitly authorized, then run the bounded six-stage
 pilot commands from the root README. Teacher extraction and target preparation
 run in separate processes from generator fine tuning. Full-width 10M teacher

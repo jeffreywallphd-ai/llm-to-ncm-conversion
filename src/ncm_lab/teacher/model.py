@@ -95,16 +95,19 @@ def cached_path(spec):
 
 
 def verify_cached_assets(spec):
-    from ncm_lab.runtime.io import root, read, digest
+    from ncm_lab.runtime.io import root, read
 
     path = cached_path(spec)
     assets = [a for a in read(root() / "configs/data/assets.lock.json")["assets"] if a["role"] == "target"]
     from ncm_lab.data.download import verify_asset
 
+    verified = {}
     for asset in assets:
-        if verify_asset(path / asset["filename"], asset) is None:
+        sha256 = verify_asset(path / asset["filename"], asset)
+        if sha256 is None:
             raise ValueError("missing/corrupt pinned Qwen asset: " + asset["filename"])
-    return {a["filename"]: digest(path / a["filename"]) for a in assets}
+        verified[asset["filename"]] = sha256
+    return verified
 
 
 def load_frozen_head(spec, device, dtype):

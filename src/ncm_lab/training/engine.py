@@ -659,7 +659,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                     }
                 )
                 for name, number in observe().items():
-                    if name != "scope":
+                    if name.endswith("_bytes") and (number is None or type(number) is int):
                         values["resources/" + name] = Measure(number, unit="bytes")
                 phase_ledger = read(run.meter.path)
                 for name, number in run.meter.used.items():

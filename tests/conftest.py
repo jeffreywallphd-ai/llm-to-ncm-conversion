@@ -15,6 +15,34 @@ def cpu_threads():
     torch.set_num_threads(1)
 
 
+@pytest.fixture
+def memory_files():
+    """Synthetic rounded reproduction, never the runner's actual procfs/cgroup state."""
+    from collections import Counter
+
+    class Files(dict):
+        def __init__(self):
+            super().__init__(
+                {
+                    "/proc/meminfo": "MemTotal: 125514547 kB\nMemFree: 54488524 kB\nMemAvailable: 117125939 kB\n",
+                    "/proc/self/cgroup": "0::/\n",
+                    "/proc/self/mountinfo": "1 0 0:1 / /sys/fs/cgroup rw - cgroup2 cgroup rw\n",
+                }
+            )
+            self.calls = Counter()
+
+        def __call__(self, path):
+            self.calls[path] += 1
+            if path not in self:
+                raise FileNotFoundError(path)
+            value = self[path]
+            if isinstance(value, Exception):
+                raise value
+            return value
+
+    return Files()
+
+
 @pytest.fixture(scope="module")
 def native_artifacts(tmp_path_factory):
     folder = tmp_path_factory.mktemp("native-production")
