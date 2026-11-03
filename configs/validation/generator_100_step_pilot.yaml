@@ -1,0 +1,31 @@
+{
+  "schema": "native_stage_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_1024.yaml",
+  "budget": "configs/budgets/real_pilot.yaml",
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "training": {
+    "steps": 100,
+    "batch_size": 1,
+    "validation_interval": 25,
+    "checkpoint_interval": 25,
+    "head_positions": 32,
+    "head_chunk": 8,
+    "optimizer_policy": "fp32_moments_bf16_stochastic_v1",
+    "optimizer_seed": 1729,
+    "optimizer_tile_elements": 1048576
+  },
+  "stage": "generator",
+  "inputs": {
+    "targets": "runs/handoffs/targets.json"
+  },
+  "output_ref": "runs/handoffs/generator_100_step.json",
+  "hardware_profile": "spark",
+  "notes": "100 training step pilot. Launcher starts the local chatbot after objective completion.",
+  "monitoring": {
+    "enabled": true,
+    "sample_interval": 25,
+    "sample_prompts": 4
+  }
+}

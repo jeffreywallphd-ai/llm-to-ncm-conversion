@@ -88,6 +88,7 @@ instead of installing the CPU Torch extra over it.
 | Optimizer rounding, numerical safety and private RNG | `uv run --no-sync python -m pytest -q tests/unit/test_optimizer_precision.py` |
 | Data source contracts and software Parquet preparation | `uv run --no-sync python -m pytest -q tests/unit/test_real_data_contracts.py` |
 | Live TensorBoard events/HTTP and replay correctness | `uv run --no-sync python -m pytest -q tests/integration/test_monitoring_tensorboard.py tests/integration/test_replay_corrections.py` |
+| Pilot launch, 100-step continuation and local chatbot | `uv run --no-sync python -m pytest -q tests/unit/test_pilot_chat.py tests/integration/test_chat_and_pilots.py` |
 | Unit tests only | `uv run --no-sync python -m pytest -q tests/unit` |
 | Lint | `uv run --no-sync ruff check .` |
 
@@ -144,7 +145,7 @@ help, planning and pilot completion never start it automatically.
 | Teacher | `ncm teacher extract --config configs/validation/teacher_features_pilot.yaml` | Exact source/length-aware subset with at least 10M distinct training answer positions; frozen pinned teacher |
 | Codec | `ncm codec train --config configs/validation/codec_pilot.yaml` | Fresh shared codec, three passes, held-out selection and train-only scales |
 | Targets | `ncm targets build --config configs/validation/latent_targets_pilot.yaml` | Selected frozen codec; broader pool streamed into fine codes |
-| Generator | `ncm generator train --config configs/validation/generator_pilot.yaml` | Fresh pinned-Qwen initialization, 1M warmup tokens within nominal 100M processed training tokens, full fine tuning and export |
+| Generator | **2 training step pilot:** `python scripts/run_2_step_pilot.py` | Fresh pinned-Qwen initialization, 1M warmup tokens within nominal 100M processed training tokens, full fine tuning and export |
 
 The complete larger sequence has one command, plus offline planning and exact resume:
 
@@ -221,15 +222,27 @@ Full-model/GPU monitoring overhead remains unmeasured.
 | [06 generation](workflows/06_generation/README.md) | Standalone export and bounded parallel generation |
 | [07 extension wave](workflows/07_extension_training/README.md) | Qualified Tülu preparation and fresh, resumable complete training sequence |
 
-An authorized real pilot starts with an acquisition preview and explicit retrieval.
+### 2 training step pilot
+
+Install the optional local chatbot interface in the existing environment first:
+
+```sh
+python -m pip install -e '.[chat]'
+```
+
+On Spark retain the validated CUDA Torch installation. This extra adds only the
+open-source Werkzeug web dependency; it does not request CPU Torch. For a new
+model-free preview, no ML extras or downloaded weights are needed.
+
+An authorized first pilot starts with acquisition preview and explicit retrieval.
 
 The shared real-pilot budget sets `enforce_wall_time_limits: false`: neither the
 run clock nor the phase clock stops its declared work or finalization. The generator
-still targets two optimizer steps; memory, work/storage and integrity checks remain
+targets two optimizer steps here; memory, work/storage and integrity checks remain
 active. Numeric time settings are inactive; elapsed time is still recorded. Smoke
 tests, the separate feasibility profile and larger waves retain their clocks.
 For the reported interrupted checkpoint, follow the explicit, source-validated
-[clock-policy recovery procedure](docs/pilot_clock_policy.md).
+[reviewed recovery procedure](docs/pilot_chat.md#checkpoint-compatibility).
 
 ```sh
 ncm doctor --profile spark
@@ -239,10 +252,59 @@ ncm data prepare --config configs/data/real_pilot.yaml
 ncm teacher extract --config configs/validation/teacher_features_pilot.yaml
 ncm codec train --config configs/validation/codec_pilot.yaml
 ncm targets build --config configs/validation/latent_targets_pilot.yaml
-ncm generator train --config configs/validation/generator_pilot.yaml
-ncm generator train --config configs/validation/generator_pilot.yaml --resume /ABS/CHECKPOINT/current.json
-ncm generate --checkpoint /ABS/EXPORT/manifest.json --prompt-file /ABS/prompt.txt
+python scripts/run_2_step_pilot.py
 ```
+
+The generator launcher uses `configs/validation/generator_2_step_pilot.yaml`, writes
+`runs/handoffs/generator.json`, then starts the chatbot at
+[http://127.0.0.1:7860](http://127.0.0.1:7860) after successful objective completion.
+For recovery, add `--resume /ABS/2-STEP-RUN/checkpoints/current.json`. The legacy
+`generator_pilot.yaml` and direct `ncm generator train` command remain available;
+only the named pilot launcher automatically starts the chatbot.
+
+### 100 step pilot
+
+Continue from the completed two-step run's **recovery checkpoint**, with the same
+prepared data, codec, targets, numerical policy and phase accounting:
+
+```sh
+python scripts/run_100_step_pilot.py --resume /ABS/2-STEP-RUN/checkpoints/current.json
+```
+
+This targets **100 total optimizer steps** (98 additional updates after step two).
+`configs/validation/generator_100_step_pilot.yaml` evaluates the unchanged held-out
+set, writes recovery state and samples up to four fixed prompts every 25 steps.
+It publishes `runs/handoffs/generator_100_step.json`, separately from the two-step
+export. The training child exits before the chatbot loads the selected export, so
+training optimizer/gradient allocations are released first. Failed, blocked,
+cancelled or incomplete training never starts the chatbot.
+The held-out selected export can come from an earlier checkpoint if it scored
+better; the samples at 25/50/75/100 show the actual in-memory model at those steps.
+
+Use `--fresh` instead of `--resume` only for an intentional fresh 100-step run.
+There is no checkpoint scan, automatic fresh-weight fallback or implicit download.
+Both named pilot launchers retain disabled training clocks and active work/storage,
+memory and integrity safeguards. The chatbot separately defaults to two hours and
+100 requests; change those with `--chat-seconds` and `--chat-requests`, or choose a
+different local port with `--port`. Press Ctrl+C to stop the foreground chatbot
+after training; the completed run remains intact.
+
+### Test an export, or preview the chatbot without a model
+
+```sh
+# Existing completed export; use generator.json for the two-step pilot:
+ncm chat serve --checkpoint runs/handoffs/generator_100_step.json --device cuda --profile spark
+# Interface only: no model loading, downloads or generated answers:
+ncm chat serve --preview
+```
+
+Open [http://127.0.0.1:7860](http://127.0.0.1:7860). Preview responses explicitly say
+that no inference occurred. Connected mode loads one verified export for all turns;
+conversation history is prompt context only, limited to 512 tokens without silent
+truncation. On another computer, use an SSH tunnel to Spark's loopback port.
+See [pilot/chat operator guide](docs/pilot_chat.md) for commands, budgets, compatibility,
+failure records and remote viewing. The 100-step target is an early inspection
+budget, not a guarantee of useful answers or convergence.
 
 Named `runs/handoffs/*.json` receipts connect stages by exact manifest hashes.
 There is no historical-run scan or arbitrary latest checkpoint selection. Resume

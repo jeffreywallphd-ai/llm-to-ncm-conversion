@@ -318,6 +318,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+chat = [
+    { name = "werkzeug" },
+]
 cpu = [
     { name = "torch", version = "2.13.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.13.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
@@ -353,8 +356,9 @@ requires-dist = [
     { name = "torch", marker = "extra == 'cpu'", specifier = "==2.13.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "ncm-lab", extra = "cpu" } },
     { name = "transformers", marker = "extra == 'cpu'", specifier = "==5.15.0" },
     { name = "transformers", marker = "extra == 'upstream'", specifier = "==5.15.0" },
+    { name = "werkzeug", marker = "extra == 'chat'", specifier = "==3.1.9" },
 ]
-provides-extras = ["cpu", "upstream", "prepare", "monitoring"]
+provides-extras = ["cpu", "upstream", "prepare", "monitoring", "chat"]
 
 [package.metadata.requires-dev]
 dev = [

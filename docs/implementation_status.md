@@ -84,3 +84,17 @@ blockers and prior evidence remain intact.
 Final local software validation: 255 passing tests, one unavailable-CUDA skip;
 Ruff and whitespace checks passed. The same source passed normal local Temp,
 loopback and owned-child cleanup checks after sandbox-restricted failures.
+
+## Named pilots and local chatbot — 2026-11-03
+
+The 2 training step pilot and 100 step pilot have named configurations/scripts,
+separate exports and success-gated chat startup after the training child exits.
+Werkzeug provides the bounded local UI, preview without ML dependencies and one
+verified export reused across conversations. Reviewed checkpoint continuation from
+0c9fdd5 and the immutable historical clock-policy chain are supported explicitly.
+
+Full local verification: 282 passed, one unavailable-CUDA skip; Ruff passed. Tiny
+production 2→100 continuation and actual export inference, fixed-prompt samples,
+preview/live HTTP, launch failure gates and genuine pre-edit BF16 state continuation
+passed. See [operator guide](pilot_chat.md) and [dated receipt](pilot_chat_validation_2026-11-03.json).
+The actual user's Spark checkpoint and real-8B 100-step run remain untested here.

@@ -89,3 +89,22 @@ optimizer updates. No model math, optimizer, data or schedule deviation is intro
 Retain larger-wave clocks and reject disabled children under their outer deadlines.
 Genuine tiny BF16 checkpoints captured before edits provide software continuation
 evidence only; the reported Spark checkpoint and real hardware remain untested.
+
+## 2026-11-03 — Named 2/100-step pilots and export-only chat
+
+Keep the old two-step config as a compatible entry point and add named two/100-step
+configs with separate exports. The 100-step target is total, preserving existing
+data/codec, phase spending, optimizer and full-backbone scope. Evaluate/save/sample
+at 25-step boundaries, with unchanged held-out selection. Chat uses that selected
+export, which may precede the last optimizer update. No scientific math changes.
+
+Run training in a separate child and wait for sealed objective completion/handoff
+before loading one inference model. No training execution clock is reintroduced.
+Use existing open-source Werkzeug for a loopback-only, bounded UI; preview has no
+model imports/inference and cannot masquerade as model output. Preserve prompt-only
+generation, native parallel argmax/EOS, request accounting and text-only rendering.
+
+Keep the original clock receipt immutable; append one exact reviewed source edge
+from 0c9fdd5 with an explicit pilot-chat-v1 option and strict identity/shard/state
+checks. Genuine tiny pre-edit checkpoints validate compatibility; no unavailable
+Spark checkpoint, full-model 100-step run or quality/speed result is inferred.

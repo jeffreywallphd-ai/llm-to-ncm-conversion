@@ -11,6 +11,21 @@ def parser():
         prog="ncm", description="Native embedded Qwen hierarchy and bounded initial training"
     )
     commands = p.add_subparsers(dest="command", required=True)
+    pilot = commands.add_parser("pilot").add_subparsers(dest="pilot_action", required=True).add_parser("train")
+    pilot.add_argument("--steps", type=int, choices=[2, 100], required=True)
+    from ncm_lab.runtime.pilot import add_arguments
+    add_arguments(pilot)
+    chat = commands.add_parser("chat").add_subparsers(dest="chat_action", required=True).add_parser("serve")
+    chat_source = chat.add_mutually_exclusive_group(required=True)
+    chat_source.add_argument("--preview", action="store_true")
+    chat_source.add_argument("--checkpoint", type=Path)
+    chat.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
+    chat.add_argument("--profile", choices=["cpu", "cuda", "spark"])
+    chat.add_argument("--port", type=int, default=7860)
+    chat.add_argument("--max-seconds", type=float, default=7200)
+    chat.add_argument("--max-requests", type=int, default=100)
+    chat.add_argument("--run-root", type=Path)
+    chat.add_argument("--ready-file", type=Path)
     doctor = commands.add_parser("doctor")
     doctor.add_argument("--profile", choices=["cpu", "cuda", "spark"], default="cpu")
     prepare = commands.add_parser("prepare")
@@ -37,7 +52,7 @@ def parser():
         stage.add_argument("--config", type=Path, required=True)
         if name in {"codec", "generator", "profile"}:
             stage.add_argument("--resume", type=Path)
-            stage.add_argument("--recovery-compatibility", choices=["clock-policy-v1"])
+            stage.add_argument("--recovery-compatibility", choices=["clock-policy-v1", "pilot-chat-v1"])
     validation = commands.add_parser("validate")
     validation.add_argument("--config", type=Path, required=True)
     generation = commands.add_parser("generate")
@@ -75,7 +90,17 @@ def parser():
 def main(argv=None):
     try:
         args = parser().parse_args(argv)
-        if args.command == 'wave':
+        if args.command == "chat":
+            from ncm_lab.chat.server import serve
+            result = serve(checkpoint=args.checkpoint, preview=args.preview, device=args.device,
+                profile=args.profile, port=args.port, max_seconds=args.max_seconds,
+                max_requests=args.max_requests, run_root=args.run_root, ready_file=args.ready_file)
+        elif args.command == "pilot":
+            from ncm_lab.runtime.pilot import run_pilot
+            result = run_pilot(args.steps, config_path=args.config_path, resume=args.resume,
+                fresh=args.fresh, compatibility=args.compatibility, port=args.port,
+                chat_seconds=args.chat_seconds, chat_requests=args.chat_requests)
+        elif args.command == 'wave':
             from ncm_lab.runtime.wave import plan, run_wave
             from ncm_lab.config.waves import wave_config
 

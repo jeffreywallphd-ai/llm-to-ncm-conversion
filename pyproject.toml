@@ -16,6 +16,7 @@ cpu = ["torch==2.13.0", "transformers==5.15.0"]
 upstream = ["transformers==5.15.0"]
 prepare = ["pyarrow==23.0.0", "langid==1.1.6"]
 monitoring = ["tensorboard==2.20.0", "Pillow==12.1.0", "setuptools==80.10.2"]
+chat = ["Werkzeug==3.1.9"]
 
 [dependency-groups]
 dev = ["pytest==9.0.2", "ruff==0.14.14"]
@@ -26,6 +27,9 @@ ncm = "ncm_lab.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = false
+
+[tool.setuptools.package-data]
+"ncm_lab.chat" = ["web/*.html", "web/*.css", "web/*.js"]
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu", extra = "cpu" }]

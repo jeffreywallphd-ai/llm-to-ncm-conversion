@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light"><title>NCM — Model playground</title>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/assets/style.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="NCM playground home"><span class="brand-mark">n<span>c</span>m</span><span class="brand-caption">MODEL PLAYGROUND</span></a>
+    <button class="new-chat" type="button"><span>＋</span> New conversation <span class="key-hint">↗</span></button>
+    <div class="sidebar-section"><span class="eyebrow">WORKSPACE</span><div class="nav-item active"><span class="nav-icon">◌</span> Chat <span class="small-pill">LOCAL</span></div></div>
+    <div class="model-card"><div class="model-card-top"><span class="model-icon">N</span><span class="eyebrow">CONNECTED MODEL</span></div><h2 id="model-name">No model attached</h2><p id="model-description">Explore the interface. Connect a trained export when you're ready.</p><span class="connection-label" id="sidebar-status"><i></i> Interface preview</span><button class="connect-button" id="connect-button" type="button">How to connect <span>↗</span></button></div>
+    <div class="sidebar-bottom"><div class="local-icon">⌂</div><div><strong>Made for your models</strong><p>Local server. No external AI API.</p></div></div>
+  </aside>
+  <main>
+    <header><div class="breadcrumb">Playground <span>/</span> <strong>Chat</strong></div><div class="top-actions"><button id="mode-badge" class="mode-badge" type="button" title="Model connection instructions"><i></i> Preview mode</button><button class="icon-button new-chat" title="New conversation" aria-label="New conversation">＋</button></div></header>
+    <section class="conversation" aria-label="Chat conversation">
+      <div class="welcome" id="welcome"><div class="hero-symbol"><span></span><span></span><span></span><span></span></div><div class="eyebrow hero-eyebrow">FROM TRAINING TO CONVERSATION</div><h1>Your model.<br>A little more conversational.</h1><p>Ask a question, try an instruction, and see<br class="desktop-break"> what your trained NCM has learned.</p><div class="suggestions"><button data-prompt="Explain why the sky appears blue in two sentences."><span>Understand an idea</span><small>Why does the sky appear blue?</small><b>↗</b></button><button data-prompt="What is 17 plus 26? Give the answer and a short explanation."><span>Work through a problem</span><small>Start with a little arithmetic.</small><b>↗</b></button><button data-prompt="Write one friendly sentence welcoming a new teammate."><span>Try a simple instruction</span><small>A warm welcome, in one sentence.</small><b>↗</b></button><button data-prompt="Give three short tips for keeping a desk organized."><span>Make something useful</span><small>Three ideas for an organized desk.</small><b>↗</b></button></div></div>
+      <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+    </section>
+    <div class="composer-area"><div class="preview-note" id="preview-note"><span>◌</span> You're exploring a preview. No model responses are generated.</div><form id="chat-form" class="composer"><label for="prompt" class="sr-only">Message your model</label><textarea id="prompt" rows="2" maxlength="4096" placeholder="Message your model…" required></textarea><div class="composer-bottom"><span class="composer-model" id="composer-model">NCM playground <span>·</span> Preview</span><button id="send" type="submit" aria-label="Send message" title="Send message">↑</button></div></form><div class="composer-foot"><span>Enter to send <span>·</span> Shift + Enter for a new line</span><span id="request-count">0 requests this session</span></div><div id="error" role="alert" hidden></div></div>
+  </main>
+  <dialog id="connect-dialog"><button class="close-dialog icon-button" aria-label="Close connection instructions">×</button><span class="eyebrow">CONNECT AN EXPORT</span><h2>Bring your trained model.</h2><p>The pilot launcher opens this playground automatically after successful training. To test an existing export, start a separate server:</p><pre>ncm chat serve --checkpoint /path/to/export/manifest.json --device cuda</pre><p class="dialog-note">Use a native generator export or its handoff reference. Recovery checkpoints are for resuming training.</p><button class="connect-button close-dialog" type="button">Got it</button></dialog>
+</body>
+</html>

@@ -47,6 +47,12 @@ Handled cancellation remains `cancelled` and settles its observed elapsed time.
 
 ## Recovery procedure
 
+The later [named-pilot/chat update](pilot_chat.md#checkpoint-compatibility) adds a
+reviewed edge from this revision to the current implementation. Use `pilot-chat-v1`
+for a checkpoint produced by `0c9fdd5`; the legacy clock option accepts its original
+predecessor only through the hash-pinned historical receipt and reviewed new edge.
+The historical receipt below remains unchanged.
+
 Reviewed predecessor: commit `c3032129d59e4a9c2b3d2414bf66f1c805202521`, package
 SHA256 `9404148f14f0496952e919c77119119b3c32e90b0c74b3947847f0cdce111ab6`.
 The exact successor and per-file/source-manifest review are recorded in

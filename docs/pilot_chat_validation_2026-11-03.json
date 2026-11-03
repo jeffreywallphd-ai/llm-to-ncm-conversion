@@ -1,0 +1,250 @@
+{
+  "schema": "native_pilot_chat_validation_v1",
+  "date": "2026-11-03",
+  "date_timezone": "America/New_York; run IDs use UTC",
+  "recorded_at_utc": "2026-11-03T19:49:22.122920+00:00",
+  "reviewed_base_commit": "0c9fdd50c637caa92a013c03a0f4a8a9eae23e99",
+  "implementation_sha256": "ca35b79d3e013454b76d9607ef036578cfbab188efbfce5fbb548706d997c330",
+  "scope": "Offline CPU software fixtures, local HTTP and browser preview, package/lock checks only; no real model/data acquisition or Spark training.",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.13.0+cpu",
+      "transformers": "5.15.0",
+      "pytest": "9.0.2",
+      "ruff": "0.14.14",
+      "Werkzeug": "3.1.9"
+    },
+    "installed_or_synced_packages": false,
+    "cuda_validation_executed": false
+  },
+  "tests": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/unit/test_pilot_chat.py tests/unit/test_clock_policy.py tests/integration/test_chat_and_pilots.py --basetemp=.cache/pilot-chat/focused-1",
+      "exit_status": 0,
+      "wall_seconds": 44.07799999997951,
+      "timeout_seconds": 240,
+      "log": {
+        "path": ".cache/pilot-chat/focused-1.txt",
+        "sha256": "ecf4ab798b344ba9473e48ebba31323c8849d48cf0175c03260dbcacd60d9df2"
+      },
+      "passed": 58,
+      "pytest_seconds": 36.83,
+      "scope": "Focused precursor implementation, including actual tiny 2-to-100 continuation; later HTTP accounting included in final full suite"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/pilot-chat/full-1",
+      "exit_status": 0,
+      "wall_seconds": 326.04699999978766,
+      "timeout_seconds": 600,
+      "implementation_sha256": "ca35b79d3e013454b76d9607ef036578cfbab188efbfce5fbb548706d997c330",
+      "aggregate_validation_ceiling_seconds": 2400,
+      "prior_completed_charge_seconds": 300,
+      "other_checks_reserved_seconds": 960,
+      "reserved_ceiling_seconds": 1860,
+      "log": {
+        "path": ".cache/pilot-chat/full-1.txt",
+        "sha256": "5b5f3fc6a585324c27d770b336da13422ae8888204853334a226f447f59e9a93"
+      },
+      "passed": 282,
+      "skipped": 1,
+      "pytest_seconds": 319.23
+    }
+  ],
+  "cuda_skip": {
+    "test": "tests/cuda/test_native_cuda.py::test_tiny_native_cuda_kernel_forward_backward",
+    "reason": "CUDA is not available; no real-8B validation implied"
+  },
+  "final_checks": [
+    {
+      "command": ".venv/Scripts/ruff.exe check .",
+      "exit_status": 0,
+      "stdout": "All checks passed!",
+      "stderr": "",
+      "timeout_seconds": 30
+    },
+    {
+      "command": "git diff --check",
+      "exit_status": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'docs/decision_log.md', CRLF will be replaced by LF the next time Git touches it\nwarning: in the working copy of 'docs/implementation_status.md', CRLF will be replaced by LF the next time Git touches it\nwarning: in the working copy of 'pyproject.toml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'uv.lock', LF will be replaced by CRLF the next time Git touches it",
+      "timeout_seconds": 30
+    }
+  ],
+  "package": {
+    "checks": [
+      {
+        "command": "uv lock --offline --check --python .venv/Scripts/python.exe",
+        "exit_status": 0,
+        "timeout_seconds": 45,
+        "log": ".cache/pilot-chat/package-0.txt"
+      },
+      {
+        "command": "uv build --offline --no-build-isolation --wheel --out-dir .cache/pilot-chat/wheel",
+        "exit_status": 0,
+        "timeout_seconds": 45,
+        "log": ".cache/pilot-chat/package-1.txt"
+      }
+    ],
+    "wheel": ".cache\\pilot-chat\\wheel\\ncm_lab-0.2.0-py3-none-any.whl",
+    "wheel_sha256": "f053977260384d3dd2790353d8f848532a12f74c8a3cc17721703ffeeb460194",
+    "static_assets_match_source": true,
+    "wall_seconds": 3.047000000020489
+  },
+  "compatibility": {
+    "new_receipt": {
+      "path": "configs/recovery/pilot_chat_v1.json",
+      "sha256": "f609a303da2713aa2686a47b791fbd660ee624c5694f53770d8cc03f21a75b8c"
+    },
+    "historical_receipt_unchanged": {
+      "path": "configs/recovery/clock_policy_v1.json",
+      "sha256": "9ef0ad3991159ec0c662ef211fd92cdadd8c937c848844d4b1806d5edd1030ef"
+    },
+    "predecessor_implementation_sha256": "e106a014d20dba62e209f7b2432b6789e1cd34e2cd57d6f9c03f152cb901a3aa",
+    "predecessor_source_manifest": {
+      "path": ".cache/pilot-chat/predecessor-source.json",
+      "sha256": "8dcdf73ebe037febdeaacb6d8782a9115ccb6f72047684b1eaad3047a3acf42a"
+    },
+    "capture": {
+      "exit_status": 0,
+      "wall_seconds": 26.389999999897555,
+      "timeout_seconds": 120,
+      "aggregate_validation_ceiling_seconds": 2400,
+      "log": {
+        "path": ".cache/pilot-chat/predecessor.txt",
+        "sha256": "65253008e6f647c2f4857d08208f19845888f9ed74ec10abcfe4d453cec24664"
+      }
+    },
+    "genuine_resume_check": {
+      "exit_status": 0,
+      "wall_seconds": 11.030999999959022,
+      "timeout_seconds": 120,
+      "log": {
+        "path": ".cache/pilot-chat/genuine-transition.txt",
+        "sha256": "beadf3fff9c553fc183110f02c87e3e8ee849c52d7ff15ab398e6028b1707c21"
+      }
+    },
+    "details": {
+      "path": ".cache/pilot-chat/genuine-transition.json",
+      "sha256": "7aa7e4498bb884fa4cbcaff02699ec69c1fade214e11f9244909a9ef6794cf95"
+    },
+    "genuine_predecessor_cases": 2,
+    "exact_model_optimizer_private_rng_global_rng_cursor_counters": true,
+    "at_target_repeated_optimizer_updates": 0,
+    "actual_user_checkpoint_available": false
+  },
+  "pilot_contract": {
+    "old_legacy_config_preserved": "configs/validation/generator_pilot.yaml",
+    "named_two_step": "configs/validation/generator_2_step_pilot.yaml",
+    "named_hundred_step": "configs/validation/generator_100_step_pilot.yaml",
+    "scripts": [
+      "scripts/run_2_step_pilot.py",
+      "scripts/run_100_step_pilot.py"
+    ],
+    "hundred_steps_are_total": true,
+    "from_two_steps_new_updates": 98,
+    "validation_checkpoint_sample_interval": 25,
+    "held_out_allowance_unchanged": 32,
+    "sample_prompts": 4,
+    "phase_id_unchanged": "native-real-pilot-v1",
+    "training_outer_deadline": null,
+    "training_clocks_enforced": false,
+    "work_storage_memory_integrity_guards": "preserved",
+    "separate_handoffs": [
+      "runs/handoffs/generator.json",
+      "runs/handoffs/generator_100_step.json"
+    ],
+    "chat_uses": "held-out selected export, possibly earlier than terminal step"
+  },
+  "chat_contract": {
+    "library": "Werkzeug 3.1.9, already installed/locked",
+    "bind": "127.0.0.1 only",
+    "model_free_preview": true,
+    "preview_imports_torch_or_transformers": false,
+    "automatic_chat_after": [
+      "zero-exit training child",
+      "objective_attained at exact step target",
+      "sealed run and intended native export handoff"
+    ],
+    "training_child_exited_before_chat_model_load": true,
+    "model_loads_for_repeated_requests": 1,
+    "prompt_only_native_generation": true,
+    "default_server_seconds": 7200,
+    "default_chat_requests": 100,
+    "per_session_http_requests": 10000,
+    "request_body_bytes": 131072,
+    "prompt_tokens": 512,
+    "messages": 41,
+    "chars": 16384,
+    "server_and_model_phases": "persistent finite work/storage/wall caps",
+    "model_load_seconds": 900,
+    "inference_request_seconds": 120
+  },
+  "browser_qa": {
+    "url": "http://127.0.0.1:7861",
+    "mode": "preview, no model attached",
+    "lifetime_seconds": 600,
+    "observed": [
+      "prompt suggestions populate input",
+      "sending displays explicit no-inference response",
+      "connection instructions accessible from compact status badge",
+      "UTF-8 labels/arrows verified after correcting an asset encoding mistake",
+      "desktop CSS bounds client/body/scroll all 1100 pixels with no horizontal overflow",
+      "temporary viewport override reset"
+    ],
+    "screenshot": {
+      "path": ".cache/pilot-chat/desktop-preview.jpg",
+      "sha256": "b8324b3724b3842db99af100191cf9a7c80fcbc00e9a2ca2b9d28acc85181d76"
+    },
+    "known_tool_limits": [
+      "Two locator attempts encountered a changed responsive/modal state and were re-observed; no product failure inferred."
+    ]
+  },
+  "preserved_development_diagnostics": {
+    "sandbox_uv_cache_checks": "Default sandbox uv checks failed writing interpreter metadata to its restricted cache; normal-local offline lock/check succeeded. No dependency installation occurred.",
+    "browser_encoding": "Browser QA caught misdecoded UTF-8 after an asset edit; assets repaired, reloaded and rebuilt into wheel exactly matching source.",
+    "test_failures": "No pytest failures in this task; focused and full gates passed."
+  },
+  "aggregate_validation_ceiling_seconds": 2400,
+  "reserved_test_envelope_seconds": 1860,
+  "archive_preserved": {
+    "branch": "archive/hierarchical-drafter",
+    "sha": "c5e5329172e63026995a440aa0591a5e15804ab4"
+  },
+  "unchanged_scientific_sources": [
+    "embedded model/geometry",
+    "training engine/losses/optimizer/precision",
+    "teacher/codec/data/split logic",
+    "Spark memory accounting",
+    "training work/storage phase caps"
+  ],
+  "not_executed": [
+    "real Spark 100-step training or user checkpoint recovery",
+    "model/corpus download",
+    "driver/CUDA installation or Torch replacement",
+    "training quality, convergence or speed study",
+    "automatic larger extension wave beyond local tiny fixtures"
+  ],
+  "final_preview_handoff": "A separate model-free 127.0.0.1 preview will be launched after commit/push; its URL/PID are operational handoff details, not a model result.",
+  "cli_help_checks": [
+    {
+      "command": ".venv/Scripts/python.exe scripts/run_2_step_pilot.py --help",
+      "exit_status": 0,
+      "timeout_seconds": 15,
+      "log": ".cache/pilot-chat/two-help.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe scripts/run_100_step_pilot.py --help",
+      "exit_status": 0,
+      "timeout_seconds": 15,
+      "log": ".cache/pilot-chat/hundred-help.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab chat serve --help",
+      "exit_status": 0,
+      "timeout_seconds": 15,
+      "log": ".cache/pilot-chat/chat-help.txt"
+    }
+  ]
+}
