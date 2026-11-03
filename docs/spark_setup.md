@@ -62,7 +62,11 @@ states alone are 81.92 GB; fine-code storage is 7.68 GB before metadata. Checkpo
 retention can require roughly four recovery-state versions at publication peak;
 the current development disk cannot validate a full 8B recovery cycle.
 
-The exact full-training feasibility command is:
+The shared generator pilot disables both execution-clock limits, retains its
+two-step target and records elapsed time; see [policy and recovery](pilot_clock_policy.md).
+Its numeric clock values are inactive. Work/storage, memory and integrity checks
+remain active. The separately configured full-training feasibility command below
+retains its clock and three-step recovery probe:
 
 ```sh
 ncm profile train --config configs/validation/spark_8b_profile.yaml

@@ -67,3 +67,20 @@ checkpoint disk space. Historical blocked runs/handoffs/checkpoints remain intac
 Final software verification: 214 passed, one CUDA skip, Ruff and whitespace checks
 passed; [dated receipt](memory_accounting_validation_2026-11-02.json) includes the
 preserved initial integration failure and successful corrected rerun.
+
+## Pilot clock policy — 2026-11-03
+
+The shared real pilot disables run and phase clock enforcement while preserving
+the two-step generator target, observed elapsed charges, non-time safeguards and
+phase spending. Other jobs remain bounded by default. Strict reviewed-source
+recovery and at-target finalization are implemented; see
+[operator procedure](pilot_clock_policy.md) and [validation receipt](pilot_clock_validation_2026-11-03.json).
+The user's reported checkpoint is absent locally, with unknown source identity;
+only the recorded predecessor is approved. Genuine tiny pre-edit BF16 checkpoint
+continuation is software evidence, not Spark/8B feasibility. CUDA/full-model
+validation and the actual user's resume remain unexecuted; current CUDA/disk
+blockers and prior evidence remain intact.
+
+Final local software validation: 255 passing tests, one unavailable-CUDA skip;
+Ruff and whitespace checks passed. The same source passed normal local Temp,
+loopback and owned-child cleanup checks after sandbox-restricted failures.

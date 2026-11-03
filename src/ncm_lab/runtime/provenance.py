@@ -60,7 +60,17 @@ class Run:
 
     def start(self):
         self.meter = Meter(Budget(**self.value["budget"]), self.path, self.path.parents[1] / "ledgers")
-        self.event("started", wave=self.value.get("wave_context"))
+        self.event(
+            "started",
+            wave=self.value.get("wave_context"),
+            wall_policy=self.meter.wall_report(),
+            wall_policy_message="Wall-clock limits: "
+            + (
+                "enabled"
+                if self.meter.budget.enforce_wall_time_limits
+                else "disabled; completion is governed by the configured work target."
+            ),
+        )
         return self.meter
 
     def event(self, status, **fields):
@@ -91,6 +101,7 @@ class Run:
             "status": status,
             "elapsed_seconds": time.perf_counter() - self.started,
             "charged_work": self.meter.used if self.meter else {},
+            "wall_policy": self.meter.wall_report() if self.meter else None,
             "origin": "software_fixture" if self.value.get("model", {}).get("fixture") else "real_model",
             "memory": observe(),
         }

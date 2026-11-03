@@ -47,6 +47,11 @@ def wave_config(path):
         if stage["stage"] != expected:
             raise ValueError("wave child CLI/config stage mismatch")
         if not name.startswith("prepare_"):
+            if not stage["budget"]["enforce_wall_time_limits"]:
+                raise ValueError(
+                    "waves retain outer execution deadlines; disabled-clock pilot stages must run "
+                    "through their standalone CLI, not a bounded wave"
+                )
             if stage["budget"]["phase_id"] != value["phase_id"]:
                 raise ValueError("native wave attempts must share the deliberate phase identity")
             child_caps = {k: v for k, v in stage["budget"].items() if k.startswith("max_phase_")}

@@ -1,0 +1,294 @@
+{
+  "schema": "native_pilot_clock_validation_v1",
+  "date": "2026-11-03",
+  "date_timezone": "America/New_York; run IDs use UTC",
+  "recorded_at_utc": "2026-11-03T16:02:39.038770+00:00",
+  "reviewed_base_commit": "c3032129d59e4a9c2b3d2414bf66f1c805202521",
+  "predecessor_implementation_sha256": "9404148f14f0496952e919c77119119b3c32e90b0c74b3947847f0cdce111ab6",
+  "implementation_sha256": "e106a014d20dba62e209f7b2432b6789e1cd34e2cd57d6f9c03f152cb901a3aa",
+  "scope": "Bounded offline CPU/fake-clock software fixtures and non-training CLI checks. No Spark, Qwen3-8B, corpus acquisition or user's reported checkpoint executed.",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.13.0+cpu",
+      "transformers": "5.15.0",
+      "pytest": "9.0.2",
+      "ruff": "0.14.14",
+      "tensorboard": "2.20.0"
+    },
+    "cuda_tests_skipped": true,
+    "dependencies_installed_or_synced": false
+  },
+  "policy": {
+    "field": "enforce_wall_time_limits",
+    "strict_boolean": true,
+    "default": true,
+    "real_pilot": false,
+    "phase_id": "native-real-pilot-v1",
+    "generator_target_steps": 2,
+    "inactive_numeric_wall_settings": {
+      "max_wall_seconds": 1200,
+      "max_phase_wall_seconds": 10800
+    },
+    "disabled_attempt_wall_reservation_seconds": 0,
+    "work_storage_memory_integrity_checks": "unchanged",
+    "unresolved_disabled_attempt": "unknown elapsed accounting blocks finite wall admission; never guessed/reset"
+  },
+  "tests": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/unit/test_clock_policy.py tests/integration/test_clock_policy.py --basetemp=.cache/clock-policy/focused-1",
+      "exit_status": 2,
+      "wall_seconds": 8.281999999890104,
+      "timeout_seconds": 180,
+      "log": {
+        "path": ".cache/clock-policy/focused-1.txt",
+        "sha256": "4da8dd33c366698f11589e30aa45f2de02a327b22da2938dab063c199daf4c80"
+      },
+      "collection_errors": 1,
+      "failure_scope": "New unit/integration files initially shared a basename under pytest prepend imports; renamed the new integration module to test_pilot_clock_completion.py. No historical tests renamed."
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/unit/test_clock_policy.py tests/integration/test_pilot_clock_completion.py --basetemp=.cache/clock-policy/focused-2",
+      "exit_status": 1,
+      "wall_seconds": 29.905999999959022,
+      "timeout_seconds": 180,
+      "log": {
+        "path": ".cache/clock-policy/focused-2.txt",
+        "sha256": "acc0b34f2842dee8ab157d341b4f19c1011f3103502cc7c2a44059f6dac42499"
+      },
+      "passed": 39,
+      "failed": 1,
+      "pytest_seconds": 21.71,
+      "failure_scope": "New direct Projector test omitted required CUDA_VISIBLE_DEVICES='' test environment. Corrected test setup and mocked projection disk capacity; production checks unchanged."
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q tests/integration/test_pilot_clock_completion.py::test_disabled_pilot_completes_and_projects_truthful_monitoring --basetemp=.cache/clock-policy/projection-final",
+      "exit_status": 0,
+      "wall_seconds": 14.125,
+      "timeout_seconds": 90,
+      "log": {
+        "path": ".cache/clock-policy/projection-final.txt",
+        "sha256": "c06f5dbb3f4933aa1bec8248749602c90d25cad0329260217ae254de3b70b1d5"
+      },
+      "passed": 1,
+      "pytest_seconds": 6.12
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/clock-policy/full-final",
+      "exit_status": 1,
+      "wall_seconds": 266.9069999998901,
+      "timeout_seconds": 600,
+      "implementation_sha256": "e106a014d20dba62e209f7b2432b6789e1cd34e2cd57d6f9c03f152cb901a3aa",
+      "aggregate_validation_ceiling_seconds": 1800,
+      "prior_checks_conservative_charge_seconds": 480,
+      "postcheck_reserved_seconds": 120,
+      "reserved_ceiling_seconds": 1200,
+      "log": {
+        "path": ".cache/clock-policy/full-final.txt",
+        "sha256": "7170096bf2d0d647ce1c46ce1be7e44f0f58c36cb1f05be4bfccad830a5e59b6"
+      },
+      "passed": 241,
+      "skipped": 1,
+      "failed": 13,
+      "pytest_seconds": 259.63,
+      "failure_scope": "Sandbox Temp permission errors in data qualification, loopback TensorBoard readiness failures, and task-owned Windows child-tree cancellation access; same source passed the normal-local rerun.",
+      "preserved": "Full stdout, failed run records, immutable resolved configurations, ledgers and child logs retained under .cache/clock-policy/full-final; no result rewritten."
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/clock-policy/full-local",
+      "exit_status": 0,
+      "wall_seconds": 270.625,
+      "timeout_seconds": 600,
+      "implementation_sha256": "e106a014d20dba62e209f7b2432b6789e1cd34e2cd57d6f9c03f152cb901a3aa",
+      "aggregate_validation_ceiling_seconds": 1800,
+      "prior_checks_conservative_charge_seconds": 600,
+      "postcheck_reserved_seconds": 120,
+      "reserved_ceiling_seconds": 1320,
+      "execution_environment": "Normal local Temp, loopback HTTP, and task-owned child-tree cleanup access; sandbox run retained separately",
+      "log": {
+        "path": ".cache/clock-policy/full-local.txt",
+        "sha256": "14d2ff192497e59a17da10c3950a1a2415af3a6ad997a5a7b5e8ccbedde0e24c"
+      },
+      "passed": 255,
+      "skipped": 1,
+      "pytest_seconds": 265.11
+    }
+  ],
+  "final_checks": [
+    {
+      "command": ".venv/Scripts/ruff.exe check .",
+      "exit_status": 0,
+      "stdout": "All checks passed!",
+      "stderr": "",
+      "timeout_seconds": 30
+    },
+    {
+      "command": "git diff --check",
+      "exit_status": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'AGENTS.md', CRLF will be replaced by LF the next time Git touches it\nwarning: in the working copy of 'configs/budgets/real_pilot.yaml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'docs/decision_log.md', CRLF will be replaced by LF the next time Git touches it\nwarning: in the working copy of 'docs/implementation_status.md', CRLF will be replaced by LF the next time Git touches it",
+      "timeout_seconds": 30
+    }
+  ],
+  "cuda_skip": {
+    "test": "tests/cuda/test_native_cuda.py::test_tiny_native_cuda_kernel_forward_backward",
+    "reason": "CUDA is not available; no real-8B validation implied"
+  },
+  "compatibility_receipt": {
+    "path": "configs/recovery/clock_policy_v1.json",
+    "sha256": "9ef0ad3991159ec0c662ef211fd92cdadd8c937c848844d4b1806d5edd1030ef"
+  },
+  "genuine_predecessor_validation": {
+    "capture_command": ".venv/Scripts/python.exe .cache/clock-policy/capture_predecessor.py",
+    "capture_gate": {
+      "exit_status": 0,
+      "wall_seconds": 25.5,
+      "timeout_seconds": 120,
+      "aggregate_validation_ceiling_seconds": 1800,
+      "log": {
+        "path": ".cache/clock-policy/predecessor.txt",
+        "sha256": "709fc7563d77ebf841d64e9fb3ce42df6096dc6a000fe3ac8c69f0510b4fcdc6"
+      }
+    },
+    "source_manifest": {
+      "path": ".cache/clock-policy/predecessor-source.json",
+      "sha256": "1eed7ba19b0c1fc0e5680716e23491594641254c6bce13f56b2e129aa78fec71"
+    },
+    "successor_command": {
+      "command": ".venv/Scripts/python.exe .cache/clock-policy/verify_predecessor.py",
+      "exit_status": 0,
+      "wall_seconds": 9.108999999938533,
+      "timeout_seconds": 120,
+      "log": {
+        "path": ".cache/clock-policy/genuine-transition.txt",
+        "sha256": "a29cdacbf95f00dc88dca16958214c8921e0b916be5020ab980da7152eda4bee"
+      }
+    },
+    "detailed_result": {
+      "path": ".cache/clock-policy/genuine-transition.json",
+      "sha256": "d043fecf7f20f205d6f9588e98e964b0bb91a4d50e1433a4d3e1e6b4e34b9f56"
+    },
+    "actual_predecessor_cases": 2,
+    "cases": [
+      {
+        "checkpoint_kind": "partial",
+        "optimizer_steps": 2,
+        "new_attempt_updates": 1,
+        "exact_model_optimizer_private_rng_global_rng_cursor_counters": true,
+        "parent_files_unchanged": true,
+        "completion": "objective_attained",
+        "status": "completed"
+      },
+      {
+        "checkpoint_kind": "full",
+        "optimizer_steps": 2,
+        "new_attempt_updates": 0,
+        "exact_model_optimizer_private_rng_global_rng_cursor_counters": true,
+        "parent_files_unchanged": true,
+        "completion": "objective_attained",
+        "status": "completed"
+      }
+    ],
+    "interpretation": "Tiny BF16 checkpoints actually generated under captured c303212 source before package edits; new current-source synthetic metadata fixtures are separate repeatable coverage, not substituted for genuine predecessor evidence."
+  },
+  "cli_checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab preflight --config configs/validation/generator_pilot.yaml",
+      "exit_status": 2,
+      "wall_seconds": 8.390999999828637,
+      "timeout_seconds": 30,
+      "stdout": ".cache/clock-policy/preflight-pilot.stdout.txt",
+      "stderr": ".cache/clock-policy/preflight-pilot.stderr.txt",
+      "wall_policy": {
+        "enforce_wall_time_limits": false,
+        "status": "disabled_by_policy",
+        "numeric_wall_limits_active": false,
+        "legacy_max_wall_seconds": 1200,
+        "legacy_max_phase_wall_seconds": 10800
+      },
+      "blockers": [
+        "CUDA unavailable in this PyTorch build",
+        "memory capacity measurement/constraint assessment unavailable: device_total_bytes",
+        "free disk cannot cover retained/new full recovery shards"
+      ]
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab generator train --help",
+      "exit_status": 0,
+      "wall_seconds": 0.5,
+      "timeout_seconds": 30,
+      "stdout": ".cache/clock-policy/resume-help.stdout.txt",
+      "stderr": ".cache/clock-policy/resume-help.stderr.txt"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m ncm_lab generator train --config configs/validation/generator_pilot.yaml --recovery-compatibility clock-policy-v1",
+      "exit_status": 2,
+      "wall_seconds": 2.75,
+      "timeout_seconds": 30,
+      "stdout": ".cache/clock-policy/compat-needs-resume.stdout.txt",
+      "stderr": ".cache/clock-policy/compat-needs-resume.stderr.txt"
+    }
+  ],
+  "coverage": [
+    "default run/phase wall admission",
+    "strict Boolean and config expansion",
+    "disabled huge clock advances and historical overspend",
+    "actual reservation/idempotent settlement",
+    "old caps/history retained",
+    "non-time run/phase work/disk limits",
+    "open unknown elapsed accounting versus finite reservations",
+    "two-step validation/checkpoint/export/handoff completion after clock advances",
+    "exact BF16 continuation and at-target finalization without repeated updates",
+    "unknown predecessor/current source, metadata self-identity, changed model/data/optimizer/dtype/phase and corrupted shard rejection",
+    "strict JSON/TensorBoard disabled status without countdown",
+    "genuine cancellation",
+    "outer wave deadline conflict rejection",
+    "CLI explicit compatibility dispatch"
+  ],
+  "actual_user_checkpoint": {
+    "reported_path": "runs/generator/20261103T145320Z-ea07d0aaaa/checkpoints/current.json",
+    "present_locally": false,
+    "implementation_sha256": null,
+    "tested": false,
+    "supported_command": "ncm generator train --config configs/validation/generator_pilot.yaml --resume runs/generator/20261103T145320Z-ea07d0aaaa/checkpoints/current.json --recovery-compatibility clock-policy-v1",
+    "condition": "Only the recorded predecessor/current source and otherwise exact contracts are supported; no promise about an unavailable checkpoint"
+  },
+  "aggregate_cpu_validation_envelope": {
+    "max_wall_seconds": 1800,
+    "final_run": {
+      "command": ".venv/Scripts/python.exe -m pytest -q --basetemp=.cache/clock-policy/full-local",
+      "exit_status": 0,
+      "wall_seconds": 270.625,
+      "timeout_seconds": 600,
+      "implementation_sha256": "e106a014d20dba62e209f7b2432b6789e1cd34e2cd57d6f9c03f152cb901a3aa",
+      "aggregate_validation_ceiling_seconds": 1800,
+      "prior_checks_conservative_charge_seconds": 600,
+      "postcheck_reserved_seconds": 120,
+      "reserved_ceiling_seconds": 1320,
+      "execution_environment": "Normal local Temp, loopback HTTP, and task-owned child-tree cleanup access; sandbox run retained separately",
+      "log": {
+        "path": ".cache/clock-policy/full-local.txt",
+        "sha256": "14d2ff192497e59a17da10c3950a1a2415af3a6ad997a5a7b5e8ccbedde0e24c"
+      },
+      "passed": 255,
+      "skipped": 1,
+      "pytest_seconds": 265.11
+    },
+    "note": "Production pilot clock policy does not remove bounded development-test subprocess timeouts. Normal-local rerun reserved prior work conservatively at 600 seconds, suite at 600 and postchecks at 120 (1320 total)."
+  },
+  "archive_preserved": {
+    "branch": "archive/hierarchical-drafter",
+    "sha": "c5e5329172e63026995a440aa0591a5e15804ab4"
+  },
+  "not_executed": [
+    "user's real checkpoint resume",
+    "GPU/Spark/full-8B training or feasibility probe",
+    "model/data downloads",
+    "dependency sync or CUDA replacement",
+    "training extension wave beyond tiny local fixtures",
+    "system tuning",
+    "quality/convergence/speed study"
+  ],
+  "unchanged_evidence": "Previous run/checkpoint/handoff/acquisition history and dated receipts retained. Only task-owned .cache fixture attempts were created; existing untracked attachments excluded from commit."
+}

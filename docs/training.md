@@ -75,12 +75,19 @@ ncm codec train --config configs/validation/codec_pilot.yaml --resume /ABS/RUN/c
 Caps may explicitly extend a resumed invocation, but source, loss, optimizer,
 architecture, phase identity, and software contracts must match. The persistent
 phase ledger is independent of checkpoints. It charges attempted work before
-execution; new run IDs and older checkpoints cannot reset it. Full per-run wall
-reservations survive abrupt crashes; normal closure replaces the reservation with
-observed execution time. Source/validation/warmup/I/O costs remain charged to their
-stage/phase. Per-run and retained aggregate disk caps include pending writes.
+execution; new run IDs and older checkpoints cannot reset it. In default enabled
+mode, finite wall reservations survive abrupt crashes; normal closure replaces the
+actual reservation with observed execution time. Source/validation/warmup/I/O costs
+remain charged to their stage/phase. Per-run and retained aggregate disk caps include pending writes.
 Budget checks occur at primitive boundaries; an executing kernel/file operation
 may finish before the stop is observed. No budget is silently expanded.
+
+The shared real pilot explicitly sets `enforce_wall_time_limits: false`, disabling
+both run and phase wall enforcement with zero wall reservation. Numeric clocks are
+inactive, elapsed observations remain, and all work/storage/memory safeguards and
+the two-step generator target stay active. Other configs default to bounded clocks.
+See [pilot policy and exact recovery procedure](pilot_clock_policy.md), including
+the reviewed implementation transition and unknown-duration crash accounting.
 
 The old OASST-only larger configs below are preserved historical envelopes. Their
 source capacity was not established; the recommended larger route is now the

@@ -221,7 +221,15 @@ Full-model/GPU monitoring overhead remains unmeasured.
 | [06 generation](workflows/06_generation/README.md) | Standalone export and bounded parallel generation |
 | [07 extension wave](workflows/07_extension_training/README.md) | Qualified Tülu preparation and fresh, resumable complete training sequence |
 
-An authorized real pilot starts with an acquisition preview and explicit retrieval:
+An authorized real pilot starts with an acquisition preview and explicit retrieval.
+
+The shared real-pilot budget sets `enforce_wall_time_limits: false`: neither the
+run clock nor the phase clock stops its declared work or finalization. The generator
+still targets two optimizer steps; memory, work/storage and integrity checks remain
+active. Numeric time settings are inactive; elapsed time is still recorded. Smoke
+tests, the separate feasibility profile and larger waves retain their clocks.
+For the reported interrupted checkpoint, follow the explicit, source-validated
+[clock-policy recovery procedure](docs/pilot_clock_policy.md).
 
 ```sh
 ncm doctor --profile spark

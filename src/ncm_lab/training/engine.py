@@ -163,7 +163,9 @@ def prune(folder, selected):
         shutil.rmtree(resolved)
 
 
-def fit(run, value, bound, *, resume=None, stop_after=None):
+def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibility=None):
+    from ncm_lab.training.recovery_compatibility import verify_recovery
+
     options = value["training"]
     architecture = Architecture(**value["architecture"])
     torch.manual_seed(options["seed"])
@@ -282,8 +284,9 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
         "selected": None,
     }
     if reader:
-        if reader.manifest["identity"] != identity:
-            raise ValueError("native recovery config/data/codec/optimizer identity mismatch")
+        transition = verify_recovery(reader, metadata, recovery_compatibility)
+        if transition:
+            run.event("policy_recovery_transition", **transition)
         reader.load_model(model)
         reader.load_optimizer(optimizer)
         state = reader.materialize(reader.field("training"))
@@ -484,6 +487,48 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
         return score
 
     try:
+        if resume and objective_reached():
+            # No update is repeated. A target-boundary checkpoint still needs a
+            # fresh attempt's validation, durable recovery and export/handoff.
+            selection = evaluate()
+            chosen = state["best_dev_loss"] is None or selection < state["best_dev_loss"]
+            state["selected_this_step"] = chosen
+            if chosen:
+                state["best_dev_loss"] = selection
+            state["cursor"] = cursor.state()
+            saved = save_checkpoint(
+                run.path / "checkpoints",
+                recovery_payload(model, optimizer, identity, metadata, state, sampler),
+                meter=run.meter,
+                shard_bytes=options["shard_bytes"],
+            )
+            if chosen:
+                state["selected"] = saved
+                atomic_json(run.path / "checkpoints/selected.json", saved)
+            recorder.event(
+                "checkpoint_completed",
+                manifest=saved["manifest"],
+                sha256=saved["sha256"],
+                finalization_only=True,
+            )
+            recorder.metric(
+                {
+                    "resources/budget_wall_seconds_used": Measure(
+                        run.meter.elapsed_seconds(), unit="seconds"
+                    ),
+                    "resources/budget_wall_seconds_remaining": Measure(
+                        max(0, run.meter.budget.max_wall_seconds - run.meter.elapsed_seconds())
+                        if run.meter.budget.enforce_wall_time_limits
+                        else None,
+                        unit="seconds",
+                        status="valid" if run.meter.budget.enforce_wall_time_limits else "disabled_by_policy",
+                    ),
+                    "resources/enforce_wall_time_limits": Measure(
+                        int(run.meter.budget.enforce_wall_time_limits)
+                    ),
+                },
+                terminal=True,
+            )
         while (
             state["optimizer_steps"] < options["steps"]
             and cursor.epoch < options["epochs"]
@@ -645,14 +690,19 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                             state["allocated_canvas_positions"], unit="positions"
                         ),
                         "resources/budget_wall_seconds_used": Measure(
-                            time.perf_counter() - run.meter.started, unit="seconds"
+                            run.meter.elapsed_seconds(), unit="seconds"
                         ),
                         "resources/budget_wall_seconds_remaining": Measure(
-                            max(
-                                0,
-                                run.meter.budget.max_wall_seconds - (time.perf_counter() - run.meter.started),
-                            ),
+                            max(0, run.meter.budget.max_wall_seconds - run.meter.elapsed_seconds())
+                            if run.meter.budget.enforce_wall_time_limits
+                            else None,
                             unit="seconds",
+                            status="valid"
+                            if run.meter.budget.enforce_wall_time_limits
+                            else "disabled_by_policy",
+                        ),
+                        "resources/enforce_wall_time_limits": Measure(
+                            int(run.meter.budget.enforce_wall_time_limits)
                         ),
                         "resources/trainable_parameters": Measure(executed_trainable),
                         "resources/frozen_parameters": Measure(executed_frozen),
@@ -672,10 +722,23 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
                     values["budgets/phase/" + name + "/remaining"] = Measure(
                         getattr(run.meter.budget, "max_phase_" + name) - phase_number
                     )
-                values["budgets/phase/wall_seconds_reserved"] = Measure(
+                from ncm_lab.runtime.budget import phase_wall_report
+
+                wall = phase_wall_report(phase_ledger)
+                values["budgets/phase/wall_seconds_charged_and_reserved"] = Measure(
                     phase_ledger["wall"],
                     unit="seconds",
-                    reduction="conservative active wall reservations plus completed actual charges",
+                    reduction="known legacy balance plus active finite reservations and closed elapsed charges; open disabled-clock durations unknown",
+                )
+                values["budgets/phase/wall_seconds_reserved"] = Measure(
+                    wall["new_attempts_active_reserved_seconds"]
+                    if not wall["legacy_charges_and_reservations_seconds"]
+                    else None,
+                    unit="seconds",
+                    status="valid"
+                    if not wall["legacy_charges_and_reservations_seconds"]
+                    else "legacy_split_unknown",
+                    reduction="active finite reservations only; disabled-clock attempts reserve zero",
                 )
                 values["resources/run_storage_bytes"] = Measure(
                     sum(p.stat().st_size for p in run.path.rglob("*") if p.is_file()),
@@ -814,9 +877,10 @@ def fit(run, value, bound, *, resume=None, stop_after=None):
     if not state["selected"]:
         raise ValueError("no completed held-out selection; recovery remains diagnostic only")
     # Export the held-out selected state without holding a second model/optimizer copy.
-    selected_reader = CheckpointReader(
-        state["selected"]["manifest"], identity=identity, check=run.meter.check
-    )
+    selected_reader = CheckpointReader(state["selected"]["manifest"], check=run.meter.check)
+    transition = verify_recovery(selected_reader, metadata, recovery_compatibility)
+    if transition:
+        run.event("selected_policy_recovery_transition", **transition)
     selected_reader.load_model(model)
     selected_reader = None
     if generator:

@@ -1,5 +1,6 @@
 {
   "phase_id": "native-real-pilot-v1",
+  "enforce_wall_time_limits": false,
   "max_wall_seconds": 1200,
   "max_steps": 1000,
   "max_source_tokens": 1000000,

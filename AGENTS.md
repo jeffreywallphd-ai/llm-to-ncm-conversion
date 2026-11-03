@@ -3,7 +3,9 @@
 Preserve GPL-3.0 and vendored third-party notices. Keep shared implementation in
 `src/ncm_lab`; workflows compose it. Do not start model downloads, training,
 benchmark sweeps, remote provisioning, or submissions during planning/install.
-Every executable run needs finite per-run and aggregate phase budgets.
+Every executable run needs finite per-run and aggregate phase work/storage budgets.
+Wall limits stay enabled by default. The real pilot explicitly disables run/phase
+clock enforcement while retaining elapsed observations and every non-time cap.
 
 Keep reference tokens, true answer lengths/masks, teacher states and target codes
 outside the generator's prompt-only forward API. Keep whole conversation trees

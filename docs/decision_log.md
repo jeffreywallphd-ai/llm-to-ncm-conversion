@@ -71,3 +71,21 @@ metric-only assumption; preserve that evidence and test the corrected consumer.
 The optional verified-hash reuse is a separate I/O change, not a memory-capacity
 claim. No architecture, dataset, optimizer, loss, schedule or resource-cap deviation
 was introduced; real Spark/full-model peak validation remains unexecuted.
+
+## 2026-11-03 — Pilot completion without clock termination
+
+The user explicitly requested disabling both run and aggregate-phase wall limits
+for the shared real pilot, superseding the blanket clock-budget wording in AGENTS.
+Keep positive numeric clocks inactive, default other jobs to enforcement and keep
+phase identity/numeric caps, work/storage, memory and integrity rules unchanged.
+Zero wall reservation is not a known zero duration. Record each attempt policy and
+actual settlement; unresolved disabled-clock elapsed accounting blocks a later
+finite-clock admission. Preserve legacy combined spending without inventing its split.
+
+Pin the c303212 predecessor and one exact reviewed successor in an explicit recovery
+receipt; require the named CLI option, verify old self-identity/all shards and every
+other contract. At-target resume completes validation/recovery/export without more
+optimizer updates. No model math, optimizer, data or schedule deviation is introduced.
+Retain larger-wave clocks and reject disabled children under their outer deadlines.
+Genuine tiny BF16 checkpoints captured before edits provide software continuation
+evidence only; the reported Spark checkpoint and real hardware remain untested.

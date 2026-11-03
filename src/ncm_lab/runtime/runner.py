@@ -10,7 +10,7 @@ from ncm_lab.runtime.budget import BudgetStop
 from ncm_lab.runtime.doctor import preflight
 
 
-def execute(value, resume=None, stop_after=None):
+def execute(value, resume=None, stop_after=None, *, recovery_compatibility=None):
     torch.set_num_threads(value["threads"])
     bound, missing = bind_inputs(value)
     run = Run(value, bound)
@@ -18,6 +18,8 @@ def execute(value, resume=None, stop_after=None):
         return run.close("blocked", {"blockers": missing, "model_loaded": False})
     try:
         run.start()
+        if recovery_compatibility and (not resume or value["stage"] not in {"codec", "generator", "profile"}):
+            raise ValueError("recovery compatibility requires an explicit training resume")
         if value["stage"] not in {"data", "validation"}:
             report = preflight(value, run.path, training=value["stage"] in {"generator", "profile"})
             write_json(run.path / "preflight.json", report, exclusive=True)
@@ -47,7 +49,14 @@ def execute(value, resume=None, stop_after=None):
                 run.event(
                     "explicit_recovery", path=str(recovery_path.resolve()), sha256=digest(recovery_path)
                 )
-            result = fit(run, value, bound, resume=resume, stop_after=stop_after)
+            result = fit(
+                run,
+                value,
+                bound,
+                resume=resume,
+                stop_after=stop_after,
+                recovery_compatibility=recovery_compatibility,
+            )
         elif value["stage"] == "validation":
             from ncm_lab.validation.workflow import validate
 

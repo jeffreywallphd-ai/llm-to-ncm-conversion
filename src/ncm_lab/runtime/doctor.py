@@ -138,6 +138,8 @@ def estimate_parameters(model, architecture):
 
 
 def preflight(value, run_path, training=False):
+    from ncm_lab.runtime.budget import Budget
+
     device = value["device"]
     profile = value.get("hardware_profile", "cpu" if device == "cpu" else "cuda")
     info = doctor(profile)
@@ -174,6 +176,7 @@ def preflight(value, run_path, training=False):
         + 65536,
         "activation_bytes": "not included; requires actual kernel/optimizer/recovery probe",
         "hardware": info,
+        "wall_policy": Budget(**value["budget"]).wall_policy(),
         **assessment,
         "remaining_after_baseline_bytes": assessment["effective_capacity_bytes"] - minimum
         if assessment["effective_capacity_bytes"] is not None

@@ -37,6 +37,7 @@ def parser():
         stage.add_argument("--config", type=Path, required=True)
         if name in {"codec", "generator", "profile"}:
             stage.add_argument("--resume", type=Path)
+            stage.add_argument("--recovery-compatibility", choices=["clock-policy-v1"])
     validation = commands.add_parser("validate")
     validation.add_argument("--config", type=Path, required=True)
     generation = commands.add_parser("generate")
@@ -196,7 +197,10 @@ def main(argv=None):
             }[args.command]
             if value["stage"] != expected:
                 raise ValueError("CLI stage and resolved configuration disagree")
-            result = execute(value, getattr(args, "resume", None))
+            compatibility = getattr(args, "recovery_compatibility", None)
+            if compatibility and not args.resume:
+                raise ValueError("--recovery-compatibility requires an explicit --resume checkpoint")
+            result = execute(value, getattr(args, "resume", None), recovery_compatibility=compatibility)
         print(json.dumps(result, indent=2, allow_nan=False))
         return (
             2

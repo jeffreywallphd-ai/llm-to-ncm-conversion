@@ -1,0 +1,299 @@
+{
+  "schema": "native_clock_policy_compatibility_v1",
+  "policy": "clock-policy-v1",
+  "reviewed_base_commit": "c3032129d59e4a9c2b3d2414bf66f1c805202521",
+  "predecessor_implementation_sha256": "9404148f14f0496952e919c77119119b3c32e90b0c74b3947847f0cdce111ab6",
+  "successor_implementation_sha256": "e106a014d20dba62e209f7b2432b6789e1cd34e2cd57d6f9c03f152cb901a3aa",
+  "approved_scope": "Explicit wall policy, elapsed/reservation accounting, truthful budget monitoring/diagnostics, standalone/wave separation, strict source-transition checks and at-target recovery finalization. No model/loss/optimizer/data/schedule change.",
+  "package_source_changes": [
+    {
+      "path": "cli.py",
+      "before_sha256": "45da1dcd58f781d7270fcf3572adb03cbddef5fe1508546ec27a53c1056add12",
+      "after_sha256": "2ab6185fc5d00cd45eb6318cc6186168d9d9eb99bb25461303e1d1ca320cfa10"
+    },
+    {
+      "path": "config/waves.py",
+      "before_sha256": "ef40f6ee1a96ed12c0888a4fd3789343997ecc2617423f685f6d1923f2348807",
+      "after_sha256": "b8b79c9fc69978571d59a8f45657890cfb74c6f7506fcdcaa3deffc1b997676a"
+    },
+    {
+      "path": "runtime/budget.py",
+      "before_sha256": "9e40244c8b48d7ae9b7fb5ec7f5831ec69dbc8ea5b49e6cbb8818de692054516",
+      "after_sha256": "9f38a6a983ef6251a0d8d704c2936b6ff9281da5e5cf4303fb8bcf68bfee645a"
+    },
+    {
+      "path": "runtime/doctor.py",
+      "before_sha256": "50ef860990e7892c8f5a1cda1e395760847056bb64e013c1115db5e396beb2a0",
+      "after_sha256": "81bf8a52140ce828718164a1cf5c57e805a8c68719d15a0b53ce18dff0cca455"
+    },
+    {
+      "path": "runtime/provenance.py",
+      "before_sha256": "6607c11715dcccde01d5d93fa113af22301dea7182bdfdb8a68e3c4474b20aaa",
+      "after_sha256": "15daadab2ef0b073947f1da22cec5f7a305b9d28f0f7236c1c50fa204dc2bc86"
+    },
+    {
+      "path": "runtime/runner.py",
+      "before_sha256": "56233d89c1aa488ba72ab28607e43e13966567cb56e5bf6f9255debf420db19f",
+      "after_sha256": "6bd84539405b92189403982f781c46ce3242d6f251cec69126869485a2e24328"
+    },
+    {
+      "path": "training/engine.py",
+      "before_sha256": "2a0a8a1375a2057021452e1e8228edf9dd247b6b8742f1c9f1243150dea7b405",
+      "after_sha256": "2fa65a1c321c7198d8e6383e9484aaced9b7d28f6c2f6ab137ea9eafdd161b74"
+    },
+    {
+      "path": "training/recovery_compatibility.py",
+      "before_sha256": null,
+      "after_sha256": "1822166c4c6e58cdb8b39f92ecb005d863b64eaaf59cf7087209d5641c28baed"
+    }
+  ],
+  "unchanged_source_files": 52,
+  "predecessor_source_manifest": [
+    [
+      "__init__.py",
+      "10b9d99b312344acd86dc28a87a8e632e1fd409af61ca2d5cdadd1af90df8b3a"
+    ],
+    [
+      "__main__.py",
+      "78a8d37235eab284f3e390a654010b49cf51b8d66491171c6ecaefd17b56b66e"
+    ],
+    [
+      "cli.py",
+      "45da1dcd58f781d7270fcf3572adb03cbddef5fe1508546ec27a53c1056add12"
+    ],
+    [
+      "codec/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "codec/model.py",
+      "3df6291668eae14a80a63fbe0f3880d3a653d88369c4cd6ca2e8dc8c40d9d437"
+    ],
+    [
+      "config/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "config/architecture.py",
+      "a9ed4ecf9ed267507f5b93bfbcbc465284f4273d48e2f97b7193d2c0cc4db4e6"
+    ],
+    [
+      "config/stages.py",
+      "ede77988988d0c8246c1944f11c0ced5f14025df0a007b214078b3cbde04ccac"
+    ],
+    [
+      "config/waves.py",
+      "ef40f6ee1a96ed12c0888a4fd3789343997ecc2617423f685f6d1923f2348807"
+    ],
+    [
+      "data/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "data/artifacts.py",
+      "c53f73a5f7dd1292f576645a88d55f902ce937acb4a217e981e1c325bc7e38af"
+    ],
+    [
+      "data/capacity.py",
+      "f533dfb6f4e0ebede169e2ad5f8c029589e69e14a3acb06196f82fac8b5f4f80"
+    ],
+    [
+      "data/download.py",
+      "4d2baf0cad314f54824f893aeef37ab84f60f9adf90e5b9fa3f4196dab5497dd"
+    ],
+    [
+      "data/language.py",
+      "f128d0c4e48c18a9dc296bd7a29c7d31f11a3c68fc9612f3ad56c84a970e905c"
+    ],
+    [
+      "data/prepare.py",
+      "c1ed98b632805dfaf9377d39c0f93caade82367dd845081990c84c9b5df4b532"
+    ],
+    [
+      "data/records.py",
+      "61b45f06914427d47468037bda22b22a4f03258572853ee1bed5e709780c187a"
+    ],
+    [
+      "data/selection.py",
+      "070f3b647da4b19a05224409d63dba4b0f9ea21857bd4a1420a0a2a22ca653da"
+    ],
+    [
+      "data/sources/__init__.py",
+      "5f66627de952dd71b4136fba6cc38727dc4427ba5df1ce1517d47924240b42af"
+    ],
+    [
+      "data/sources/tulu.py",
+      "a600915cbce5fe23393f85a9747dd2c87179f003d14da41e886b2c1cc6955f52"
+    ],
+    [
+      "data/tokenization.py",
+      "328e5cd9afbadeff852ea7a64219fdedd7bde64687270293ae40e5e47ae351bd"
+    ],
+    [
+      "embedded/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "embedded/geometry.py",
+      "1aa6dd88b38f8f46a9f6c064d7c4d13bf80f1f0651e48642d06a52ba04ba959a"
+    ],
+    [
+      "embedded/model.py",
+      "5f2f079a310553624662c954ff9a17a43ccbb7228aed839676241c2a675f7332"
+    ],
+    [
+      "inference/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "inference/export.py",
+      "ae8c119d529cd4a1d9b959c61d0f42d7c458563b182abb2251057ce233707f09"
+    ],
+    [
+      "inference/policy.py",
+      "8b9014daede4b1aeb553e3a1b595bed7b46b59790e6eab51c6c6889c34435d7a"
+    ],
+    [
+      "monitoring/__init__.py",
+      "97936a5514d4514b36ce5bddac3fb2bfaf7eb5602909c053a8d73672d0a37614"
+    ],
+    [
+      "monitoring/diagnostics.py",
+      "dbadd4fe79ae67be1d0df6c5a87b902e256985d9368b32a22760c2853d3ffe06"
+    ],
+    [
+      "monitoring/layouts.py",
+      "e6a9a6b3012615a6db10d77f04873d6cda79720870fe3abfe3647ea441d73aff"
+    ],
+    [
+      "monitoring/metrics.py",
+      "34ed4abb56280294833dece8b689255405eb96adbdefd966d9a9e84e43a63b89"
+    ],
+    [
+      "monitoring/projector.py",
+      "fbc8050027a0b8579e74bfcfa078fc6e0b0daa34731046a8b70ff62215684dfa"
+    ],
+    [
+      "monitoring/recorder.py",
+      "7f32def60604a2999220cd73ebd82dba8f39f75ea86227ba2861501e1174bcc1"
+    ],
+    [
+      "monitoring/records.py",
+      "f0017b69cb7bd4b22730bcc5bcc653b3bee8267c59404580246a61a1db7cb52b"
+    ],
+    [
+      "monitoring/samples.py",
+      "3f206a1be1103a4773ee973216a00ea88ef7e299933f11ccaf0617c01690e298"
+    ],
+    [
+      "monitoring/server.py",
+      "368c0eb1d6a7a5c492b4971fa1b8cd87ef389fc366473cb3c22fa24b3c121091"
+    ],
+    [
+      "runtime/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "runtime/budget.py",
+      "9e40244c8b48d7ae9b7fb5ec7f5831ec69dbc8ea5b49e6cbb8818de692054516"
+    ],
+    [
+      "runtime/doctor.py",
+      "50ef860990e7892c8f5a1cda1e395760847056bb64e013c1115db5e396beb2a0"
+    ],
+    [
+      "runtime/generation.py",
+      "58b14554b7ac9c411c3a3f9db14f542c03f2591a4b175a409e8da9e216fd601c"
+    ],
+    [
+      "runtime/host_memory.py",
+      "711cb0d75f762ca6c43a0f332568d2c323d4f1f5e1653ffa2f0c266e48f47694"
+    ],
+    [
+      "runtime/io.py",
+      "5e20a276b5697404c8adbbcf9a9d89cdc86c71ecf66422a729cb3b48e0b4a3b9"
+    ],
+    [
+      "runtime/memory.py",
+      "08890617b947bf3ff2ccc172d1af6a7d378b918b5bd37eea86163f829564834c"
+    ],
+    [
+      "runtime/prepare.py",
+      "2a880a8be5e4331f5cd67ed1f23567287027447517abe809111591765b423811"
+    ],
+    [
+      "runtime/provenance.py",
+      "6607c11715dcccde01d5d93fa113af22301dea7182bdfdb8a68e3c4474b20aaa"
+    ],
+    [
+      "runtime/runner.py",
+      "56233d89c1aa488ba72ab28607e43e13966567cb56e5bf6f9255debf420db19f"
+    ],
+    [
+      "runtime/wave.py",
+      "a91a7a42810d023cba3ee8a3837ce371bfd061a5c0695f405673835eef920ac3"
+    ],
+    [
+      "teacher/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "teacher/model.py",
+      "5119fc2108d609bb2f7bf7976cb31cb48cb45cbd2809017265533030a13e04e9"
+    ],
+    [
+      "teacher/stages.py",
+      "21676060f81dfbb2aaba86bb33ce47d93961e6bc3c63cfe3289c280a7834ef9c"
+    ],
+    [
+      "training/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "training/checkpoints.py",
+      "022e6280368b5c689c1092cfa01a9b07d5fc79ae8648c38239096f0e3a12f232"
+    ],
+    [
+      "training/engine.py",
+      "2a0a8a1375a2057021452e1e8228edf9dd247b6b8742f1c9f1243150dea7b405"
+    ],
+    [
+      "training/losses.py",
+      "77019360b45883b6631d734c3037a63a7179991d34613c3c14638e06fcd918ac"
+    ],
+    [
+      "training/optimizer.py",
+      "54105d1696b722b65a4ed5f120216d32736418f218ccd6274d4016ba4998ff03"
+    ],
+    [
+      "training/precision.py",
+      "f4324e3c0ad5415a412fa13013a448ea5bcb28faf119c93bb9ccc27a6754b91d"
+    ],
+    [
+      "training/validation_plan.py",
+      "97594c91a03afc32fd7bbedafd92c834d9ebacfb6ae5efcff0b8c759349a9edc"
+    ],
+    [
+      "validation/__init__.py",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    [
+      "validation/fixtures.py",
+      "3d5d20f23ec4abbe361156417564d7f08281bc58d75a613de866fbee16d992e2"
+    ],
+    [
+      "validation/workflow.py",
+      "f8eeec756303872bfc01b523e2557799b0c3fe298db849784076560ceae73b58"
+    ]
+  ],
+  "requirements": [
+    "explicit --recovery-compatibility clock-policy-v1",
+    "exact predecessor and successor source identities",
+    "old manifest/payload identity equals native_identity(old metadata)",
+    "all metadata equal after only approved implementation hash transition",
+    "every checkpoint shard, parameter group, precision, scheduler/scaler and RNG state still validated",
+    "original checkpoint remains immutable; transition recorded in new attempt events"
+  ],
+  "actual_user_checkpoint_available": false,
+  "evidence": "Tiny BF16 checkpoints captured under the genuine predecessor before package edits; independent regression fixtures also cover the explicit transition. Actual reported Spark checkpoint not present locally."
+}

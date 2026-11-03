@@ -186,6 +186,14 @@ flags are recorded. The sample timer is cooperative before/between prompts; an
 in-flight forward finishes, any overrun is recorded, and further prompts stop.
 Source/canvas work and time are charged to the existing aggregate training budget.
 
+For the [real pilot's disabled-clock policy](pilot_clock_policy.md), elapsed time
+is still observed/settled but never enforces run or phase deadlines. The remaining
+clock is null with `disabled_by_policy` status (TensorBoard text, no countdown);
+`resources/enforce_wall_time_limits` is zero. Events/preflight/summary explain the
+policy. Phase metrics distinguish active finite reservations from the combined
+known elapsed/reserved balance; legacy splits and open unbounded durations stay
+explicitly unknown. Sample/view timers do not become training deadlines.
+
 Resource tags distinguish nonpadding source tokens, supervised answer tokens,
 allocated canvas and returned sample length. Host step wall time is not a CUDA
 device-event compute measurement. Generation reuses the existing synchronized
