@@ -155,3 +155,34 @@ forward/backward/export checks at all five sizes and an 8-position local prepara
 chain followed by 98 additional updates to 100 total. See the
 [dated evidence receipt](configurable_canvas_validation_2026-11-04.json), which also
 retains the initial two development failures and their corrected reruns.
+
+## Stage 1 SQLite preparation correction (2026-11-04)
+
+The shared OASST index now initializes its supplied parent hierarchy before
+connecting, reports directory/open errors with path and chained cause, and closes
+the connection throughout setup, ingestion and iteration. Stage 1 and legacy
+preparation close their owned readers on early termination. SQL, source admission,
+grouped partitions, production quotas, scientific settings, budgets and the README
+combined block are unchanged. Prior runs were not edited or deleted.
+
+Added offline real-Parquet/SQLite regressions for fresh/existing parents, spaces,
+relative/string paths, row bounds and filters, unchanged sources, stale-index
+rejection, JSONL independence, connection cleanup, legacy preparation, prepare-only
+Stage 1 artifact verification and nonzero filesystem failure isolation.
+
+**Validation outstanding:** the user explicitly requested skipping tests on this
+system, which has no configured development Python environment. No dependencies
+were installed. The following checks were not executed and no passing test result
+is claimed for this correction:
+
+```sh
+python -m pytest -q tests/unit/test_oasst_index.py tests/integration/test_stage1_preparation_sqlite.py
+python -m pytest -q tests/unit/test_real_data_contracts.py tests/unit/test_stage1_data.py tests/unit/test_stage1_policy.py tests/integration/test_stage1_workflow.py tests/integration/test_stage1_bash.py
+python -m pytest -q
+ruff check .
+```
+
+Full-model/GPU validation remains unexecuted. No research training or downloads
+were launched. See [preparation troubleshooting](stage1.md#preparation-sqlite-troubleshooting)
+for the fresh-experiment procedure and saved failure locations. This fix alone
+does not validate data quotas, downstream stages, feasibility or output quality.

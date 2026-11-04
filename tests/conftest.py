@@ -110,6 +110,71 @@ def stage1_fixture(tmp_path):
 
 
 @pytest.fixture
+def oasst_source(tmp_path):
+    """Local approved/rejected Parquet rows exercising the real SQLite reader."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from ncm_lab.runtime.io import digest
+
+    rows, expected = [], []
+    for i in range(120):
+        prompt, answer = f"token4 token{i % 20 + 4} {i}", "token8 token9"
+        parent = {
+            "message_id": f"pair-{i:03d}-p",
+            "parent_id": None,
+            "message_tree_id": f"stage1-group-{i}",
+            "text": prompt,
+            "role": "prompter",
+            "lang": "en",
+            "deleted": False,
+            "review_result": True,
+        }
+        child = {
+            **parent, "message_id": f"pair-{i:03d}-a", "parent_id": parent["message_id"],
+            "role": "assistant", "text": answer,
+        }
+        rows.extend([parent, child])
+        expected.append({
+            "original_id": child["message_id"], "group_id": parent["message_tree_id"],
+            "prompt": prompt, "answer": answer, "split": "train",
+        })
+    for number, changes in enumerate([
+        {"deleted": True}, {"lang": "fr"}, {"review_result": False},
+        {"review_result": None}, {"role": "prompter"},
+        {"message_tree_id": "different-tree"}, {"parent_id": "missing-parent"},
+    ]):
+        rows.append({**rows[1], "message_id": f"rejected-answer-{number}", **changes})
+    for number, changes in enumerate([
+        {"deleted": True}, {"lang": "fr"}, {"review_result": False}, {"role": "assistant"},
+    ]):
+        parent = {**rows[0], "message_id": f"rejected-parent-{number}", **changes}
+        rows.extend([
+            parent,
+            {**rows[1], "message_id": f"rejected-pair-{number}", "parent_id": parent["message_id"]},
+        ])
+    path = tmp_path / "approved source with spaces.parquet"
+    pq.write_table(pa.Table.from_pylist(rows), path)
+    settings = {
+        "format": "oasst_parquet", "source_path": str(path), "source_sha256": digest(path),
+        "revision": "software-fixture-oasst", "license": "software fixture",
+        "max_source_rows": len(rows), "max_examples": 120, "max_unique_tokens": 10000,
+        "max_prompt_tokens": 512, "dev_fraction": 0.5, "overlength": "exclude", "seed": 17,
+    }
+    return {"path": path, "settings": settings, "expected": expected, "rows": rows}
+
+
+@pytest.fixture
+def stage1_oasst_fixture(stage1_fixture, oasst_source):
+    from ncm_lab.runtime.io import read, write_json
+
+    path = stage1_fixture["experiment"]["stages"]["prepare"]
+    value = read(path)
+    value["data"] = oasst_source["settings"]
+    write_json(path, value)
+    return {**stage1_fixture, "oasst": oasst_source}
+
+
+@pytest.fixture
 def memory_files():
     """Synthetic rounded reproduction, never the runner's actual procfs/cgroup state."""
     from collections import Counter

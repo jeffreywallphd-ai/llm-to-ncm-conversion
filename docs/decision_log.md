@@ -182,3 +182,25 @@ through extended paths while preserving ordinary serialized identities and the
 existing bounded deletion/ownership checks. Preserve failed attempts. Condense the
 README into an explained command guide, retaining the exact combined block and
 moving scientific/operator detail to [Stage 1](stage1.md).
+
+## 2026-11-04 — Initialize the shared OASST SQLite index before source scanning
+
+Source inspection confirms Stage 1 opens its native-run index before either
+artifact writer creates `artifacts`. Create only the supplied index parent at the
+shared reader boundary, using the existing Windows I/O path helper, before SQLite
+connects. Report directory creation and connection failures with their intended
+path and chained original cause. Keep existing schema-collision rejection, SQL,
+transactions, source filters, scan bounds, partitions and scientific settings.
+
+Protect all connection-owned setup, ingestion and queries with explicit closing.
+Both Stage 1 and legacy preparation own and close their reader generators, including
+when a consumer breaks or raises. No attempt/index reuse, source compatibility
+bypass, data migration or architectural deviation is introduced. Historical failed
+runs remain untouched; the operator should start a new experiment using the
+unchanged README combined block after installing the fix.
+
+Add local Parquet/SQLite lifecycle regressions, legacy early-stop cleanup and actual
+Stage 1 prepare-only publication/failure-path tests. Test and lint execution were
+explicitly waived by the user because this system has no configured development
+Python environment; these new checks and the existing suite remain unexecuted.
+No dependencies were installed, research assets downloaded or real training run.

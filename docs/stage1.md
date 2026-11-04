@@ -84,6 +84,32 @@ loaders reject that locked partition. No relabeling or test-derived normalizatio
 scales, codec fitting, targets or checkpoint selection occurs. Final test CE is
 computed directly against the selected export, without a test codec/teacher.
 
+### Preparation SQLite troubleshooting
+
+The shared OASST reader creates the index parent hierarchy before opening SQLite;
+fresh preparation needs no manual directory creation. The intended index is inside
+the native preparation run, at
+`native_runs/stage1_prepare/<run-id>/artifacts/source-index.sqlite`, not directly
+under the experiment manifest or controller attempt. Existing parent directories
+are accepted; unusable paths fail without fallback, replacement or index reuse.
+Connections close on completion, setup/ingestion errors and reader cancellation.
+
+Directory-creation and connection failures report the operation and intended index
+path. The original exception and chained traceback are retained in the native
+run's `failure.json`; `stages/prepare/<attempt>/launch.json` identifies that run.
+The experiment manifest and partial `reports/stage1_summary` retain failure, the
+worker exits nonzero, and dependent stages remain pending without a successful
+preparation handoff. Check the actual filesystem error rather than assuming every
+SQLite open error means a missing directory.
+
+After installing this fix, retain the reported failed experiment
+`runs/stage1/medium/20261104T222631Z-54a2db31` as evidence. Use the existing root
+README **Stage 1 single-pass experiment — run everything** combined Bash block to
+create a new experiment in the installed CUDA environment with verified local
+Qwen/OASST/tokenizer assets. Implementation identity changes can reject the old
+manifest; do not bypass those checks. This correction does not establish corpus
+capacity, downstream training success, hardware fit or answer quality.
+
 ## Codec selection and qualification
 
 Initialization is measured before any update under preserved Torch/Python/training

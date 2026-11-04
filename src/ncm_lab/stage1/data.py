@@ -1,6 +1,7 @@
 """Complete references, dedup-connected group splits and sealed locked evaluation."""
 
 from collections import Counter, defaultdict, deque
+from contextlib import closing
 from dataclasses import asdict
 import hashlib
 import unicodedata
@@ -68,31 +69,32 @@ def prepare(run, value):
         a, b = find(first), find(second)
         parents[max(a, b)] = min(a, b)
 
-    for row in raw_examples(
-        settings, run.path / "artifacts/source-index.sqlite", run.meter.check_disk, observations
-    ):
-        run.meter.check_disk()
-        if row["original_id"] in ids:
-            raise ValueError("ambiguous duplicated source example ID")
-        ids.add(row["original_id"])
-        if not isinstance(row["group_id"], str) or not row["group_id"]:
-            raise ValueError("source parent group ID required")
-        group = row["group_id"]
-        find(group)
-        for other in row.get("overlap_group_ids", []):
-            union(group, other)
-        key = canonical_hash([normalized(row["prompt"]), normalized(row["answer"])])
-        if key in duplicate_owner:
-            union(group, duplicate_owner[key])
-            excluded["duplicate"] += 1
-        else:
-            duplicate_owner[key] = group
-            rows.append((key, row))
-        size += len(str(row).encode("utf-8"))
-        if size > policy.max_candidate_bytes:
-            raise DataCapacityError(
-                "bounded source candidate storage exhausted; explicitly revise approved scan settings"
-            )
+    with closing(
+        raw_examples(settings, run.path / "artifacts/source-index.sqlite", run.meter.check_disk, observations)
+    ) as source:
+        for row in source:
+            run.meter.check_disk()
+            if row["original_id"] in ids:
+                raise ValueError("ambiguous duplicated source example ID")
+            ids.add(row["original_id"])
+            if not isinstance(row["group_id"], str) or not row["group_id"]:
+                raise ValueError("source parent group ID required")
+            group = row["group_id"]
+            find(group)
+            for other in row.get("overlap_group_ids", []):
+                union(group, other)
+            key = canonical_hash([normalized(row["prompt"]), normalized(row["answer"])])
+            if key in duplicate_owner:
+                union(group, duplicate_owner[key])
+                excluded["duplicate"] += 1
+            else:
+                duplicate_owner[key] = group
+                rows.append((key, row))
+            size += len(str(row).encode("utf-8"))
+            if size > policy.max_candidate_bytes:
+                raise DataCapacityError(
+                    "bounded source candidate storage exhausted; explicitly revise approved scan settings"
+                )
     try:
         tokenizer = load_tokenizer(value["model"])
     except (OSError, ValueError) as exc:

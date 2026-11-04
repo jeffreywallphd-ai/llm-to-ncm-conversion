@@ -2,10 +2,12 @@
 
 import hashlib
 import json
+from contextlib import closing
+from pathlib import Path
 from ncm_lab.data.records import Example
 from ncm_lab.data.artifacts import ArtifactWriter
 from ncm_lab.teacher.model import model_identity, load_tokenizer
-from ncm_lab.runtime.io import root, read, digest, canonical_hash, write_json
+from ncm_lab.runtime.io import root, read, digest, canonical_hash, write_json, disk_path
 from ncm_lab.data.tokenization import prompt_tokens
 
 
@@ -83,39 +85,47 @@ def raw_examples(settings, index_path=None, check=None, observations=None):
 
         if index_path is None:
             raise ValueError("bounded on-disk OASST parent index required")
-        database = sqlite3.connect(index_path)
-        database.execute("PRAGMA cache_size=-4096")
-        database.execute("PRAGMA temp_store=FILE")
-        database.execute(
-            "CREATE TABLE messages (id TEXT PRIMARY KEY,parent TEXT,tree TEXT,text TEXT,role TEXT,lang TEXT,deleted INTEGER,approved INTEGER)"
-        )
-        count = 0
-        for batch in pq.ParquetFile(path).iter_batches(batch_size=512, columns=columns):
-            if check:
-                check()
-            records = []
-            for row in batch.to_pylist():
-                count += 1
-                if count > settings["max_source_rows"]:
-                    break
-                observations["source_rows_inspected"] = count
-                records.append(
-                    (
-                        row["message_id"],
-                        row["parent_id"],
-                        row["message_tree_id"],
-                        row["text"],
-                        row["role"],
-                        row["lang"],
-                        bool(row.get("deleted")),
-                        row.get("review_result") is True,
-                    )
-                )
-            database.executemany("INSERT OR REPLACE INTO messages VALUES (?,?,?,?,?,?,?,?)", records)
-            database.commit()
-            if count >= settings["max_source_rows"]:
-                break
+        index_path = Path(index_path)
         try:
+            disk_path(index_path.parent).mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise RuntimeError(f"OASST index parent directory creation failed for {index_path}: {exc}") from exc
+        try:
+            database = sqlite3.connect(disk_path(index_path))
+        except (sqlite3.Error, OSError) as exc:
+            raise RuntimeError(f"OASST index connection failed for {index_path}: {exc}") from exc
+        with closing(database):
+            database.execute("PRAGMA cache_size=-4096")
+            database.execute("PRAGMA temp_store=FILE")
+            database.execute(
+                "CREATE TABLE messages (id TEXT PRIMARY KEY,parent TEXT,tree TEXT,text TEXT,role TEXT,lang TEXT,deleted INTEGER,approved INTEGER)"
+            )
+            count = 0
+            for batch in pq.ParquetFile(path).iter_batches(batch_size=512, columns=columns):
+                if check:
+                    check()
+                records = []
+                for row in batch.to_pylist():
+                    count += 1
+                    if count > settings["max_source_rows"]:
+                        break
+                    observations["source_rows_inspected"] = count
+                    records.append(
+                        (
+                            row["message_id"],
+                            row["parent_id"],
+                            row["message_tree_id"],
+                            row["text"],
+                            row["role"],
+                            row["lang"],
+                            bool(row.get("deleted")),
+                            row.get("review_result") is True,
+                        )
+                    )
+                database.executemany("INSERT OR REPLACE INTO messages VALUES (?,?,?,?,?,?,?,?)", records)
+                database.commit()
+                if count >= settings["max_source_rows"]:
+                    break
             query = "SELECT a.id,a.tree,p.text,a.text FROM messages a JOIN messages p ON a.parent=p.id AND a.tree=p.tree WHERE a.role='assistant' AND p.role='prompter' AND a.lang='en' AND p.lang='en' AND a.deleted=0 AND p.deleted=0 AND a.approved=1 AND p.approved=1 ORDER BY a.id"
             for identity, tree, prompt, answer in database.execute(query):
                 if check:
@@ -127,8 +137,6 @@ def raw_examples(settings, index_path=None, check=None, observations=None):
                     "answer": answer,
                     "split": "train",
                 }
-        finally:
-            database.close()
 
 
 def prepare_data(run, value):
@@ -174,71 +182,74 @@ def prepare_data(run, value):
     observations = {"source_rows_inspected": 0, "eligible_references_inspected": 0}
     lengths = {"train": [], "dev": []}
     eos = tokenizer.eos_token_id
-    for row in raw_examples(settings, run.path / "artifacts/source-index.sqlite", run.meter.check_disk, observations):
-        run.meter.check()
-        observations["eligible_references_inspected"] += 1
-        key = canonical_hash([row["prompt"], row["answer"]])
-        if key in seen:
-            excluded["duplicate"] += 1
-            continue
-        seen.add(key)
-        prompt = prompt_tokens(tokenizer, row["prompt"])
-        answer = tokenizer.encode(row["answer"], add_special_tokens=False)
-        if eos in answer:
-            answer = answer[: answer.index(eos)]
-        answer = answer + [eos]
-        canvas = value["architecture"]["canvas"]
-        censored = False
-        if len(answer) > canvas:
-            if settings.get("overlength", "exclude") == "exclude":
-                excluded["overlength"] += 1
+    with closing(
+        raw_examples(settings, run.path / "artifacts/source-index.sqlite", run.meter.check_disk, observations)
+    ) as source:
+        for row in source:
+            run.meter.check()
+            observations["eligible_references_inspected"] += 1
+            key = canonical_hash([row["prompt"], row["answer"]])
+            if key in seen:
+                excluded["duplicate"] += 1
                 continue
-            answer = answer[:canvas]
-            censored = True
-        if len(prompt) > settings["max_prompt_tokens"]:
-            excluded["prompt_length"] += 1
-            continue
-        fraction = (
-            int(
-                hashlib.sha256((str(settings.get("seed", 17)) + ":" + row["group_id"]).encode()).hexdigest()[
-                    :16
-                ],
-                16,
+            seen.add(key)
+            prompt = prompt_tokens(tokenizer, row["prompt"])
+            answer = tokenizer.encode(row["answer"], add_special_tokens=False)
+            if eos in answer:
+                answer = answer[: answer.index(eos)]
+            answer = answer + [eos]
+            canvas = value["architecture"]["canvas"]
+            censored = False
+            if len(answer) > canvas:
+                if settings.get("overlength", "exclude") == "exclude":
+                    excluded["overlength"] += 1
+                    continue
+                answer = answer[:canvas]
+                censored = True
+            if len(prompt) > settings["max_prompt_tokens"]:
+                excluded["prompt_length"] += 1
+                continue
+            fraction = (
+                int(
+                    hashlib.sha256((str(settings.get("seed", 17)) + ":" + row["group_id"]).encode()).hexdigest()[
+                        :16
+                    ],
+                    16,
+                )
+                / 2**64
             )
-            / 2**64
-        )
-        split = "dev" if fraction < settings.get("dev_fraction", 0.15) else "train"
-        provenance = {
-            "model_id": value["model"]["model_id"],
-            "revision": value["model"]["revision"],
-            "tokenizer_revision": value["model"]["tokenizer_revision"],
-            "template_sha256": template,
-            "thinking": False,
-            "source_sha256": source_sha,
-            "dataset_revision": settings["revision"],
-            "license": settings["license"],
-            "eos_ids": value["model"].get("eos_ids", [eos]),
-        }
-        example = Example(
-            row["original_id"],
-            row["group_id"],
-            split,
-            "software_fixture" if value["model"].get("fixture") else "reference",
-            prompt,
-            answer,
-            not censored,
-            censored,
-            provenance,
-        )
-        amount = len(prompt) + len(answer)
-        if total + amount > settings["max_unique_tokens"]:
-            break
-        run.meter.charge(source=amount, answer=len(answer), steps=1)
-        total += amount
-        writer.append(example)
-        lengths[split].append(len(answer))
-        if writer.count >= settings["max_examples"]:
-            break
+            split = "dev" if fraction < settings.get("dev_fraction", 0.15) else "train"
+            provenance = {
+                "model_id": value["model"]["model_id"],
+                "revision": value["model"]["revision"],
+                "tokenizer_revision": value["model"]["tokenizer_revision"],
+                "template_sha256": template,
+                "thinking": False,
+                "source_sha256": source_sha,
+                "dataset_revision": settings["revision"],
+                "license": settings["license"],
+                "eos_ids": value["model"].get("eos_ids", [eos]),
+            }
+            example = Example(
+                row["original_id"],
+                row["group_id"],
+                split,
+                "software_fixture" if value["model"].get("fixture") else "reference",
+                prompt,
+                answer,
+                not censored,
+                censored,
+                provenance,
+            )
+            amount = len(prompt) + len(answer)
+            if total + amount > settings["max_unique_tokens"]:
+                break
+            run.meter.charge(source=amount, answer=len(answer), steps=1)
+            total += amount
+            writer.append(example)
+            lengths[split].append(len(answer))
+            if writer.count >= settings["max_examples"]:
+                break
     qualification = {
         **observations, "canvas": value["architecture"]["canvas"], "excluded": excluded,
         "splits": {split: {"examples": len(items), "unique_supervised_answer_positions": sum(items),
