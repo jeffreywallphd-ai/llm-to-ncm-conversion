@@ -4,10 +4,11 @@ from pathlib import Path
 from dataclasses import asdict
 import json
 import torch
-from ncm_lab.runtime.io import write_json, read, digest, resolve_reference
+from ncm_lab.runtime.io import write_json, read, digest, resolve_reference, disk_path
 from ncm_lab.data.records import Example
 
-KINDS = {"native_data_v1", "native_features_v1", "native_targets_v1"}
+LOCKED = "native_stage1_evaluation_v1"
+KINDS = {"native_data_v1", "native_features_v1", "native_targets_v1", LOCKED}
 
 
 class ArtifactWriter:
@@ -15,12 +16,12 @@ class ArtifactWriter:
         if kind not in KINDS:
             raise ValueError("native data/cache schema required")
         self.path = Path(path)
-        self.path.mkdir(parents=True, exist_ok=False)
+        disk_path(self.path).mkdir(parents=True, exist_ok=False)
         self.kind = kind
         self.identity = identity
         self.meter = meter
         self.count = 0
-        self.index = (self.path / "records.jsonl").open("x", encoding="utf-8", newline="\n")
+        self.index = disk_path(self.path / "records.jsonl").open("x", encoding="utf-8", newline="\n")
         self.stats = {
             "examples": 0,
             "unique_source_tokens": 0,
@@ -29,17 +30,19 @@ class ArtifactWriter:
             "source_types": {},
             "answer_length_histogram": {},
         }
-        self.groups = {"train": set(), "dev": set()}
+        self.groups = {"test": set()} if kind == LOCKED else {"train": set(), "dev": set()}
         self.ids = set()
 
     def append(self, example, tensor=None):
+        if (example.split == "test") != (self.kind == LOCKED):
+            raise ValueError("locked evaluation records cannot enter training/selection artifacts")
         if (example.source_type == "software_fixture") != bool(self.identity.get("model", {}).get("fixture")):
             raise ValueError("fixture lineage cannot be relabeled as real source data")
         if example.provenance.get("template_sha256") != self.identity.get("template_sha256"):
             raise ValueError("example and artifact prompt template differ")
         if example.original_id in self.ids:
             raise ValueError("duplicate original source example")
-        if example.group_id in self.groups["dev" if example.split == "train" else "train"]:
+        if any(example.group_id in groups for split, groups in self.groups.items() if split != example.split):
             raise ValueError("conversation/document group crosses train/dev")
         self.ids.add(example.original_id)
         self.groups[example.split].add(example.group_id)
@@ -51,13 +54,16 @@ class ArtifactWriter:
                 self.meter.check_disk(tensor.numel() * tensor.element_size() + 4096)
             name = f"shard-{self.count:08d}.pt"
             path = self.path / name
-            torch.save(tensor.detach().to("cpu").contiguous().clone(), path)
+            from ncm_lab.stage1.io import account
+
+            with account(self.meter, path, tensor.numel() * tensor.element_size() + 65536):
+                torch.save(tensor.detach().to("cpu").contiguous().clone(), disk_path(path))
             row["tensor"] = {
                 "file": name,
                 "sha256": digest(path, self.meter.check if self.meter else None),
                 "shape": list(tensor.shape),
                 "dtype": str(tensor.dtype),
-                "bytes": path.stat().st_size,
+                "bytes": disk_path(path).stat().st_size,
             }
         self.index.write(json.dumps(row, allow_nan=False) + "\n")
         self.index.flush()
@@ -90,7 +96,11 @@ class ArtifactWriter:
             "unique_units": "distinct prepared-example token positions; repeated epochs excluded; shared prompt prefixes across different examples counted separately",
             "extra": extra or {},
         }
-        write_json(self.path / "manifest.json", manifest, exclusive=True)
+        from ncm_lab.stage1.io import account
+
+        path = self.path / "manifest.json"
+        with account(self.meter, path, len(json.dumps(manifest, indent=2).encode("utf-8")) + 1):
+            write_json(path, manifest, exclusive=True)
         return self.path / "manifest.json"
 
 
@@ -109,7 +119,7 @@ class Dataset:
         if not 0 < self.manifest["records"] <= 1000000:
             raise ValueError("native initial dataset metadata cap is one million examples")
         self.offsets = []
-        with (self.path / "records.jsonl").open("rb") as stream:
+        with disk_path(self.path / "records.jsonl").open("rb") as stream:
             while True:
                 offset = stream.tell()
                 line = stream.readline()
@@ -133,13 +143,13 @@ class Dataset:
             path = (self.path / info["file"]).resolve()
             if not path.is_relative_to(self.path.resolve()) or digest(path) != info["sha256"]:
                 raise ValueError("corrupt native data shard")
-            tensor = torch.load(path, weights_only=True, mmap=True, map_location="cpu")
+            tensor = torch.load(disk_path(path), weights_only=True, mmap=True, map_location="cpu")
             if list(tensor.shape) != info["shape"] or str(tensor.dtype) != info["dtype"]:
                 raise ValueError("native cached tensor shape/dtype mismatch")
         return example, tensor
 
     def metadata(self, index):
-        with (self.path / "records.jsonl").open("rb") as stream:
+        with disk_path(self.path / "records.jsonl").open("rb") as stream:
             stream.seek(self.offsets[index])
             row = json.loads(stream.readline())
         return row
@@ -148,7 +158,7 @@ class Dataset:
         return [i for i, row in self.iter_metadata() if row["example"]["split"] == split]
 
     def iter_metadata(self):
-        with (self.path / "records.jsonl").open(encoding="utf-8") as stream:
+        with disk_path(self.path / "records.jsonl").open(encoding="utf-8") as stream:
             for index, line in enumerate(stream):
                 yield index, json.loads(line)
 

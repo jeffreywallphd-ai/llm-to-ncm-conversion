@@ -40,3 +40,31 @@ def codec_validation_plan(dataset, dev, resolutions, max_examples, seed):
         "aggregation": "equal mean of per-example actual 0.5 full normalized MSE + 0.5 planned cutoff normalized MSE + beta sampled KL",
         "head_sampling": "independent stable per-example RNG; one coarse reconstruction per example",
     }
+
+
+def stage1_codec_plan(dataset, dev, resolutions, max_examples, seed):
+    plan = codec_validation_plan(dataset, dev, resolutions, max_examples, seed)
+    # Reduced software/explicit diagnostics still cover every LEVEL index, even if
+    # slot counts repeat. Repeated validation assignments are never unique examples.
+    if not plan["complete_coarse_coverage"]:
+        assignments = []
+        for cutoff in range(len(resolutions) - 1):
+            index = dev[cutoff % min(len(dev), max_examples)]
+            identity = dataset.metadata(index)["example"]["original_id"]
+            assignments.append(
+                {
+                    "index": index,
+                    "example_id": identity,
+                    "cutoff_index": cutoff,
+                    "resolution": resolutions[cutoff],
+                    "head_seed": int(canonical_hash(["stage1", seed, identity, cutoff])[:15], 16),
+                }
+            )
+        plan.update(
+            assignments=assignments,
+            coverage_counts={str(i): 1 for i in range(len(resolutions) - 1)},
+            complete_coarse_coverage=True,
+        )
+    plan["policy"] = "stage1_fixed_all_coarse_indices_v1"
+    plan["distinct_examples"] = len({a["example_id"] for a in plan["assignments"]})
+    return plan

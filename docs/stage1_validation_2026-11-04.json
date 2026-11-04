@@ -1,0 +1,628 @@
+{
+  "schema": "native_stage1_workflow_validation_v1",
+  "date": "2026-11-04",
+  "base_commit": "9317762298a1d761039c07a44a6e6a2cb01c30c9",
+  "implementation_sha256": "7fce6b2618e3c4f53c1de5ae5ea2ce09db7cb04a7b3b8ff87309f89898c08144",
+  "environment": {
+    "python": "3.12.14",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.15.0",
+    "pytest": "9.0.2",
+    "ruff": "0.14.14",
+    "platform": "win32",
+    "cuda_available": false
+  },
+  "offline_test_allowance": {
+    "max_seconds": 10800,
+    "reserved_seconds": 8820,
+    "max_retained_bytes": 4000000000,
+    "retained_bytes": 1455867159,
+    "separate_packaging_phases": "Each packaging phase has 300 seconds, at most 8 subprocesses and 250 MB retained; their exact results follow."
+  },
+  "checks": [
+    {
+      "name": "initial-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_stage1_policy.py",
+        "tests/integration/test_stage1_workflow.py",
+        "--basetemp=.cache/stage1-validation/initial-1"
+      ],
+      "seconds_cap": 240,
+      "status": "finished",
+      "exit_code": 1,
+      "elapsed_seconds": 45.95300000021234,
+      "pytest_summary": "1 failed, 19 passed in 25.16s",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\initial-1.txt",
+      "log_sha256": "06e1c95719acb9de4ad968ff7842f4371e0cee8b4712d72e82a5c8f22e393887",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "initial-2",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_stage1_policy.py",
+        "tests/integration/test_stage1_workflow.py",
+        "--basetemp=.cache/stage1-validation/initial-2"
+      ],
+      "seconds_cap": 240,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 50.57799999997951,
+      "pytest_summary": "20 passed in 44.90s",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\initial-2.txt",
+      "log_sha256": "b66e4a1b56913a5b675cd8de489d7305b0aa039165027658747058d21b425c9b",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "workflow-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_stage1_policy.py",
+        "tests/integration/test_stage1_workflow.py",
+        "tests/integration/test_stage1_bash.py",
+        "--basetemp=.cache/stage1-validation/workflow-1"
+      ],
+      "seconds_cap": 900,
+      "status": "finished",
+      "exit_code": 1,
+      "elapsed_seconds": 172.0470000000205,
+      "pytest_summary": "2 failed, 35 passed in 166.65s (0:02:46)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\workflow-1.txt",
+      "log_sha256": "0b4ba39acf5e4ec32220b81b4674a6a3c15120a56d087bd59fe7ec51b71754ea",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "bash-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/integration/test_stage1_bash.py",
+        "--basetemp=.cache/stage1-validation/bash-1"
+      ],
+      "seconds_cap": 300,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 88.03099999995902,
+      "pytest_summary": "8 passed in 81.59s (0:01:21)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\bash-1.txt",
+      "log_sha256": "68c03a6a8080d90740b032d7c55e061bdd6f45016cf82159226016332f9d9d1e",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "focused-2",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_stage1_policy.py",
+        "tests/unit/test_stage1_data.py",
+        "tests/integration/test_stage1_workflow.py",
+        "tests/integration/test_stage1_bash.py",
+        "tests/unit/test_canvas_presets.py",
+        "--basetemp=.cache/stage1-validation/focused-2"
+      ],
+      "seconds_cap": 1200,
+      "status": "finished",
+      "exit_code": 1,
+      "elapsed_seconds": 376.68800000008196,
+      "pytest_summary": "8 failed, 83 passed in 365.79s (0:06:05)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\focused-2.txt",
+      "log_sha256": "199bcead4561fbcf8ab0d6a2d9b70414a925833fcc67a8560aebfec049858161",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "focused-3",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_stage1_policy.py",
+        "tests/unit/test_stage1_data.py",
+        "tests/integration/test_stage1_workflow.py",
+        "tests/integration/test_stage1_bash.py",
+        "--basetemp=.cache/stage1-validation/focused-3"
+      ],
+      "seconds_cap": 1200,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 467.75,
+      "pytest_summary": "46 passed in 458.62s (0:07:38)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\focused-3.txt",
+      "log_sha256": "f96e0ba1717703b4ca9b54b184a0d2644a3a073227b7818f3ece7e5618b40661",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "guard-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_stage1_policy.py::test_locked_test_access_prevents_extension_even_when_main_evaluation_pending",
+        "--basetemp=.cache/stage1-validation/guard-1"
+      ],
+      "seconds_cap": 60,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 5.655999999959022,
+      "pytest_summary": "1 passed in 0.28s",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\guard-1.txt",
+      "log_sha256": "88bd8dfdb7a94b6010ba5e505610de7af6f1c0243a48a0fdf1fe146c619a4fa4",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "full-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "--basetemp=.cache/stage1-validation/full-1"
+      ],
+      "seconds_cap": 2400,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 1005.125,
+      "pytest_summary": "414 passed, 1 skipped in 998.68s (0:16:38)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\full-1.txt",
+      "log_sha256": "6cc7246c1eccbd3f9817c009e0c2489e71f380c423e7bb157dfab53f8db1ba8e",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "recovery-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/integration/test_stage1_workflow.py::test_mid_stage_and_at_target_recovery_retain_state_and_do_only_remaining_updates",
+        "--basetemp=.cache/stage1-validation/recovery-1"
+      ],
+      "seconds_cap": 180,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 65.25,
+      "pytest_summary": "1 passed in 59.59s",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\recovery-1.txt",
+      "log_sha256": "c1d5566d97c4917aaef6bb531b0ef6d10ec66d1e38a58e76557b1fd0ae4bd5a7",
+      "scope": "earlier development snapshot or targeted check; superseded by full-2"
+    },
+    {
+      "name": "full-2",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "--basetemp=.cache/stage1-validation/full-2",
+        "--junitxml=.cache/stage1-validation/full-2-junit.xml"
+      ],
+      "seconds_cap": 1800,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 1006.4680000001099,
+      "pytest_summary": "414 passed, 1 skipped in 996.87s (0:16:36)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\full-2.txt",
+      "log_sha256": "97f4ca48cbee26fe7c88d79e7517809750fa52a5fd861c0d34c18f9a758ab57d",
+      "scope": "final implementation"
+    },
+    {
+      "name": "targets-resume-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/integration/test_stage1_workflow.py::test_interrupted_targets_resume_preserves_completed_codec_and_charges",
+        "--basetemp=.cache/stage1-validation/targets-resume-1"
+      ],
+      "seconds_cap": 240,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 58.40600000019185,
+      "pytest_summary": "1 passed in 52.50s",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\targets-resume-1.txt",
+      "log_sha256": "078f85daeb5a44c4e0d9e245a978aae8c066b8107903709bb04329a6fcd7e789",
+      "scope": "final implementation"
+    },
+    {
+      "name": "lint-final",
+      "command": [
+        ".venv/Scripts/ruff.exe",
+        "check",
+        "."
+      ],
+      "seconds_cap": 60,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6559999999590218,
+      "pytest_summary": null,
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\lint-final.txt",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "scope": "final implementation"
+    }
+  ],
+  "lint": {
+    "name": "lint-final",
+    "command": [
+      ".venv/Scripts/ruff.exe",
+      "check",
+      "."
+    ],
+    "seconds_cap": 60,
+    "status": "finished",
+    "exit_code": 0,
+    "elapsed_seconds": 0.6559999999590218,
+    "pytest_summary": null,
+    "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\lint-final.txt",
+    "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "scope": "final implementation"
+  },
+  "packaging": [
+    {
+      "phase": "package-1",
+      "max_seconds": 300,
+      "max_subprocesses": 8,
+      "max_retained_bytes": 250000000,
+      "checks": [
+        {
+          "name": "wheel",
+          "command": [
+            "uv",
+            "--cache-dir",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-1\\uv-cache",
+            "build",
+            "--offline",
+            "--no-build-isolation",
+            "--out-dir",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-1\\dist"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 5.531999999890104
+        },
+        {
+          "name": "wheel-plans",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-1\\wheel_probe.py"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 1.1719999997876585
+        },
+        {
+          "name": "run_stage1-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\run_stage1.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 0.9060000001918525
+        },
+        {
+          "name": "train_stage1_codec-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\train_stage1_codec.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 0.9840000001713634
+        },
+        {
+          "name": "train_stage1_generator-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\train_stage1_generator.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 3.077999999979511
+        },
+        {
+          "name": "evaluate_stage1-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\evaluate_stage1.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 2.375
+        }
+      ],
+      "wheel": {
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-1\\dist\\ncm_lab-0.2.0-py3-none-any.whl",
+        "sha256": "9c2a322d017e9c08a69cb7ab81dd7af76e9e5839acbb8b5f51a406201cf0ca01",
+        "matched_python_files": 77,
+        "implementation_sha256": "3c699675479865e7221ee84616d01b88b63f23c8a35dbf6ef34d3baee3c30381"
+      },
+      "elapsed_seconds": 14.312999999849126,
+      "retained_bytes": 1183809
+    },
+    {
+      "phase": "package-2",
+      "max_seconds": 300,
+      "max_subprocesses": 8,
+      "max_retained_bytes": 250000000,
+      "checks": [
+        {
+          "name": "wheel",
+          "command": [
+            "uv",
+            "--cache-dir",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-2\\uv-cache",
+            "build",
+            "--offline",
+            "--no-build-isolation",
+            "--out-dir",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-2\\dist"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 6.672000000020489
+        },
+        {
+          "name": "wheel-plans",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-2\\wheel_probe.py"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 1.2190000000409782
+        },
+        {
+          "name": "run_stage1-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\run_stage1.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 0.29699999978765845
+        },
+        {
+          "name": "train_stage1_codec-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\train_stage1_codec.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 1.047000000020489
+        },
+        {
+          "name": "train_stage1_generator-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\train_stage1_generator.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 2.6410000000614673
+        },
+        {
+          "name": "evaluate_stage1-help",
+          "command": [
+            "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+            "C:\\ai-projects\\llm-to-ncm-conversion\\scripts\\evaluate_stage1.py",
+            "--help"
+          ],
+          "seconds_cap": 90,
+          "exit_code": 0,
+          "elapsed_seconds": 0.2190000000409782
+        }
+      ],
+      "wheel": {
+        "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\package-2\\dist\\ncm_lab-0.2.0-py3-none-any.whl",
+        "sha256": "28d38fb1956454e7b7e0fafda9e2575237e967300d5565907eed102ac5deb327",
+        "matched_python_files": 77,
+        "implementation_sha256": "7fce6b2618e3c4f53c1de5ae5ea2ce09db7cb04a7b3b8ff87309f89898c08144"
+      },
+      "elapsed_seconds": 12.453999999910593,
+      "retained_bytes": 1186229
+    }
+  ],
+  "junit": {
+    "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\full-2-junit.xml",
+    "sha256": "4523fbdd299c3f3b8a2aee306e1bab54f100b562ce94fba1044b2a1f7e2c24c7",
+    "testcases": 415,
+    "skipped": [
+      {
+        "classname": "tests.cuda.test_native_cuda",
+        "name": "test_tiny_native_cuda_kernel_forward_backward",
+        "time": "0.000",
+        "reason": "CUDA is not available; no real-8B validation implied"
+      }
+    ],
+    "literal_readme_bash_tests": [
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_exact_readme_block_bash_syntax_and_parsers",
+        "time": "1.383"
+      },
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_literal_bash_block_runs_actual_tiny_backend_and_keeps_parent_shell",
+        "time": "70.168"
+      },
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_literal_block_failure_stops_remaining_commands_without_closing_parent[prepare]",
+        "time": "3.380"
+      },
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_literal_block_failure_stops_remaining_commands_without_closing_parent[teacher]",
+        "time": "1.210"
+      },
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_literal_block_failure_stops_remaining_commands_without_closing_parent[codec]",
+        "time": "3.805"
+      },
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_literal_block_failure_stops_remaining_commands_without_closing_parent[targets]",
+        "time": "0.944"
+      },
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_literal_block_failure_stops_remaining_commands_without_closing_parent[generator]",
+        "time": "2.330"
+      },
+      {
+        "classname": "tests.integration.test_stage1_bash",
+        "name": "test_literal_block_failure_stops_remaining_commands_without_closing_parent[evaluate]",
+        "time": "4.148"
+      }
+    ]
+  },
+  "readme": {
+    "exact_required_block_matches_attachment": true,
+    "literal_bash_executed_actual_tiny_backend": true,
+    "shell_failure_cases": 6,
+    "parent_shell_and_space_paths_verified": true,
+    "production_defaults_unchanged": {
+      "codec_updates": 1000,
+      "generator_updates": 500
+    },
+    "fixture_overrides": "Explicit test-only planning config, tiny production classes, codec 12 / generator 3. No production hidden environment fallback."
+  },
+  "actual_tiny_end_to_end": {
+    "origin": "software_fixture",
+    "statuses": {
+      "prepare": "completed",
+      "teacher": "completed",
+      "codec": "completed",
+      "targets": "completed",
+      "generator": "completed",
+      "evaluate": "completed"
+    },
+    "codec_completed_updates": 12,
+    "codec_presentations": 48,
+    "generator_completed_updates": 3,
+    "generator_presentations": 6,
+    "precision_boundary": {
+      "cached_source_dtype": "float32",
+      "parameter_dtype": "bfloat16",
+      "target_cast": "explicit_target_to_generator_parameter_dtype_v1"
+    },
+    "locked_test_examples": 4,
+    "teacher_or_codec_loaded_for_final_eval": false,
+    "interpretation": "Software-path evidence only, not a learning-quality, real-8B, hardware or speed result."
+  },
+  "interrupted_target_cache": {
+    "check": {
+      "name": "targets-resume-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/integration/test_stage1_workflow.py::test_interrupted_targets_resume_preserves_completed_codec_and_charges",
+        "--basetemp=.cache/stage1-validation/targets-resume-1"
+      ],
+      "seconds_cap": 240,
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 58.40600000019185,
+      "pytest_summary": "1 passed in 52.50s",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\targets-resume-1.txt",
+      "log_sha256": "078f85daeb5a44c4e0d9e245a978aae8c066b8107903709bb04329a6fcd7e789",
+      "scope": "final implementation"
+    },
+    "reused_completed_codec": true,
+    "cumulative_write_charges_preserved": true,
+    "scientific_implementation_unchanged_after_full_2": true
+  },
+  "owned_launch_recovery": {
+    "events": [
+      {
+        "event": "recovered_owned_launch_checkpoint",
+        "stage": "generator",
+        "checkpoint": {
+          "schema": "native_reference_v1",
+          "manifest": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\stage1-validation\\full-2\\test_mid_stage_and_at_target_r0\\training recovery experiment\\native_runs\\generator\\20261104T204713Z-7950133871\\checkpoints\\version-96c8017acbe04f209092fe331e787a7a\\manifest.json",
+          "sha256": "261390a5991f2e1a9fb332edaae3b7205018aa5fe6bd78c7c8c9d9dfe1270705"
+        }
+      }
+    ],
+    "resumed_generator_update_charges": [
+      2,
+      0
+    ],
+    "interpretation": "Actual tiny interrupted optimizer boundary resumed for two remaining updates; a target-boundary finalization performed zero new updates. The same test also executes separate uninterrupted comparison and injected export-failure fixture attempts."
+  },
+  "additional_setup_errors_preserved": [
+    {
+      "command": "python -m pytest -q tests/unit/test_stage1_policy.py::test_locked_test_access_prevents_extension_even_when_main_evaluation_pending",
+      "outcome": "1 setup error in 0.46s; sandbox default temporary directory could not be created. guard-1 and full-2 use fresh workspace basetemp and pass. Original tool output retained in chat."
+    },
+    {
+      "command": "python .cache/stage1-validation/package_checks_2.py (first attempt)",
+      "outcome": "FileExistsError before build because the helper still named package-1. Existing evidence was not overwritten; failed helper preserved as package_checks_2_path_error.py, corrected package-2 checks pass."
+    }
+  ],
+  "failures_and_resolution": [
+    "Initial codec export failed on Windows path length; extended actual I/O paths preserve ordinary serialized identities and bounded retention ownership checks.",
+    "Workflow-1 exposed a literal shell parser expansion assumption and a deep Windows directory-creation failure; corrected and re-executed the actual tiny backend.",
+    "Focused-2: Git Bash initialization failed inside sandbox with 0xC0000142. Normal local process permission smoke succeeded; focused-3 and final full suite run without weakening assertions.",
+    "Final review found controller interruption could miss the latest exact-owned launch checkpoint. The stronger actual recovery fixture now proves only remaining updates execute."
+  ],
+  "changed_areas": [
+    "src/ncm_lab/stage1/",
+    "src/ncm_lab/training/",
+    "src/ncm_lab/data/",
+    "src/ncm_lab/teacher/stages.py",
+    "src/ncm_lab/runtime/",
+    "src/ncm_lab/monitoring/",
+    "src/ncm_lab/inference/export.py",
+    "configs/stage1/",
+    "scripts/*stage1*.py",
+    "tests/unit/test_stage1_*.py",
+    "tests/integration/test_stage1_*.py",
+    "tests/conftest.py",
+    "README.md",
+    "docs/stage1.md",
+    "docs/decision_log.md",
+    "docs/implementation_status.md",
+    "docs/contributions.json"
+  ],
+  "not_executed": [
+    "Research asset acquisition or corpus scan",
+    "Real 1000-update codec / 500-update generator Stage 1 training",
+    "Full Qwen3-8B optimizer/recovery or CUDA/Spark allocation feasibility",
+    "Model answer-quality, convergence, retained-capability or speed evaluation",
+    "Persistent chatbot, TensorBoard server, benchmark sweep or remote provisioning"
+  ],
+  "limitations": [
+    "Complete real OASST capacity and hardware fit remain operator checks.",
+    "Baseline memory and active-attempt disk estimates are not measured activation/recovery peaks; preserved prior attempts consume actual free disk and aggregate allowances.",
+    "Strict implementation identity rejects older-source training checkpoints; no new legacy recovery bridge was introduced.",
+    "Optional AR reference and reduced overfit diagnostic are separate explicit actions and cannot support generalization claims."
+  ]
+}

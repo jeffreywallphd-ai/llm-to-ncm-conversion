@@ -5,7 +5,7 @@ from pathlib import Path
 import random
 import uuid
 import torch
-from ncm_lab.runtime.io import read, write_json, atomic_json, digest, canonical_hash
+from ncm_lab.runtime.io import read, write_json, atomic_json, digest, canonical_hash, disk_path
 
 RECOVERY = "native_recovery_v1"
 INFERENCE = "native_inference_v1"
@@ -48,12 +48,12 @@ def save_checkpoint(
     if kind not in {RECOVERY, INFERENCE} or shard_bytes < 1024:
         raise ValueError("native checkpoint kind/shard budget invalid")
     folder = Path(folder)
-    folder.mkdir(parents=True, exist_ok=True)
+    disk_path(folder).mkdir(parents=True, exist_ok=True)
     if meter:
         meter.check_disk(tensor_bytes(payload) + 1024 * 1024)
     version = uuid.uuid4().hex
     pending = folder / (".pending-" + version)
-    pending.mkdir()
+    disk_path(pending).mkdir()
     files = {}
     number = 0
     part_number = 0
@@ -69,11 +69,13 @@ def save_checkpoint(
         name = f"shard-{number:06d}.pt"
         number += 1
         path = pending / name
-        with path.open("xb") as stream:
-            torch.save(buffer, stream)
-            stream.flush()
-            os.fsync(stream.fileno())
-        files[name] = {"sha256": digest(path, meter.check if meter else None), "bytes": path.stat().st_size}
+        from ncm_lab.stage1.io import account
+        with account(meter, path, buffer_bytes + 65536):
+            with disk_path(path).open("xb") as stream:
+                torch.save(buffer, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+        files[name] = {"sha256": digest(path, meter.check if meter else None), "bytes": disk_path(path).stat().st_size}
         buffer = {}
         buffer_bytes = 0
         boundary("shard_finished")
@@ -130,13 +132,17 @@ def save_checkpoint(
         "tree": tree,
         "shard_payload_limit": shard_bytes,
     }
-    write_json(pending / "manifest.json", manifest, exclusive=True)
+    from ncm_lab.stage1.io import account
+    import json
+    manifest_path = pending / "manifest.json"
+    with account(meter, manifest_path, len(json.dumps(manifest, indent=2).encode()) + 1):
+        write_json(manifest_path, manifest, exclusive=True)
     boundary("manifest_written")
     if meter:
         meter.check_disk()
     boundary("before_commit")
     committed = folder / ("version-" + version)
-    os.replace(pending, committed)
+    os.replace(disk_path(pending), disk_path(committed))
     boundary("after_commit")
     result = {
         "schema": "native_checkpoint_pointer_v1",
@@ -177,7 +183,7 @@ class CheckpointReader:
             source = (path.parent / name).resolve()
             if (
                 not source.is_relative_to(path.parent.resolve())
-                or source.stat().st_size != receipt["bytes"]
+                or disk_path(source).stat().st_size != receipt["bytes"]
                 or digest(source, check) != receipt["sha256"]
             ):
                 raise ValueError("corrupt/missing native checkpoint shard: " + name)
@@ -204,7 +210,7 @@ class CheckpointReader:
                 if self._cached_file != piece["file"]:
                     self._cached_shard = None
                     self._cached_shard = torch.load(
-                        self.path.parent / piece["file"], weights_only=True, mmap=True, map_location="cpu"
+                        disk_path(self.path.parent / piece["file"]), weights_only=True, mmap=True, map_location="cpu"
                     )
                     self._cached_file = piece["file"]
                 tensor = self._cached_shard[piece["key"]]

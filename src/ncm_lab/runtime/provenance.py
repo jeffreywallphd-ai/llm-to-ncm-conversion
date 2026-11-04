@@ -9,6 +9,7 @@ from ncm_lab.runtime.io import root, write_json, read, digest, implementation_ha
 from ncm_lab.runtime.budget import Budget, Meter
 from ncm_lab.runtime.doctor import doctor
 from ncm_lab.config.canvas import canvas_metadata
+from ncm_lab.runtime.io import disk_path
 
 
 class Run:
@@ -26,7 +27,7 @@ class Run:
             except ValueError:
                 run_root = Path.cwd() / "runs"
         self.path = run_root / self.stage / self.id
-        self.path.mkdir(parents=True, exist_ok=False)
+        disk_path(self.path).mkdir(parents=True, exist_ok=False)
         self.resolved = {**value, "resolved_inputs": bound or {}}
         write_json(self.path / "resolved_config.json", self.resolved, exclusive=True)
         write_json(
@@ -62,6 +63,10 @@ class Run:
 
     def start(self):
         self.meter = Meter(Budget(**self.value["budget"]), self.path, self.path.parents[1] / "ledgers")
+        if self.value.get("stage1_io"):
+            from ncm_lab.stage1.io import WriteMeter
+
+            self.meter.write_meter = WriteMeter(self.value["stage1_io"], self.id)
         self.event(
             "started",
             wave=self.value.get("wave_context"),
@@ -78,7 +83,7 @@ class Run:
     def event(self, status, **fields):
         from json import dumps
 
-        with (self.path / "events.jsonl").open("a", encoding="utf-8") as stream:
+        with disk_path(self.path / "events.jsonl").open("a", encoding="utf-8") as stream:
             stream.write(
                 dumps({"utc": datetime.now(timezone.utc).isoformat(), "status": status, **fields}) + "\n"
             )
@@ -87,7 +92,7 @@ class Run:
     def metric(self, value):
         from json import dumps
 
-        with (self.path / "metrics.jsonl").open("a", encoding="utf-8") as stream:
+        with disk_path(self.path / "metrics.jsonl").open("a", encoding="utf-8") as stream:
             stream.write(dumps(value, allow_nan=False) + "\n")
             stream.flush()
 
@@ -102,6 +107,7 @@ class Run:
             **summary,
             "canvas": canvas_metadata(self.value["architecture"]),
             "experiment": self.value.get("experiment_context"),
+            **({"stage1": self.value["stage1_context"]} if self.value.get("stage1_context") else {}),
             "status": status,
             "elapsed_seconds": time.perf_counter() - self.started,
             "charged_work": self.meter.used if self.meter else {},
@@ -127,14 +133,15 @@ class Run:
             exclusive=True,
         )
         if status == "completed" and self.pending_artifact:
-            atomic_json(root() / self.value["output_ref"], {
-                **reference(self.pending_artifact), "run": reference(self.path / "manifest.json")
-            })
+            atomic_json(
+                root() / self.value["output_ref"],
+                {**reference(self.pending_artifact), "run": reference(self.path / "manifest.json")},
+            )
         return {"run_id": self.id, "path": str(self.path), "status": status, **summary}
 
     def publish(self, artifact_manifest):
         if self.value.get("output_ref"):
-            if self.value.get("experiment_context"):
+            if self.value.get("experiment_context") or self.value.get("stage1_context"):
                 self.pending_artifact = artifact_manifest
                 return  # Only publish after completed run and hashes have been sealed.
             atomic_json(root() / self.value["output_ref"], reference(artifact_manifest))

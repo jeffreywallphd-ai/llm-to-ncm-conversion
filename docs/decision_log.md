@@ -132,3 +132,53 @@ architecture and immutable inputs, with normal complete optimizer/RNG/identity
 checks. Exact saved inference geometry remains independent of fresh-run defaults.
 Use bounded tiny software tests and meta parameter inspection; real-data capacity,
 all-size Spark behavior, quality, speed and convergence remain unverified.
+
+## 2026-11-04 — Separate Stage 1 codec/generator experiment
+
+Add a manifest-bound Stage 1 workflow alongside the existing pilots. Keep their
+two-step codec and legacy combined generator selection unchanged. Stage 1 uses a
+1,000-update FP32 codec, independently configured BF16 teacher, FP32 cached targets
+and a 500-update BF16 full-backbone generator. Its versioned generator selection
+uses mean per-example dev text CE; auxiliary loss remains a training objective and
+separate diagnostic. Initial measurements never select an untrained checkpoint.
+
+Retain equal actual microbatch-objective reduction, including partial groups,
+rather than silently switching to a global-token or global-example objective.
+Measure initialization and all 31 codec cutoff assignments with a fixed plan and
+preserved RNG. Compare combined/full/coarse/head components with explicit numerical
+tolerances. Finite non-improvement seals trained artifacts but blocks dependencies
+for review; a separately recorded diagnostic override cannot excuse invalid data,
+nonfinite states or corrupt artifacts. Report train-only scales and raw variance.
+
+Qualify complete EOS-inclusive references before teacher allocation. Connect whole
+conversation/duplicate groups before partitioning and filtering, keep source splits
+and dev/test IDs independent of training seed, and store locked test records under
+a schema refused by training writers. The bounded approved OASST scan targets
+2,000/200/200 pairs without automatic source substitution or quota changes.
+
+Use synchronous owned children and exact manifest-owned receipts/checkpoints.
+Disable all Stage 1 execution clocks explicitly, including sample/controller
+deadlines, while retaining elapsed observations, cancellation and finite work,
+storage, attempts and cumulative tensor/checkpoint I/O. Derive allowances after
+qualification from actual counts and meta parameter inventories; distinguish
+resident disk, cumulative writes and baseline memory from unmeasured activations.
+An explicit pre-test total-step extension preserves prior work and charges.
+
+Recover a complete native boundary from the exact recorded child launch even if
+the controller was interrupted before copying that pointer into manifest state.
+Validate launch ownership and scientific context before binding it; never search
+global runs or repeat already completed updates to compensate for missing controller
+bookkeeping. Locked-test access through optional AR inference also closes the
+training-extension window.
+
+Keep optional original-Qwen AR evaluation separate, opt-in and incapable of
+repairing NCM outputs. Isolate the 32-pair overfit diagnostic. No real research
+assets, model training, sweep or server is started during this implementation.
+Stage 1 is not covered by historical source-transition recovery receipts.
+
+Actual fixture execution of the literal README block exposed Windows long-path
+failures in nested cache/checkpoint/export paths. Normalize actual Windows I/O
+through extended paths while preserving ordinary serialized identities and the
+existing bounded deletion/ownership checks. Preserve failed attempts. Condense the
+README into an explained command guide, retaining the exact combined block and
+moving scientific/operator detail to [Stage 1](stage1.md).

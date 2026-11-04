@@ -1,0 +1,37 @@
+{
+  "schema": "native_stage_v1",
+  "stage": "stage1_prepare",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_medium.yaml",
+  "budget": "configs/stage1/budget.yaml",
+  "device": "cpu",
+  "dtype": "float32",
+  "hardware_profile": "cpu",
+  "inputs": {},
+  "output_ref": null,
+  "stage1": {
+    "schema": "stage1_single_pass_v1",
+    "selection": "stage1_codec_fixed_components_v1",
+    "reduction": "equal_actual_microbatch_objectives_v1",
+    "progress_interval": 10,
+    "comparison_atol": 1e-07,
+    "comparison_rtol": 1e-05,
+    "combined_min_delta": 0.0,
+    "generator_target_cast": "explicit_target_to_generator_parameter_dtype_v1"
+  },
+  "data": {
+    "format": "oasst_parquet",
+    "source_path": "runs/assets/oasst1/fdf72ae0827c1cda404aff25b6603abec9e3399b/data/train-00000-of-00001-b42a775f407cee45.parquet",
+    "source_sha256": "bbfadf5ed1278ba2208c837fdcad865adf65f5df55d80abadab2745db13fcb5e",
+    "revision": "fdf72ae0827c1cda404aff25b6603abec9e3399b",
+    "license": "apache-2.0",
+    "max_source_rows": 100000,
+    "max_examples": 100000,
+    "max_unique_tokens": 200000000,
+    "max_prompt_tokens": 512,
+    "dev_fraction": 0.15,
+    "seed": 17,
+    "overlength": "exclude",
+    "source_asset_id": "oasst1:data/train-00000-of-00001-b42a775f407cee45.parquet"
+  }
+}

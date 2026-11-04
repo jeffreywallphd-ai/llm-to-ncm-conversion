@@ -4,7 +4,7 @@ from pathlib import Path
 import time
 import torch
 from transformers import AutoTokenizer
-from ncm_lab.runtime.io import read, write_json, digest, canonical_hash, resolve_reference
+from ncm_lab.runtime.io import read, write_json, digest, canonical_hash, resolve_reference, disk_path
 from ncm_lab.embedded.model import from_metadata
 from ncm_lab.training.checkpoints import save_checkpoint, CheckpointReader, INFERENCE
 
@@ -27,7 +27,7 @@ def fixture_tokenizer():
 
 def export_generator(model, metadata, path, meter, shard_bytes, spec, *, selected_step=None):
     path = Path(path)
-    path.mkdir(parents=True, exist_ok=False)
+    disk_path(path).mkdir(parents=True, exist_ok=False)
     tokenizer = (
         fixture_tokenizer()
         if spec.get("fixture")
@@ -40,7 +40,7 @@ def export_generator(model, metadata, path, meter, shard_bytes, spec, *, selecte
     )
     if canonical_hash(tokenizer.chat_template) != metadata["source"]["template_sha256"]:
         raise ValueError("training/deployment chat template differs")
-    tokenizer.save_pretrained(path / "tokenizer")
+    tokenizer.save_pretrained(disk_path(path / "tokenizer"))
     identity = canonical_hash(metadata)
     saved = save_checkpoint(
         path / "weights",
@@ -54,7 +54,7 @@ def export_generator(model, metadata, path, meter, shard_bytes, spec, *, selecte
         "identity": identity,
         "weights_manifest": str(Path(saved["manifest"]).relative_to(path)),
         "weights_sha256": saved["sha256"],
-        "tokenizer_files": {p.name: digest(p) for p in (path / "tokenizer").iterdir() if p.is_file()},
+        "tokenizer_files": {p.name: digest(p) for p in disk_path(path / "tokenizer").iterdir() if p.is_file()},
         "template_sha256": canonical_hash(tokenizer.chat_template),
         "thinking": False,
         "eos_ids": spec.get("eos_ids", [tokenizer.eos_token_id]),
@@ -92,7 +92,7 @@ def load_export(path, device="cpu", check=None):
     reader.load_model(model)
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained(
-        path.parent / "tokenizer", local_files_only=True, trust_remote_code=False
+        disk_path(path.parent / "tokenizer"), local_files_only=True, trust_remote_code=False
     )
     if canonical_hash(tokenizer.chat_template) != manifest["template_sha256"]:
         raise ValueError("exported prompt policy changed")

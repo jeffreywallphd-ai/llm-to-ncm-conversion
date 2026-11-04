@@ -21,18 +21,27 @@ class Monitoring:
     histograms: bool = False
 
     def __post_init__(self):
+        self.validate(4)
+
+    def validate(self, maximum_samples):
         if type(self.enabled) is not bool or type(self.histograms) is not bool:
             raise ValueError("monitoring switches must be boolean")
         for key in ("scalar_interval", "detail_interval", "first_steps", "sample_interval", "text_chars"):
             if type(getattr(self, key)) is not int or getattr(self, key) <= 0:
                 raise ValueError("positive monitoring limit required: " + key)
-        if type(self.sample_prompts) is not int or not 0 <= self.sample_prompts <= 4:
-            raise ValueError("at most four sample prompts")
+        if type(self.sample_prompts) is not int or not 0 <= self.sample_prompts <= maximum_samples:
+            raise ValueError(f"at most {maximum_samples} sample prompts")
         for value in (self.scalar_seconds, self.sample_seconds):
             if not math.isfinite(value) or value <= 0:
                 raise ValueError("finite positive monitoring time required")
         if self.histograms:
             raise ValueError("histogram collection is not implemented; keep it disabled")
+
+
+@dataclass(frozen=True)
+class Stage1Monitoring(Monitoring):
+    def __post_init__(self):
+        self.validate(8)
 
 
 @dataclass(frozen=True)

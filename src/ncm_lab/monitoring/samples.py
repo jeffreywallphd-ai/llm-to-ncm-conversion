@@ -48,7 +48,10 @@ def observe_samples(model, tokenizer, prompts, recorder, meter, eos_ids):
     rows = []
     with preserve_training_state(model), torch.no_grad():
         for prompt in prompts[: options.sample_prompts]:
-            if time.perf_counter() - started >= options.sample_seconds:
+            if (
+                not recorder.run.value.get("stage1")
+                and time.perf_counter() - started >= options.sample_seconds
+            ):
                 break
             meter.check()
             ids = torch.tensor([prompt["prompt_ids"]], device=next(model.parameters()).device)
@@ -83,7 +86,10 @@ def observe_samples(model, tokenizer, prompts, recorder, meter, eos_ids):
                 },
                 "model_identity": recorder.config_sha,
                 "checkpoint": "current in-memory optimizer boundary",
-                "cooperative_wall_limit_overrun": time.perf_counter() - started > options.sample_seconds,
+                "cooperative_wall_limit_overrun": time.perf_counter() - started > options.sample_seconds
+                if not recorder.run.value.get("stage1")
+                else None,
+                **({"sampling_clock_limit": "disabled"} if recorder.run.value.get("stage1") else {}),
             }
             recorder.append("samples", split="dev", **row)
             rows.append(row)

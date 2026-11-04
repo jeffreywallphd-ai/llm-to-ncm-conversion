@@ -84,6 +84,7 @@ def codec_loss(
     chunk_positions=8,
     diagnostics=None,
     cutoff_index=None,
+    report_head_agreement=False,
 ):
     if beta < 0 or not 1 <= max_head_positions <= 32 or not 1 <= chunk_positions <= 8:
         raise ValueError("bounded codec head-alignment configuration required")
@@ -103,9 +104,18 @@ def codec_loss(
     teacher = states.flatten(0, 1)[indices].detach()
     reconstruction = coarse.flatten(0, 1)[indices]
     kl = states.new_zeros((), dtype=torch.float32)
+    agreement = 0
     for start in range(0, len(indices), chunk_positions):
         original = teacher[start : start + chunk_positions]
         recovered = reconstruction[start : start + chunk_positions]
+        if report_head_agreement:
+            with torch.no_grad():
+                agreement += int(
+                    (
+                        F.linear(original, head.weight).argmax(-1)
+                        == F.linear(recovered, head.weight).argmax(-1)
+                    ).sum()
+                )
 
         def consistency(x, y, weight):
             with torch.no_grad():
@@ -145,4 +155,5 @@ def codec_loss(
         "loss": float(total.detach()),
         "cutoff": cutoff,
         "head_positions": len(indices),
+        **({"head_agreement": agreement / len(indices)} if report_head_agreement else {}),
     }

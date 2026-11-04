@@ -16,6 +16,100 @@ def cpu_threads():
 
 
 @pytest.fixture
+def stage1_fixture(tmp_path):
+    """Explicit tiny, reduced-work Stage 1 config; never a real experiment claim."""
+    import json
+    from ncm_lab.runtime.io import read, write_json, digest, root
+    from ncm_lab.stage1.config import DataSettings, Resources
+
+    base = root()
+    folder = tmp_path / "stage1 fixture settings"
+    folder.mkdir()
+    source = folder / "approved-fixture.jsonl"
+    source.write_text(
+        "\n".join(
+            json.dumps(
+                {
+                    "original_id": str(i),
+                    "group_id": "stage1-group-" + str(i),
+                    "prompt": f"token4 token{i % 20 + 4} {i}",
+                    "answer": "token8 token9",
+                }
+            )
+            for i in range(120)
+        ),
+        encoding="utf-8",
+    )
+    spec = model_spec()
+    spec["config"].update(hidden_size=8, intermediate_size=16, num_attention_heads=1, head_dim=8)
+    experiment = read(base / "configs/stage1/experiment.yaml")
+    experiment["qualification"] = asdict(
+        DataSettings(
+            train_examples=8, dev_examples=4, test_examples=4, diagnostic=True, max_candidate_bytes=1000000
+        )
+    )
+    experiment["resources"] = asdict(
+        Resources(
+            reserve_free_bytes=1,
+            max_retained_bytes=150000000,
+            max_phase_retained_bytes=600000000,
+            max_generator_steps=6,
+            retry_allowance=4,
+            max_controller_bytes=50000000,
+        )
+    )
+    for name, filename in experiment["stages"].items():
+        cfg = __import__("ncm_lab.config.stages", fromlist=["config"]).config(
+            base / filename, _bind_canvas=False
+        )
+        cfg.update(
+            model=spec,
+            architecture=tiny_architecture(8, activation_checkpointing=False).to_dict(),
+            device="cpu",
+            hardware_profile="cpu",
+            threads=1,
+        )
+        if name == "prepare":
+            cfg["data"] = dict(
+                format="jsonl",
+                source_path=str(source),
+                source_sha256=digest(source),
+                revision="software-fixture-stage1",
+                license="GPL-3.0",
+                max_source_rows=120,
+                max_examples=120,
+                max_unique_tokens=10000,
+                max_prompt_tokens=512,
+                seed=17,
+                overlength="exclude",
+            )
+        if name in {"codec", "generator"}:
+            cfg["training"].update(
+                steps=12 if name == "codec" else 3,
+                batch_size=2 if name == "codec" else 1,
+                accumulation=2,
+                validation_interval=4 if name == "codec" else 1,
+                checkpoint_interval=4 if name == "codec" else 2,
+                learning_rate=0.003 if name == "codec" else 0.001,
+                new_learning_rate=0.002,
+                max_validation_examples=4,
+                shard_bytes=65536,
+            )
+            cfg["monitoring"].update(
+                sample_prompts=0 if name == "codec" else 2,
+                sample_interval=1,
+                detail_interval=100,
+                first_steps=1,
+            )
+        path = folder / (name + ".json")
+        write_json(path, cfg, exclusive=True)
+        experiment["stages"][name] = str(path)
+    path = folder / "experiment.json"
+    write_json(path, experiment, exclusive=True)
+    return {"config": path, "source": source, "folder": folder, "experiment": experiment, "model": spec}
+
+
+@pytest.fixture
 def memory_files():
     """Synthetic rounded reproduction, never the runner's actual procfs/cgroup state."""
     from collections import Counter

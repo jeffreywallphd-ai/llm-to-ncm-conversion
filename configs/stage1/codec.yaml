@@ -1,0 +1,46 @@
+{
+  "schema": "native_stage_v1",
+  "stage": "codec",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_medium.yaml",
+  "budget": "configs/stage1/budget.yaml",
+  "device": "cuda",
+  "dtype": "float32",
+  "hardware_profile": "spark",
+  "inputs": {},
+  "output_ref": null,
+  "stage1": {
+    "schema": "stage1_single_pass_v1",
+    "selection": "stage1_codec_fixed_components_v1",
+    "reduction": "equal_actual_microbatch_objectives_v1",
+    "progress_interval": 10,
+    "comparison_atol": 1e-07,
+    "comparison_rtol": 1e-05,
+    "combined_min_delta": 0.0,
+    "generator_target_cast": "explicit_target_to_generator_parameter_dtype_v1"
+  },
+  "training": {
+    "objective": "steps",
+    "steps": 1000,
+    "batch_size": 4,
+    "accumulation": 4,
+    "learning_rate": 0.0001,
+    "new_learning_rate": 0.0001,
+    "validation_interval": 100,
+    "checkpoint_interval": 100,
+    "max_validation_examples": 128,
+    "warmup_processed_tokens": 0,
+    "recovery_probe": false,
+    "seed": 17,
+    "validation_seed": 20261029,
+    "head_positions": 32,
+    "head_chunk": 8
+  },
+  "monitoring": {
+    "enabled": true,
+    "sample_interval": 50,
+    "sample_prompts": 0,
+    "detail_interval": 100,
+    "first_steps": 1
+  }
+}

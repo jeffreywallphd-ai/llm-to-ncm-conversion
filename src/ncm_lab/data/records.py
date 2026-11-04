@@ -5,6 +5,7 @@ import torch
 from ncm_lab.runtime.io import canonical_hash
 
 SCHEMA = "native_answer_example_v1"
+LOCKED_SCHEMA = "native_locked_evaluation_example_v1"
 ALIGNMENT = "post_final_norm_at_prompt_length_minus_one_plus_answer_index"
 
 
@@ -22,11 +23,10 @@ class Example:
     schema: str = SCHEMA
 
     def __post_init__(self):
-        if (
-            self.schema != SCHEMA
-            or self.split not in {"train", "dev"}
-            or self.source_type not in {"reference", "teacher_generated", "software_fixture"}
-        ):
+        if not (
+            (self.schema == SCHEMA and self.split in {"train", "dev"})
+            or (self.schema == LOCKED_SCHEMA and self.split == "test")
+        ) or self.source_type not in {"reference", "teacher_generated", "software_fixture"}:
             raise ValueError("native answer schema/split/source required; legacy anchors are incompatible")
         if not self.original_id or not self.group_id or not self.prompt_ids or not self.answer_ids:
             raise ValueError("nonempty native example identities/prompt/answer required")

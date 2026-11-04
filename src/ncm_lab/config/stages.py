@@ -117,6 +117,10 @@ def config(path, canvas_size=None, *, _bind_canvas=True):
         "inference",
         "wave_context",
         "experiment_context",
+        "stage1",
+        "stage1_context",
+        "stage1_data",
+        "stage1_io",
     }
     if set(value) - allowed:
         raise ValueError("unknown native stage fields: " + str(sorted(set(value) - allowed)))
@@ -129,6 +133,8 @@ def config(path, canvas_size=None, *, _bind_canvas=True):
         "validation",
         "profile",
         "prepare",
+        "stage1_prepare",
+        "stage1_evaluate",
     }:
         raise ValueError("native stage schema required; archived configurations are incompatible")
 
@@ -158,6 +164,9 @@ def config(path, canvas_size=None, *, _bind_canvas=True):
     value["architecture"] = architecture.to_dict()
     value["budget"] = asdict(Budget(**value["budget"]))
     value["training"] = asdict(Training(**value.get("training", {})))
+    if value.get("stage1"):
+        from ncm_lab.stage1.policy import Policy
+        value["stage1"] = asdict(Policy(**value["stage1"]))
     value.setdefault("device", "cpu")
     value.setdefault("dtype", "float32")
     value.setdefault("threads", 1)
@@ -182,7 +191,8 @@ def config(path, canvas_size=None, *, _bind_canvas=True):
 
     if isinstance(value.get("monitoring"), str):
         value["monitoring"] = read(root() / value["monitoring"])
-    value["monitoring"] = asdict(Monitoring(**value.get("monitoring", {})))
+    from ncm_lab.monitoring.records import Stage1Monitoring
+    value["monitoring"] = asdict((Stage1Monitoring if value.get("stage1") else Monitoring)(**value.get("monitoring", {})))
     if value["model"] and not value["model"].get("fixture"):
         from ncm_lab.config.canvas import validate_production
 

@@ -10,7 +10,16 @@ from ncm_lab.config.architecture import Architecture
 from ncm_lab.data.artifacts import Dataset, Cursor
 from ncm_lab.data.records import collate, ALIGNMENT
 from ncm_lab.embedded.geometry import masked_pool
-from ncm_lab.runtime.io import canonical_hash, write_json, digest, implementation_hash, atomic_json, read
+from ncm_lab.runtime.io import (
+    canonical_hash,
+    write_json,
+    digest,
+    implementation_hash,
+    atomic_json,
+    read,
+    disk_path,
+    plain_path,
+)
 from ncm_lab.runtime.budget import BudgetStop
 from ncm_lab.teacher.model import load_generator, load_frozen_head, model_identity
 from ncm_lab.training.optimizer import TiledAdamW
@@ -150,7 +159,11 @@ def prune(folder, selected):
     import shutil
 
     folder = Path(folder).resolve()
-    candidates = sorted(folder.glob("version-*"), key=lambda p: p.stat().st_mtime, reverse=True)
+    candidates = sorted(
+        (plain_path(p) for p in disk_path(folder).glob("version-*")),
+        key=lambda p: disk_path(p).stat().st_mtime,
+        reverse=True,
+    )
     protected = {p.resolve() for p in candidates[:2]}
     if selected:
         protected.add(Path(selected["manifest"]).parent.resolve())
@@ -158,15 +171,16 @@ def prune(folder, selected):
         resolved = path.resolve()
         if resolved in protected:
             continue
-        if path.is_symlink() or resolved.parent != folder:
+        if disk_path(path).is_symlink() or resolved.parent != folder:
             raise ValueError("unsafe checkpoint retention path")
-        shutil.rmtree(resolved)
+        shutil.rmtree(disk_path(resolved))
 
 
 def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibility=None):
     from ncm_lab.training.recovery_compatibility import verify_recovery
 
     options = value["training"]
+    stage1 = value.get("stage1")
     architecture = Architecture(**value["architecture"])
     torch.manual_seed(options["seed"])
     if torch.cuda.is_available():
@@ -190,18 +204,30 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
     unique_answers = sum(len(dataset.metadata(i)["example"]["answer_ids"]) for i in train)
     if unique_answers < options["minimum_unique_answer_positions"]:
         raise ValueError("requested unique answer pool unavailable; repetition cannot fill it")
+    early_reader = CheckpointReader(resume, check=run.meter.check) if stage1 and resume else None
+    early_metadata = early_reader.materialize(early_reader.field("metadata")) if early_reader else None
     normalization = (
-        source.get("normalization") if generator else state_normalization(dataset, train, run.meter)
+        source.get("normalization")
+        if generator
+        else (
+            early_metadata["normalization"]
+            if early_metadata
+            else state_normalization(dataset, train, run.meter)
+        )
     )
     dtype = getattr(torch, value["dtype"])
     device = value["device"]
     restore_started = time.perf_counter()
     restored_checkpoint_ref = None
-    reader = CheckpointReader(resume, check=run.meter.check) if resume else None
+    reader = early_reader or (CheckpointReader(resume, check=run.meter.check) if resume else None)
     previous_metadata = reader.materialize(reader.field("metadata")) if reader else None
     if reader:
         # Validate implementation/scheduler/identity before allocating model or optimizer.
-        verify_recovery(reader, {**previous_metadata, "implementation_sha256": implementation_hash()}, recovery_compatibility)
+        verify_recovery(
+            reader,
+            {**previous_metadata, "implementation_sha256": implementation_hash()},
+            recovery_compatibility,
+        )
     if previous_metadata and (
         previous_metadata["architecture"] != architecture.to_dict()
         or previous_metadata["dataset_sha256"] != dataset.sha256
@@ -209,7 +235,48 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         or previous_metadata["phase_id"] != value["budget"]["phase_id"]
         or previous_metadata["dtype"] != value["dtype"]
     ):
-        raise ValueError("resume architecture/data/codec/phase mismatch before model allocation; changing canvas requires fresh training")
+        raise ValueError(
+            "resume architecture/data/codec/phase mismatch before model allocation; changing canvas requires fresh training"
+        )
+    if stage1 and previous_metadata:
+        from ncm_lab.training.validation_plan import stage1_codec_plan
+
+        expected_selection = (
+            {"policy": stage1["selection"], "indices": dev[: options["max_validation_examples"]]}
+            if generator
+            else stage1_codec_plan(
+                dataset,
+                dev,
+                architecture.resolutions,
+                options["max_validation_examples"],
+                options["validation_seed"],
+            )
+        )
+        expected_training = {
+            k: v
+            for k, v in options.items()
+            if k
+            not in {
+                "steps",
+                "epochs",
+                "validation_interval",
+                "checkpoint_interval",
+                "recovery_probe",
+                "max_validation_examples",
+            }
+        }
+        if (
+            previous_metadata.get("stage1_contract") != stage1
+            or previous_metadata["training_contract"] != expected_training
+            or previous_metadata["runtime"]["device"] != device
+            or previous_metadata["runtime"]["torch"] != str(torch.__version__)
+            or previous_metadata["model"] != model_identity(value["model"])
+        ):
+            raise ValueError(
+                "Stage 1 recovery reduction/selection/training/runtime contract mismatch before allocation"
+            )
+        if previous_metadata["selection_policy"] != expected_selection:
+            raise ValueError("Stage 1 recovery fixed selection subset/plan mismatch before allocation")
     if (
         previous_metadata
         and previous_metadata.get("optimizer_precision", {}).get("policy")
@@ -230,10 +297,12 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         model = ContinuousCodec(hidden, architecture).to(device=device, dtype=dtype)
         head = load_frozen_head(value["model"], device, dtype)
     optimizer = make_optimizer(model, options, generator)
+    from ncm_lab.training.validation_plan import stage1_codec_plan
+
     validation_plan = (
         None
         if generator
-        else codec_validation_plan(
+        else (stage1_codec_plan if stage1 else codec_validation_plan)(
             dataset,
             dev,
             architecture.resolutions,
@@ -254,7 +323,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         "selection_policy": validation_plan
         if not generator
         else {
-            "policy": "generator_equal_example_loss_v1",
+            "policy": stage1["selection"] if stage1 else "generator_equal_example_loss_v1",
             "indices": dev[: options["max_validation_examples"]],
         },
         "training_contract": {
@@ -278,6 +347,15 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             "attention": "explicit-mask SDPA; no AR KV reuse",
         },
     }
+    if stage1:
+        metadata["stage1_contract"] = stage1
+        metadata["precision_boundary"] = {
+            "cached_source_dtype": source["dtype"],
+            "parameter_dtype": value["dtype"],
+            "target_cast": stage1["generator_target_cast"]
+            if generator
+            else "cached_states_explicitly_cast_to_fp32_codec",
+        }
     if options.get("objective") == "epochs":
         metadata["training_contract"]["objective_epochs"] = options["epochs"]
     if generator:
@@ -293,6 +371,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         "phase": "warmup" if generator and options["warmup_processed_tokens"] else "full",
         "best_dev_loss": None,
         "selected": None,
+        **({"example_presentations": 0} if stage1 else {}),
     }
     if reader:
         transition = verify_recovery(reader, metadata, recovery_compatibility)
@@ -310,6 +389,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             }
         restored_checkpoint_ref = {"path": str(reader.path), "sha256": digest(reader.path)}
         reader = None
+        early_reader = None
+        early_metadata = None
     cursor = Cursor(train, sampler, state.get("cursor"))
     if generator:
         model.set_phase(state["phase"])
@@ -440,6 +521,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                 options["head_chunk"],
                 detail if recorder.options.enabled else None,
                 cutoff_index=None if training else planned["cutoff_index"],
+                report_head_agreement=bool(stage1 and not training),
             )
         observations = (
             quantities(
@@ -456,7 +538,10 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         )
         return loss, metrics, source_positions, int(valid.sum()), observations
 
-    def evaluate():
+    last_validation = None
+
+    def evaluate(full_dev=False, selection_eligible=True):
+        nonlocal last_validation
         started = time.perf_counter()
         recorder.event("validation_started")
         prior_phase = recorder.phase
@@ -467,9 +552,15 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         rows = []
         with torch.no_grad():
             assignments = (
-                [{"index": i} for i in dev[: options["max_validation_examples"]]]
+                [{"index": i} for i in (dev if full_dev else dev[: options["max_validation_examples"]])]
                 if generator
-                else validation_plan["assignments"]
+                else (
+                    stage1_codec_plan(
+                        dataset, dev, architecture.resolutions, len(dev), options["validation_seed"]
+                    )["assignments"]
+                    if stage1 and full_dev
+                    else validation_plan["assignments"]
+                )
             )
             for planned in assignments:
                 _, metrics, _, _, observations = objective([planned["index"]], False, planned)
@@ -487,17 +578,70 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             )
         recorder.phase = prior_phase
         recorder.event("validation_completed", duration_seconds=time.perf_counter() - started)
-        score = sum(row["loss"] for row in rows) / len(rows)
+        score_key = "text_loss" if generator and stage1 else "loss"
+        score = sum(row[score_key] for row in rows) / len(rows)
+        if stage1:
+            from collections import defaultdict
+
+            cutoff_rows = defaultdict(list)
+            for row in rows:
+                if "cutoff" in row:
+                    cutoff_rows[str(row["cutoff"])].append(row)
+            keys = (
+                ("loss", "text_loss", "latent_loss")
+                if generator
+                else ("loss", "mse_full", "mse_cutoff", "head_kl", "head_agreement", "head_positions")
+            )
+            last_validation = {key: sum(r[key] for r in rows) / len(rows) for key in keys if key in rows[0]}
+            last_validation.update(
+                selection_score=score,
+                plan_sha256=canonical_hash(metadata["selection_policy"]),
+                assignments=len(rows),
+                distinct_examples=len({a["index"] for a in assignments}),
+                per_cutoff={
+                    k: {
+                        metric: sum(r[metric] for r in group) / len(group)
+                        for metric in ("mse_full", "mse_cutoff", "head_kl", "loss")
+                    }
+                    for k, group in cutoff_rows.items()
+                },
+                selection_eligible=selection_eligible,
+                full_dev=full_dev,
+            )
+            if not all(__import__("math").isfinite(last_validation[k]) for k in keys if k in last_validation):
+                raise ValueError("nonfinite Stage 1 held-out validation")
+            recorder.event("stage1_validation", components=last_validation)
         recorder.event(
             "selection_evaluated",
             score=score,
             plan_sha256=canonical_hash(validation_plan),
-            policy="generator_equal_example_loss_v1" if generator else validation_plan["policy"],
+            policy=metadata["selection_policy"]["policy"],
             per_example_components=rows,
         )
         return score
 
     try:
+        if stage1 and "initial_validation" not in state:
+            if state["optimizer_steps"]:
+                raise ValueError("Stage 1 recovery lacks its immutable initialization measurement")
+            from ncm_lab.monitoring.samples import preserve_training_state, observe_samples
+
+            sampler_state = sampler.getstate()
+            with preserve_training_state(model):
+                evaluate(selection_eligible=False)
+                state["initial_validation"] = last_validation
+                if generator and sample_prompts:
+                    observe_samples(
+                        model,
+                        tokenizer,
+                        sample_prompts,
+                        recorder,
+                        run.meter,
+                        model_identity(value["model"])["eos_ids"],
+                    )
+            sampler.setstate(sampler_state)
+            write_json(run.path / "initialization.json", state["initial_validation"], exclusive=True)
+            recorder.event("initialization_measured", eligible_for_selection=False)
         if resume and objective_reached():
             # No update is repeated. A target-boundary checkpoint still needs a
             # fresh attempt's validation, durable recovery and export/handoff.
@@ -506,6 +650,9 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             state["selected_this_step"] = chosen
             if chosen:
                 state["best_dev_loss"] = selection
+                if stage1:
+                    state["selected_validation"] = last_validation
+                    state["selected_optimizer_step"] = state["optimizer_steps"]
             state["cursor"] = cursor.state()
             saved = save_checkpoint(
                 run.path / "checkpoints",
@@ -588,6 +735,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                 step_source_count += source_count
                 step_answer_count += answer_count
                 state["allocated_canvas_positions"] += len(indices) * architecture.canvas
+                if stage1:
+                    state["example_presentations"] += len(indices)
                 state["backbone_answer_positions"] += metrics.get("backbone_answer_positions", 0)
                 aggregate.append(metrics)
             report = optimizer.check_gradients()
@@ -630,6 +779,15 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                 "answer_position_exposures": state["answer_position_exposures"],
                 "allocated_canvas_positions": state["allocated_canvas_positions"],
             }
+            if stage1:
+                for component in ("loss", "text_loss", "latent_loss", "mse_full", "mse_cutoff", "head_kl"):
+                    if component in aggregate[0]:
+                        metrics[component] = sum(row[component] for row in aggregate) / len(aggregate)
+                metrics.update(
+                    example_presentations=state["example_presentations"],
+                    actual_accumulation=len(aggregate),
+                    microbatch_head_positions=[row.get("head_positions") for row in aggregate],
+                )
             observed = step_observations.finish()
             # First average the trainer's equally weighted microbatch objective;
             # then weight completed optimizer steps equally across an interval.
@@ -752,7 +910,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                     reduction="active finite reservations only; disabled-clock attempts reserve zero",
                 )
                 values["resources/run_storage_bytes"] = Measure(
-                    sum(p.stat().st_size for p in run.path.rglob("*") if p.is_file()),
+                    sum(p.stat().st_size for p in disk_path(run.path).rglob("*") if p.is_file()),
                     unit="bytes",
                     reduction="observed current run including retained checkpoint versions",
                 )
@@ -812,9 +970,12 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                     effective_from_step=state["optimizer_steps"] + 1,
                 )
                 model.set_phase(state["phase"])
+            improved = selection is not None and (
+                state["best_dev_loss"] is None or selection < state["best_dev_loss"]
+            )
             if (
                 state["optimizer_steps"] % options["checkpoint_interval"] == 0
-                or selection is not None
+                or (improved if stage1 else selection is not None)
                 or state["optimizer_steps"] == options["steps"]
                 or terminal_update
             ):
@@ -825,6 +986,9 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                 state["selected_this_step"] = chosen
                 if chosen:
                     state["best_dev_loss"] = selection
+                    if stage1:
+                        state["selected_validation"] = last_validation
+                        state["selected_optimizer_step"] = state["optimizer_steps"]
                 save_started = time.perf_counter()
                 recorder.event("checkpointing_started")
                 saved = save_checkpoint(
@@ -844,6 +1008,20 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                     duration_seconds=time.perf_counter() - save_started,
                 )
                 recorder.durable()
+            if stage1 and (terminal_update or recorder.step % stage1["progress_interval"] == 0):
+                from ncm_lab.runtime.memory import observe
+
+                memory = observe()
+                components = {
+                    k: metrics[k]
+                    for k in ("text_loss", "latent_loss", "mse_full", "mse_cutoff", "head_kl")
+                    if k in metrics
+                }
+                print(
+                    f"{value['stage']} step {recorder.step}/{options['steps']} phase={executed_phase} loss={metrics['loss']:.6g} components={components} dev={metrics.get('dev_loss', state['best_dev_loss'])} grad={norm:.5g} presentations={state['example_presentations']} selected={state.get('selected_optimizer_step')} host_available_bytes={memory['host_available_bytes']} clocks=disabled",
+                    file=__import__("sys").stderr,
+                    flush=True,
+                )
             if generator and options["recovery_probe"] and state["optimizer_steps"] == 2:
                 if device == "cuda":
                     before_restore_peak = torch.cuda.max_memory_allocated()
@@ -881,13 +1059,18 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             )
         return unfinished(stop_reason, "resource_interrupted")
     diagnostic_stop = (
-        stop_after is not None and value["model"].get("fixture") and state["optimizer_steps"] >= stop_after
+        not stage1
+        and stop_after is not None
+        and value["model"].get("fixture")
+        and state["optimizer_steps"] >= stop_after
     )
     if not objective_reached() and not diagnostic_stop:
         return unfinished("step/epoch safety cap reached before declared objective", "objective_incomplete")
     if not state["selected"]:
         raise ValueError("no completed held-out selection; recovery remains diagnostic only")
     # Export the held-out selected state without holding a second model/optimizer copy.
+    if stage1 and digest(state["selected"]["manifest"]) != state["selected"]["sha256"]:
+        raise ValueError("Stage 1 selected checkpoint manifest changed")
     selected_reader = CheckpointReader(state["selected"]["manifest"], check=run.meter.check)
     transition = verify_recovery(selected_reader, metadata, recovery_compatibility)
     if transition:
@@ -895,6 +1078,30 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
     selected_reader.load_model(model)
     selected_step = selected_reader.materialize(selected_reader.field("training"))["optimizer_steps"]
     selected_reader = None
+    stage1_report = None
+    if stage1:
+        evaluate(full_dev=True, selection_eligible=False)
+        stage1_report = {
+            "schema": "stage1_training_diagnostics_v1",
+            "component": metadata["component"],
+            "initial": state["initial_validation"],
+            "selected": state["selected_validation"],
+            "full_development": last_validation,
+            "selected_optimizer_step": selected_step,
+            "completed_optimizer_steps": state["optimizer_steps"],
+            "improved_on_initialization": state["selected_validation"]["selection_score"]
+            < state["initial_validation"]["selection_score"],
+            "selection_policy": metadata["selection_policy"],
+            "precision_boundary": metadata["precision_boundary"],
+            "reduction": stage1["reduction"],
+            "loss_weighting": "valid-element normalized within each physical microbatch; equal actual microbatch objectives per update; generator physical batch one yields equal-example normalized losses",
+            "unique_training_examples": len(train),
+            "unique_training_answer_positions": unique_answers,
+            "example_presentations": state["example_presentations"],
+            "answer_position_exposures": state["answer_position_exposures"],
+            "source_token_exposures": state["processed_source_tokens"],
+            "initialization_is_not_a_trained_selected_checkpoint": True,
+        }
     if generator:
         from ncm_lab.inference.export import export_generator
 
@@ -926,8 +1133,28 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
     else:
         model.eval().requires_grad_(False)
         scales, scale_statistics = latent_scales(model, dataset, train, run.meter)
+        if stage1:
+            from ncm_lab.stage1.policy import codec_gate
+            import math
+
+            values = [v for row in scales.values() for v in row]
+            valid_scales = all(math.isfinite(v) and v >= 1e-3 for v in values)
+            stage1_report["scale_statistics"] = {
+                **scale_statistics,
+                "scale_floor_fraction": sum(v <= 1.000001e-3 for v in values) / len(values),
+            }
+            stage1_report["codec_qualification"] = codec_gate(
+                state["initial_validation"],
+                state["selected_validation"],
+                stage1,
+                artifacts_valid=valid_scales
+                and math.isfinite(normalization["variance"])
+                and normalization["variance"] > 0,
+            )
+            if not stage1_report["codec_qualification"]["artifacts_valid"]:
+                raise ValueError("invalid Stage 1 codec normalization/scales; cannot override")
         folder = run.path / "artifacts/codec"
-        folder.mkdir(parents=True, exist_ok=True)
+        disk_path(folder).mkdir(parents=True, exist_ok=True)
         weights = save_checkpoint(
             folder / "weights",
             {"identity": identity, "metadata": metadata, "model": model.state_dict(keep_vars=True)},
@@ -956,6 +1183,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                     "validation_plan": validation_plan,
                 },
                 "frozen": True,
+                **({"stage1_diagnostics": stage1_report} if stage1 else {}),
             },
             exclusive=True,
         )
@@ -965,6 +1193,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             "head_frozen": not any(p.requires_grad for p in head.parameters()),
         }
     run.publish(artifact)
+    if stage1:
+        write_json(run.path / "stage1_diagnostics.json", stage1_report, exclusive=True)
     peak = torch.cuda.max_memory_allocated() if device == "cuda" else None
     if before_restore_peak is not None:
         peak = max(peak, before_restore_peak)
@@ -1021,6 +1251,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         "checkpoint": str(run.path / "checkpoints/current.json"),
         "selected_checkpoint": state["selected"],
         "selected_optimizer_step": selected_step,
+        **({"stage1_diagnostics": stage1_report} if stage1 else {}),
         "first_step_included_in_wall_budget": True,
         **diagnostics,
     }

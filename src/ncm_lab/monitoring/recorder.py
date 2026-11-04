@@ -7,14 +7,18 @@ import os
 import time
 import uuid
 from ncm_lab.monitoring.records import Monitoring, Measure, SCHEMA, MAX_RECORD_BYTES, mappings
-from ncm_lab.runtime.io import canonical_hash, digest, write_json
+from ncm_lab.runtime.io import canonical_hash, digest, write_json, disk_path
 from ncm_lab.config.canvas import canvas_metadata
 
 
 class Recorder:
     def __init__(self, run):
         self.run = run
-        self.options = Monitoring(**run.value.get("monitoring", {}))
+        from ncm_lab.monitoring.records import Stage1Monitoring
+
+        self.options = (Stage1Monitoring if run.value.get("stage1") else Monitoring)(
+            **run.value.get("monitoring", {})
+        )
         self.attempt = uuid.uuid4().hex
         self.sequence = {s: 0 for s in ("metrics", "events", "samples")}
         self.step = 0
@@ -33,6 +37,16 @@ class Recorder:
                 "architecture_sha256": canonical_hash(run.value.get("architecture", {})),
                 "canvas": canvas_metadata(run.value["architecture"]),
                 "experiment": run.value.get("experiment_context"),
+                **(
+                    {
+                        "stage1": run.value["stage1_context"],
+                        "stage1_policy": run.value["stage1"],
+                        "precision": run.value["dtype"],
+                        "training": run.value["training"],
+                    }
+                    if run.value.get("stage1_context")
+                    else {}
+                ),
                 "mapping": mappings(run.value["architecture"]),
                 "inputs": run.resolved.get("resolved_inputs", {}),
                 "settings": asdict(self.options),
@@ -43,7 +57,7 @@ class Recorder:
             },
             exclusive=True,
         )
-        os.replace(run.path / "attempt.pending", run.path / "attempt.json")
+        os.replace(disk_path(run.path / "attempt.pending"), disk_path(run.path / "attempt.json"))
 
     def append(self, stream, *, metrics=None, split="diagnostic", terminal=False, **fields):
         self.sequence[stream] += 1
@@ -79,7 +93,7 @@ class Recorder:
             except BudgetStop as exc:
                 if not terminal or "wall" not in str(exc):
                     raise
-        with self.paths[stream].open("ab") as f:
+        with disk_path(self.paths[stream]).open("ab") as f:
             f.write(encoded)
             f.flush()
         if metrics and any(v["status"] == "nonfinite" for v in row["metrics"].values()):
@@ -145,8 +159,8 @@ class Recorder:
 
     def durable(self):
         for path in self.paths.values():
-            if path.exists():
-                with path.open("ab") as f:
+            if disk_path(path).exists():
+                with disk_path(path).open("ab") as f:
                     f.flush()
                     os.fsync(f.fileno())
 

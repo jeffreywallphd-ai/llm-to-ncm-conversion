@@ -1,5 +1,38 @@
 # Native implementation status
 
+## Stage 1 workflow — 2026-11-04
+
+The separate manifest-bound workflow implements complete-answer qualification,
+locked test data, independent BF16 teacher / FP32 codec and targets / BF16 generator
+precision, fixed component codec qualification, initialization diagnostics and
+versioned dev text-CE generator selection. Stage 1 defaults to medium/64, 1,000
+codec updates and 500 generator updates; the existing pilots are unchanged.
+
+Public scripts cover planning, foreground separate-stage/all execution, exact
+manifest-owned checkpoint recovery, explicit pre-test total-step extension and
+selected-export evaluation. Reports include partial failures/review stops, raw
+triplets, exposures, selection versus terminal step, and finite work/storage/I/O
+accounting with execution clocks explicitly disabled. Optional AR reference and
+32-pair overfit diagnostics remain separate operator actions. See the
+[Stage 1 guide](stage1.md) and the explained commands in the root README.
+
+Software verification: **414 passed, 1 CUDA-only skip** in the full suite;
+the additional interrupted-target restart check passed separately on the same
+implementation. Ruff, the literal README Bash sequence against a tiny backend,
+eight shell tests, offline wheel/source parity and model-free entry points passed.
+See the [dated receipt](stage1_validation_2026-11-04.json) for exact commands,
+source identity, retained failures and limits. These are CPU software fixtures.
+
+**Unexecuted research work:** approved real-data capacity qualification, Qwen3-8B
+training, full optimizer/checkpoint recovery on Spark/CUDA, answer-quality review,
+convergence and speed measurement. No research model/data download, full-model
+training, sweep or persistent server was launched during implementation. Tiny CPU
+fixtures cannot resolve these blockers. Real runs also require sufficient cache,
+simultaneous checkpoints/export and filesystem headroom; the derived baseline
+memory/storage estimates are not a measured training fit.
+
+## Earlier implementation evidence
+
 | Milestone | Implementation | Actual evidence |
 |---|---|---|
 | 36 original blocks, 32 updates, 8/32/64/256/1024 canvases, width 384 | implemented | Tiny-width all-size geometry/gradient tests and meta shape inspection; no real-8B claim |

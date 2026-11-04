@@ -7,6 +7,26 @@ from pathlib import Path
 import yaml
 
 
+def disk_path(path):
+    """Windows extended IO path; serialized artifact identities keep ordinary paths."""
+    path = Path(path)
+    if os.name == "nt":
+        absolute = str(path.absolute())
+        if not absolute.startswith("\\\\?\\"):
+            absolute = "\\\\?\\UNC\\" + absolute[2:] if absolute.startswith("\\\\") else "\\\\?\\" + absolute
+        return Path(absolute)
+    return path
+
+
+def plain_path(path):
+    text = str(path)
+    if text.startswith("\\\\?\\UNC\\"):
+        text = "\\\\" + text[8:]
+    elif text.startswith("\\\\?\\"):
+        text = text[4:]
+    return Path(text)
+
+
 def root():
     configured = os.environ.get("NCM_REPO_ROOT")
     candidates = [Path(configured)] if configured else [Path.cwd(), *Path.cwd().parents]
@@ -18,13 +38,13 @@ def root():
 
 
 def read(path):
-    text = Path(path).read_text(encoding="utf-8")
+    text = disk_path(path).read_text(encoding="utf-8")
     return json.loads(text) if text.lstrip().startswith(("{", "[")) else yaml.safe_load(text)
 
 
 def digest(path, check=None):
     value = hashlib.sha256()
-    with Path(path).open("rb") as stream:
+    with disk_path(path).open("rb") as stream:
         while block := stream.read(1024 * 1024):
             if check:
                 check()
@@ -39,7 +59,7 @@ def canonical_hash(value):
 
 
 def write_json(path, value, exclusive=False):
-    path = Path(path)
+    path = disk_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("x" if exclusive else "w", encoding="utf-8", newline="\n") as stream:
         json.dump(value, stream, indent=2, allow_nan=False)
@@ -52,7 +72,7 @@ def atomic_json(path, value):
     path = Path(path)
     temporary = path.with_suffix(path.suffix + ".pending")
     write_json(temporary, value)
-    os.replace(temporary, path)
+    os.replace(disk_path(temporary), disk_path(path))
 
 
 def reference(path):

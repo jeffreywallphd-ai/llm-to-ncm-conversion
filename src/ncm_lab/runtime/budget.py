@@ -6,7 +6,7 @@ from pathlib import Path
 import math
 import time
 import uuid
-from ncm_lab.runtime.io import read, atomic_json
+from ncm_lab.runtime.io import read, atomic_json, disk_path
 
 
 class BudgetStop(RuntimeError):
@@ -174,7 +174,7 @@ class Meter:
         self.check()
 
         def size(folder):
-            return sum(p.stat().st_size for p in Path(folder).rglob("*") if p.is_file())
+            return sum(p.stat().st_size for p in disk_path(folder).rglob("*") if p.is_file())
 
         if size(self.run_dir) + additional > self.budget.max_storage_bytes:
             raise BudgetStop("per-run storage budget exhausted")

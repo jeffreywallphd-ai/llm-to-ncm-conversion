@@ -37,6 +37,11 @@ def extract(run, value, bound):
         "dtype": value["dtype"],
         "template_sha256": data.manifest["identity"]["template_sha256"],
         "selected_indices_sha256": canonical_hash(indices),
+        **(
+            {"source_contract_sha256": data.manifest["identity"]["source_contract_sha256"]}
+            if value.get("stage1")
+            else {}
+        ),
     }
     writer = ArtifactWriter(run.path / "artifacts/features", "native_features_v1", identity, run.meter)
     for i in indices:
@@ -47,6 +52,8 @@ def extract(run, value, bound):
             steps=1,
         )
         states = prediction_states(teacher, example.prompt_ids, example.answer_ids)
+        if value.get("stage1") and not bool(torch.isfinite(states).all()):
+            raise ValueError("nonfinite Stage 1 frozen teacher states")
         writer.append(example, states)
     manifest = writer.finish(
         {
@@ -109,7 +116,21 @@ def targets(run, value, bound):
         "architecture": value["architecture"],
         "dtype": value["dtype"],
         "encoder_dtype": str(next(codec.parameters()).dtype),
+        **(
+            {
+                "codec_computation_dtype": str(next(codec.parameters()).dtype),
+                "target_storage_dtype": value["dtype"],
+                "generator_boundary_cast": value["stage1"]["generator_target_cast"],
+            }
+            if value.get("stage1")
+            else {}
+        ),
         "template_sha256": data.manifest["identity"]["template_sha256"],
+        **(
+            {"source_contract_sha256": data.manifest["identity"]["source_contract_sha256"]}
+            if value.get("stage1")
+            else {}
+        ),
     }
     writer = ArtifactWriter(run.path / "artifacts/targets", "native_targets_v1", identity, run.meter)
     features = Dataset(bound["features"]["manifest"], "native_features_v1") if bound.get("features") else None
@@ -147,7 +168,10 @@ def targets(run, value, bound):
                 )
                 states = prediction_states(teacher, example.prompt_ids, example.answer_ids)
             states = states.to(dtype=next(codec.parameters()).dtype)
-            writer.append(example, codec.fine_codes(states).to(dtype=getattr(torch, value["dtype"])))
+            codes = codec.fine_codes(states).to(dtype=getattr(torch, value["dtype"]))
+            if value.get("stage1") and not bool(torch.isfinite(codes).all()):
+                raise ValueError("nonfinite Stage 1 frozen targets")
+            writer.append(example, codes)
     manifest = writer.finish(
         {
             "coordinate_system": "raw frozen encoder outputs; scales applied only in auxiliary loss",
