@@ -108,3 +108,27 @@ Keep the original clock receipt immutable; append one exact reviewed source edge
 from 0c9fdd5 with an explicit pilot-chat-v1 option and strict identity/shard/state
 checks. Genuine tiny pre-edit checkpoints validate compatibility; no unavailable
 Spark checkpoint, full-model 100-step run or quality/speed result is inferred.
+
+## 2026-11-04 — Independent canvas pilots
+
+Centralize five answer capacities (8/32/64/256/1024), retain pinned Qwen3-8B,
+width 384 and all 32 updates, and default new named pilots to medium/64. Preserve
+explicit 1024 schedules/exports and deliberate legacy/Tulu workflows. Repeated
+resolutions execute separate refinements. Do not implement curriculum or cross-size
+checkpoint transfer under a canvas flag.
+
+Build data/teacher/codec/targets in separate owned local children. Qualification
+requires complete references including EOS and usable stable whole-group train/dev
+splits before teacher loading. Keep the codec's two-step objective separate from
+100 total generator updates. Namespace convenience pointers by full experiment
+fingerprint, publish only sealed successes, guard writers and retain phase charges.
+Pilot clocks stay disabled without an outer execution deadline; non-time safeguards
+and elapsed observations remain. No-chat and planning avoid optional chat startup.
+
+This scientific source change is not covered by the historical clock/chat recovery
+receipts. Leave them immutable and reject older-source training recovery honestly;
+no narrowly reviewed legacy transition is claimed. Same-source recovery restores
+architecture and immutable inputs, with normal complete optimizer/RNG/identity
+checks. Exact saved inference geometry remains independent of fresh-run defaults.
+Use bounded tiny software tests and meta parameter inspection; real-data capacity,
+all-size Spark behavior, quality, speed and convergence remain unverified.

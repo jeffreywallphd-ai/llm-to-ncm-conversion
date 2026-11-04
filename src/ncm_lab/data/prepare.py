@@ -5,7 +5,7 @@ import json
 from ncm_lab.data.records import Example
 from ncm_lab.data.artifacts import ArtifactWriter
 from ncm_lab.teacher.model import model_identity, load_tokenizer
-from ncm_lab.runtime.io import root, read, digest, canonical_hash
+from ncm_lab.runtime.io import root, read, digest, canonical_hash, write_json
 from ncm_lab.data.tokenization import prompt_tokens
 
 
@@ -45,13 +45,19 @@ def validate_source_binding(settings, lock=None):
     return asset
 
 
-def raw_examples(settings, index_path=None, check=None):
+class DataCapacityError(ValueError):
+    pass
+
+
+def raw_examples(settings, index_path=None, check=None, observations=None):
+    observations = observations if observations is not None else {}
     path = root() / settings["source_path"]
     if settings.get("format", "jsonl") == "jsonl":
         with path.open(encoding="utf-8") as stream:
             for i, line in enumerate(stream):
                 if i >= settings["max_source_rows"]:
                     break
+                observations["source_rows_inspected"] = i + 1
                 row = json.loads(line)
                 if row.get("split", "train") != "train":
                     raise ValueError("only source training releases are admitted")
@@ -92,6 +98,7 @@ def raw_examples(settings, index_path=None, check=None):
                 count += 1
                 if count > settings["max_source_rows"]:
                     break
+                observations["source_rows_inspected"] = count
                 records.append(
                     (
                         row["message_id"],
@@ -164,9 +171,12 @@ def prepare_data(run, value):
     seen = set()
     excluded = {"overlength": 0, "prompt_length": 0, "duplicate": 0}
     total = 0
+    observations = {"source_rows_inspected": 0, "eligible_references_inspected": 0}
+    lengths = {"train": [], "dev": []}
     eos = tokenizer.eos_token_id
-    for row in raw_examples(settings, run.path / "artifacts/source-index.sqlite", run.meter.check_disk):
+    for row in raw_examples(settings, run.path / "artifacts/source-index.sqlite", run.meter.check_disk, observations):
         run.meter.check()
+        observations["eligible_references_inspected"] += 1
         key = canonical_hash([row["prompt"], row["answer"]])
         if key in seen:
             excluded["duplicate"] += 1
@@ -226,22 +236,43 @@ def prepare_data(run, value):
         run.meter.charge(source=amount, answer=len(answer), steps=1)
         total += amount
         writer.append(example)
+        lengths[split].append(len(answer))
         if writer.count >= settings["max_examples"]:
             break
+    qualification = {
+        **observations, "canvas": value["architecture"]["canvas"], "excluded": excluded,
+        "splits": {split: {"examples": len(items), "unique_supervised_answer_positions": sum(items),
+                   "min_answer_positions": min(items) if items else None,
+                   "max_answer_positions": max(items) if items else None,
+                   "mean_answer_positions": sum(items) / len(items) if items else None}
+                   for split, items in lengths.items()},
+        "counting": "distinct admitted examples; repeated exposure never increases these counts",
+        "usable": all(lengths.values()),
+    }
+    write_json(run.path / "data_qualification.json", qualification, exclusive=True)
+    if not qualification["usable"]:
+        writer.index.close()
+        raise DataCapacityError(
+            f"data-capacity blocker for canvas {value['architecture']['canvas']}: "
+            f"admitted train={len(lengths['train'])}, dev={len(lengths['dev'])}; "
+            "complete references including EOS must fit. Supply --prepare --data-config PATH "
+            "with an approved short-answer native data config or explicitly larger bounded source slice. "
+            f"See {run.path / 'data_qualification.json'}"
+        )
     manifest = writer.finish(
         {
             "excluded": excluded,
             "requested_unique_tokens": settings["max_unique_tokens"],
             "unique_token_shortfall": max(0, settings["max_unique_tokens"] - total),
             "source_pool_target_is_not_evidence_of_availability": True,
+            "qualification": qualification,
         }
     )
-    if not all(writer.groups.values()):
-        raise ValueError("bounded source slice did not yield both whole-group train/dev partitions")
     run.publish(manifest)
     return {
         "artifact": str(manifest),
         "stats": writer.stats,
         "excluded": excluded,
+        "qualification": qualification,
         "unique_token_shortfall": max(0, settings["max_unique_tokens"] - total),
     }

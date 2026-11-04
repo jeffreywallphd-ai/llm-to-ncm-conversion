@@ -1,9 +1,13 @@
 # Native embedded architecture
 
-The default configuration is `configs/architecture/embedded_1024.yaml`, with a
+Fresh named pilots default to `embedded_medium.yaml` (64 answer positions).
+The explicitly selected legacy `configs/architecture/embedded_1024.yaml` has a
 384-wide continuous stream, four initial queries, 36 original Qwen blocks, and
 32 sequential hierarchy updates. It is an initial engineering design, not an
 established optimum or evidence of a semantic concept hierarchy.
+
+The diagram and explicit schedule below show the preserved legacy xlarge case.
+Other presets use their resolved C positions in the final stream.
 
 ```mermaid
 flowchart LR
@@ -15,7 +19,7 @@ flowchart LR
   M -. sixteen cumulative-code losses, training only .-> T[Frozen offline targets]
 ```
 
-The 32 resolutions are:
+The legacy xlarge/1024 resolutions are:
 
 ```text
 4,5,6,7,8,10,12,14,17,20,24,29,34,41,49,59,
@@ -66,3 +70,8 @@ Offline codec targets are one shared encoder representation pooled at each scale
 Residual targets telescope under the same resize rule; the generator losses compare
 cumulative codes after even updates. No target code is injected into later groups.
 Only deployed Qwen/query/refinement weights and the tokenizer enter inference.
+
+Five production capacities (8/32/64/256/1024) share identical parameter shapes,
+width and block counts. All 32 refinements execute at every size, including repeated
+resolutions. See [canvas contracts](configurable_canvas.md) for the central resolver,
+checked preset files, overrides, preparation and strict same-size recovery.

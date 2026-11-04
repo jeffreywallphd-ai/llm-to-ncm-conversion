@@ -8,6 +8,7 @@ import time
 import uuid
 from ncm_lab.monitoring.records import Monitoring, Measure, SCHEMA, MAX_RECORD_BYTES, mappings
 from ncm_lab.runtime.io import canonical_hash, digest, write_json
+from ncm_lab.config.canvas import canvas_metadata
 
 
 class Recorder:
@@ -30,6 +31,8 @@ class Recorder:
                 "stage": run.stage,
                 "config_sha256": self.config_sha,
                 "architecture_sha256": canonical_hash(run.value.get("architecture", {})),
+                "canvas": canvas_metadata(run.value["architecture"]),
+                "experiment": run.value.get("experiment_context"),
                 "mapping": mappings(run.value["architecture"]),
                 "inputs": run.resolved.get("resolved_inputs", {}),
                 "settings": asdict(self.options),
@@ -59,6 +62,7 @@ class Recorder:
             "elapsed_seconds": time.perf_counter() - self.run.started,
             "split": split,
             "origin": "software_fixture" if self.run.value.get("model", {}).get("fixture") else "real_model",
+            "canvas": canvas_metadata(self.run.value["architecture"]),
             "config_sha256": self.config_sha,
             **fields,
         }

@@ -5,6 +5,7 @@ from pathlib import Path
 from ncm_lab.runtime.budget import Budget, BudgetStop
 from ncm_lab.runtime.io import read, resolve_reference, reference
 from ncm_lab.data.tokenization import validated_messages
+from ncm_lab.config.canvas import canvas_metadata
 
 
 def conversation(messages):
@@ -72,6 +73,7 @@ class ModelBackend:
             "label": self.manifest["model"]["model_id"],
             "identity": self.manifest["identity"],
             "canvas": self.model.architecture.canvas,
+            "canvas_preset": canvas_metadata(self.manifest["architecture"])["preset"],
             "device": self.value["device"],
         }
 

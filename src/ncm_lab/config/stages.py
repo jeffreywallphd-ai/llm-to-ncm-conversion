@@ -91,7 +91,7 @@ class Training:
             raise ValueError("token objective must leave room for full fine tuning after warmup")
 
 
-def config(path):
+def config(path, canvas_size=None, *, _bind_canvas=True):
     path = Path(path)
     if not path.is_absolute():
         path = root() / path
@@ -116,6 +116,7 @@ def config(path):
         "monitoring",
         "inference",
         "wave_context",
+        "experiment_context",
     }
     if set(value) - allowed:
         raise ValueError("unknown native stage fields: " + str(sorted(set(value) - allowed)))
@@ -137,7 +138,24 @@ def config(path):
 
     for field in ("model", "architecture", "budget"):
         expand(field)
-    value["architecture"] = Architecture(**value.get("architecture", {})).to_dict()
+    # No implicit medium here: explicit legacy configurations and exports retain geometry.
+    if "architecture" not in value:
+        from ncm_lab.config.canvas import resolve_canvas
+
+        value["architecture"] = resolve_canvas().architecture().to_dict()
+    architecture_fields = dict(value["architecture"])
+    if canvas_size is not None:
+        from ncm_lab.config.canvas import resolve_canvas
+
+        preset = resolve_canvas(canvas_size)
+        if (
+            architecture_fields.get("initial_queries", 4) != 4
+            or architecture_fields.get("hierarchy_blocks", 16) != 16
+        ):
+            raise ValueError("canvas presets require four queries and 32 updates")
+        architecture_fields.update(canvas=preset.positions, resolutions=preset.schedule)
+    architecture = Architecture(**architecture_fields)
+    value["architecture"] = architecture.to_dict()
     value["budget"] = asdict(Budget(**value["budget"]))
     value["training"] = asdict(Training(**value.get("training", {})))
     value.setdefault("device", "cpu")
@@ -166,17 +184,16 @@ def config(path):
         value["monitoring"] = read(root() / value["monitoring"])
     value["monitoring"] = asdict(Monitoring(**value.get("monitoring", {})))
     if value["model"] and not value["model"].get("fixture"):
-        a = value["architecture"]
-        if (a["early_blocks"], a["hierarchy_blocks"], a["late_blocks"], a["canvas"], a["latent_width"]) != (
-            8,
-            16,
-            12,
-            1024,
-            384,
-        ):
-            raise ValueError(
-                "real initial architecture requires 8/16/12 blocks, 32 updates, 1024 canvas and width 384"
-            )
+        from ncm_lab.config.canvas import validate_production
+
+        validate_production(value["architecture"])
+    named_pilot = path.resolve() in {
+        (root() / f"configs/validation/generator_{steps}_step_pilot.yaml").resolve() for steps in (2, 100)
+    }
+    if _bind_canvas and (canvas_size is not None or named_pilot):
+        from ncm_lab.runtime.canvas_pipeline import bind_canvas_stage
+
+        value = bind_canvas_stage(value)
     return value
 
 

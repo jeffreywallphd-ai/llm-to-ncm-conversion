@@ -1,0 +1,348 @@
+{
+  "schema": "native_canvas_pilots_validation_v1",
+  "date": "2026-11-04",
+  "base_commit": "c8d3dc896f683696319842b3955ade4bfd149ce5",
+  "implementation_sha256": "3d659cb38b14b3890aa81c26d1afef571f0dfc650bce3d14c5455abe1004a5aa",
+  "environment": {
+    "python": "3.12.14",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.15.0",
+    "cuda_available": false,
+    "platform": "win32"
+  },
+  "offline_test_allowance": {
+    "reserved_seconds": 2670,
+    "aggregate_seconds_cap": 3600,
+    "retained_storage_cap_bytes": 2000000000,
+    "retained_storage_bytes": 1133875209,
+    "storage_note": "Expanded the finite offline evidence allowance from 1 GB to 2 GB before exhaustion after observing 483 MB per full suite; preserved all earlier files and time charges. No experiment ledger was changed."
+  },
+  "checks": [
+    {
+      "name": "focused-1",
+      "seconds_cap": 300,
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_canvas_presets.py",
+        "tests/integration/test_canvas_pipeline.py",
+        "tests/unit/test_pilot_chat.py",
+        "tests/unit/test_clock_policy.py",
+        "tests/integration/test_chat_and_pilots.py",
+        "--basetemp=.cache/canvas-validation/focused-1"
+      ],
+      "status": "finished",
+      "exit_code": 1,
+      "elapsed_seconds": 134.73499999986961,
+      "pytest_summary": "2 failed, 129 passed in 116.16s (0:01:56)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\focused-1.txt",
+      "log_sha256": "4e3072f6fdb07ebdd57a7da2c54aa591ee5c563af615b3ca56dba9d66ed5c8a8",
+      "source_scope": "earlier development snapshot, superseded by full-2"
+    },
+    {
+      "name": "focused-2",
+      "seconds_cap": 300,
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_canvas_presets.py",
+        "tests/integration/test_canvas_pipeline.py",
+        "tests/unit/test_pilot_chat.py",
+        "tests/unit/test_clock_policy.py",
+        "tests/integration/test_chat_and_pilots.py",
+        "--basetemp=.cache/canvas-validation/focused-2"
+      ],
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 118.76600000006147,
+      "pytest_summary": "131 passed in 112.77s (0:01:52)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\focused-2.txt",
+      "log_sha256": "e404df7cf716a7355e60f2fd828bd81302f69fd6b0c0a75bfe7cbb8b2ceda09b",
+      "source_scope": "earlier development snapshot, superseded by full-2"
+    },
+    {
+      "name": "full-1",
+      "seconds_cap": 900,
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "--basetemp=.cache/canvas-validation/full-1"
+      ],
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 388.75,
+      "pytest_summary": "358 passed, 1 skipped in 383.39s (0:06:23)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\full-1.txt",
+      "log_sha256": "c25e5dc569ea12399c93bd35a1f947df364895791298ce081e2d697b6dc92c41",
+      "source_scope": "earlier development snapshot, superseded by full-2"
+    },
+    {
+      "name": "guards-1",
+      "seconds_cap": 240,
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_canvas_presets.py",
+        "tests/integration/test_canvas_pipeline.py",
+        "tests/unit/test_pilot_chat.py",
+        "--basetemp=.cache/canvas-validation/guards-1"
+      ],
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 94.42200000002049,
+      "pytest_summary": "101 passed in 88.85s (0:01:28)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\guards-1.txt",
+      "log_sha256": "d65d8183d2a04e9c3c8dc54a28148970af250b0f2e487930d95af9ddd52f21ae",
+      "source_scope": "final production source, focused guard tests"
+    },
+    {
+      "name": "full-2",
+      "seconds_cap": 900,
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "--basetemp=.cache/canvas-validation/full-2"
+      ],
+      "status": "finished",
+      "exit_code": 0,
+      "elapsed_seconds": 376.61000000010245,
+      "pytest_summary": "367 passed, 1 skipped in 371.68s (0:06:11)",
+      "retained_log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\full-2.txt",
+      "log_sha256": "85869e0679fd0f39cf2bcf18d5aefa53e3e88264adbe193c518067547d6e6eca",
+      "source_scope": "final frozen production source and tests"
+    }
+  ],
+  "packaging_and_actual_cli_plans": {
+    "phase": "offline-package-and-cli",
+    "seconds_cap": 180,
+    "storage_cap_bytes": 100000000,
+    "implementation_sha256": "3d659cb38b14b3890aa81c26d1afef571f0dfc650bce3d14c5455abe1004a5aa",
+    "checks": [
+      {
+        "name": "two-help",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_2_step_pilot.py",
+          "--help"
+        ],
+        "exit_code": 0,
+        "log_sha256": "818016f82072dddb859ae244cab7a8e89acc9681c9db39f4b219333463ae0956"
+      },
+      {
+        "name": "hundred-help",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_100_step_pilot.py",
+          "--help"
+        ],
+        "exit_code": 0,
+        "log_sha256": "6af899621ce6a1a383f724f9ada33ede6334bd8f4e342c0b7b06b6e3140f9f32"
+      },
+      {
+        "name": "native-help",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ncm_lab",
+          "pilot",
+          "train",
+          "--help"
+        ],
+        "exit_code": 0,
+        "log_sha256": "9345375ec52e9e0faa0d92d4b333316fa4d22ec3df005abd3b6e25021571a7e6"
+      },
+      {
+        "name": "plan-xsmall",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_100_step_pilot.py",
+          "--fresh",
+          "--prepare",
+          "--no-chat",
+          "--plan-only",
+          "--canvas-size",
+          "xsmall"
+        ],
+        "exit_code": 0,
+        "log_sha256": "91b0f8d1bf8587f7bf32d8ee33f897efde326cd287e884da21f5c2bea4994ab9"
+      },
+      {
+        "name": "plan-small",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_100_step_pilot.py",
+          "--fresh",
+          "--prepare",
+          "--no-chat",
+          "--plan-only",
+          "--canvas-size",
+          "small"
+        ],
+        "exit_code": 0,
+        "log_sha256": "261a112559ce0448a268cdba8e087baf3565692c222eaaab97845fdcc2d712da"
+      },
+      {
+        "name": "plan-medium",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_100_step_pilot.py",
+          "--fresh",
+          "--prepare",
+          "--no-chat",
+          "--plan-only",
+          "--canvas-size",
+          "medium"
+        ],
+        "exit_code": 0,
+        "log_sha256": "21a949e8b0b1b1e7b9e1e992bdf8eea78e389bf6db00027b0ad52185ca79d964"
+      },
+      {
+        "name": "plan-large",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_100_step_pilot.py",
+          "--fresh",
+          "--prepare",
+          "--no-chat",
+          "--plan-only",
+          "--canvas-size",
+          "large"
+        ],
+        "exit_code": 0,
+        "log_sha256": "0b2fb7d398984f1d970bc45e93c264a002f4ec30e04006514ba432f847efe7e9"
+      },
+      {
+        "name": "plan-xlarge",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_100_step_pilot.py",
+          "--fresh",
+          "--prepare",
+          "--no-chat",
+          "--plan-only",
+          "--canvas-size",
+          "xlarge"
+        ],
+        "exit_code": 0,
+        "log_sha256": "d1c6750c0b56e65b5ae2c9b7eeba0cfda549ea8e63205ccce7744822c1fc0c94"
+      },
+      {
+        "name": "plan-default",
+        "command": [
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.venv\\Scripts\\python.exe",
+          "scripts/run_100_step_pilot.py",
+          "--fresh",
+          "--prepare",
+          "--no-chat",
+          "--plan-only"
+        ],
+        "exit_code": 0,
+        "log_sha256": "21a949e8b0b1b1e7b9e1e992bdf8eea78e389bf6db00027b0ad52185ca79d964"
+      },
+      {
+        "name": "wheel-build",
+        "command": [
+          "uv",
+          "build",
+          "--offline",
+          "--no-build-isolation",
+          "--wheel",
+          "--out-dir",
+          "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\wheel"
+        ],
+        "exit_code": 0,
+        "log_sha256": "d29fa44e5c65d125ee62db184446efd85c4ae145fa9535b5fc010d7a114d3f38"
+      }
+    ],
+    "wheel": {
+      "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\wheel\\ncm_lab-0.2.0-py3-none-any.whl",
+      "sha256": "63071fec396e17389280a8ff3d33643f8498eb5386e75fef38482afe979b24ec",
+      "verified_packaged_files": true
+    },
+    "elapsed_seconds": 4.608999999938533
+  },
+  "additional_checks": {
+    "ruff check .": "passed",
+    "git diff --check": "passed",
+    "unchanged_legacy_1024_architecture_budgets_optimizer_memory_and_recovery_receipts": true
+  },
+  "preserved_development_failures": [
+    "focused-1: planning imported Torch unnecessarily; semantic blocked child was incorrectly normalized to failed. Both corrected; original log retained."
+  ],
+  "later_review_guards": [
+    "Direct generator namespace includes actual optimizer settings and runtime.",
+    "Named pilots require successful step objectives, disable explicit training clocks and retain 25-step resumed sampling.",
+    "Re-evaluate cache reuse after upstream replacement; downstream targets rebuild.",
+    "Reject backwards resume targets and unknown child statuses; compare result to sealed summary."
+  ],
+  "actual_tiny_continuation": {
+    "origin": "software_fixture",
+    "canvas": 8,
+    "completed_generator_steps": 100,
+    "additional_optimizer_updates": 98,
+    "selected_optimizer_step": 100,
+    "run": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\full-2\\test_real_fixture_preparation_0\\runs\\generator\\20261104T140534Z-a0a0a87892",
+    "export": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\canvas-validation\\full-2\\test_real_fixture_preparation_0\\runs\\generator\\20261104T140534Z-a0a0a87892\\artifacts\\generator\\manifest.json",
+    "disabled_training_clocks": true,
+    "source_rows_inspected": 100,
+    "complete_admitted_examples": 20,
+    "overlength_exclusions": 80,
+    "codec_objective_steps": 2,
+    "cache_rebuild_chain": [
+      "codec",
+      "targets",
+      "generator"
+    ],
+    "sample_steps": [
+      25,
+      50,
+      75,
+      100
+    ]
+  },
+  "coverage": [
+    "All five names/numeric aliases and checked configurations; default/explicit precedence and parser-tested README commands.",
+    "All five actual C-position forwards/backwards, 32 updates including repeats, 36 blocks, padded prompts, finite full-model fixture gradients and auxiliary groups.",
+    "Full production parameter-shape invariance on meta, with no real weights allocated.",
+    "All five independent export round trips, legacy 1024 metadata, all-C inference before EOS trimming and no-EOS truncation.",
+    "Complete-reference EOS admission, exclusions, stable group splits, censoring, early capacity blocker and source/schedule/codec binding rejection.",
+    "Local preparation children, strict stage completion/publication, no-chat dependency/port avoidance, immutable-input recovery, 100 total updates and owned-tree cancellation.",
+    "Existing fake-clock, memory/cgroup, optimizer/RNG, recovery/integrity and TensorBoard tests."
+  ],
+  "recovery_policy": "No new legacy compatibility receipt. Historical clock/chat receipts unchanged and reject this successor. Same-source same-size recovery remains strict; changing canvas requires fresh training. Original checkpoint layout/config/launch records are required.",
+  "scope": {
+    "research_downloads_started": false,
+    "real_training_started": false,
+    "persistent_server_started": false,
+    "full_8b_or_spark_tested": false,
+    "real_all_size_data_capacity": "unverified",
+    "quality_speed_or_convergence_claim": null,
+    "skip": "CUDA kernel test: CPU-only Torch / no available CUDA device; normal local temporary-directory, loopback and process cleanup access used for tests."
+  },
+  "final_readme_parser_check": {
+    "name": "docs-parser",
+    "seconds_cap": 30,
+    "command": [
+      ".venv/Scripts/python.exe",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/unit/test_canvas_presets.py::test_all_documented_pilot_commands_parse",
+      "--basetemp=.cache/canvas-validation/docs-parser"
+    ],
+    "status": "finished",
+    "exit_code": 0,
+    "elapsed_seconds": 5.125,
+    "log_sha256": "20ee3f7b7e36d0f92a6c8c7a068f6ae5d7546cd4a3fd061d2250832019002977"
+  }
+}

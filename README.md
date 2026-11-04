@@ -38,8 +38,9 @@ checks verify release before replacement allocation and exact continuation; see 
 
 The original 36 Qwen blocks execute once per answer canvas. Blocks 1–8 process
 the prompt and four learned answer queries. Each of blocks 9–24 is followed by
-two successive hierarchy updates, giving 32 updates from four to 1024 answer
-positions. Blocks 25–36 refine the full 1024-position stream. Original transformer
+two successive hierarchy updates, giving 32 updates from four to the selected answer
+capacity. Fresh named pilots default to 64 positions; the explicit legacy design has 1024. Blocks 25–36 refine
+the selected full canvas. Original transformer
 residuals remain intact; every hierarchy update also preserves hidden/compact
 residual paths. The compact stream is 384 wide in the real configuration.
 
@@ -88,6 +89,7 @@ instead of installing the CPU Torch extra over it.
 | Optimizer rounding, numerical safety and private RNG | `uv run --no-sync python -m pytest -q tests/unit/test_optimizer_precision.py` |
 | Data source contracts and software Parquet preparation | `uv run --no-sync python -m pytest -q tests/unit/test_real_data_contracts.py` |
 | Live TensorBoard events/HTTP and replay correctness | `uv run --no-sync python -m pytest -q tests/integration/test_monitoring_tensorboard.py tests/integration/test_replay_corrections.py` |
+| Canvas presets, preparation, exact recovery and exports | `uv run --no-sync python -m pytest -q tests/unit/test_canvas_presets.py tests/integration/test_canvas_pipeline.py` |
 | Pilot launch, 100-step continuation and local chatbot | `uv run --no-sync python -m pytest -q tests/unit/test_pilot_chat.py tests/integration/test_chat_and_pilots.py` |
 | Unit tests only | `uv run --no-sync python -m pytest -q tests/unit` |
 | Lint | `uv run --no-sync ruff check .` |
@@ -145,7 +147,7 @@ help, planning and pilot completion never start it automatically.
 | Teacher | `ncm teacher extract --config configs/validation/teacher_features_pilot.yaml` | Exact source/length-aware subset with at least 10M distinct training answer positions; frozen pinned teacher |
 | Codec | `ncm codec train --config configs/validation/codec_pilot.yaml` | Fresh shared codec, three passes, held-out selection and train-only scales |
 | Targets | `ncm targets build --config configs/validation/latent_targets_pilot.yaml` | Selected frozen codec; broader pool streamed into fine codes |
-| Generator | **2 training step pilot:** `python scripts/run_2_step_pilot.py` | Fresh pinned-Qwen initialization, 1M warmup tokens within nominal 100M processed training tokens, full fine tuning and export |
+| Generator | **2 training step pilot:** `python scripts/run_2_step_pilot.py --fresh --prepare --no-chat` | Fresh pinned-Qwen initialization, 1M warmup tokens within nominal 100M processed training tokens, full fine tuning and export |
 
 The complete larger sequence has one command, plus offline planning and exact resume:
 
@@ -222,100 +224,193 @@ Full-model/GPU monitoring overhead remains unmeasured.
 | [06 generation](workflows/06_generation/README.md) | Standalone export and bounded parallel generation |
 | [07 extension wave](workflows/07_extension_training/README.md) | Qualified Tülu preparation and fresh, resumable complete training sequence |
 
-### 2 training step pilot
+## Configurable canvas sizes and 100-step pilots
 
-Install the optional local chatbot interface in the existing environment first:
+Fresh named pilots default to **medium / 64 answer positions**. These capacities
+change answer sequence geometry, not model parameter count: every real preset uses
+the pinned Qwen3-8B, width 384, four queries, all 36 backbone blocks (8/16/12), and
+all 32 hierarchy updates. Repeated resolutions still execute separate updates.
+EOS consumes a position: xsmall admits at most seven content tokens plus EOS.
+The prompt allowance remains 512 tokens. Smaller canvases retain the full-backbone
+FP32 AdamW moment memory requirement.
+
+| Preset | Answer positions |
+|---|---:|
+| xsmall | 8 |
+| small | 32 |
+| **medium (default)** | **64** |
+| large | 256 |
+| xlarge | 1024 |
+
+Use the existing CUDA environment and the installation prerequisites above; retain
+its working CUDA Torch. The optional `chat` extra does not install Torch. Explicit
+one-time asset acquisition is separate from preparation:
+
+```sh
+ncm prepare --config configs/validation/real_pilot.yaml --plan-only
+```
+
+```sh
+ncm prepare --config configs/validation/real_pilot.yaml
+```
+
+`--prepare` builds or verifies local per-size data, frozen teacher features, a
+separately fitted codec/normalization, and latent targets before generator training.
+It never downloads missing research assets. Source data is qualified before loading
+the teacher. The existing codec pilot objective is **two codec updates**, separately
+reported; 100 generator updates do not establish a fully trained codec. Missing
+local weights/tokenizers/data block with retained stage logs.
+
+Choose **one** independent fresh experiment below. Do not paste all examples as one
+job. Named medium, numeric 64 and omitted-size examples are alternatives.
+Every command requests exactly **100 total completed generator optimizer updates**.
+Pilot preparation and training have **no run, phase, or outer training-clock
+deadline**; elapsed observations and finite work/storage, memory, integrity and
+owned-process cancellation safeguards remain active. Validation, checkpoints and
+fixed-prompt samples run every 25 updates, with required finalization.
+
+**xsmall — 8 answer positions**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --canvas-size xsmall --prepare --no-chat
+```
+
+**small — 32 answer positions**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --canvas-size small --prepare --no-chat
+```
+
+**medium — 64 answer positions; recommended default**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --canvas-size medium --prepare --no-chat
+```
+
+**large — 256 answer positions**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --canvas-size large --prepare --no-chat
+```
+
+**xlarge — 1024 answer positions**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --canvas-size xlarge --prepare --no-chat
+```
+
+**Default size — medium/64**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --prepare --no-chat
+```
+
+**Numeric alias — equivalent to named medium**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --canvas-size 64 --prepare --no-chat
+```
+
+**Model-free plan — no training, downloads, handoff mutation or chat**
+
+```bash
+python scripts/run_100_step_pilot.py --fresh --canvas-size medium --prepare --no-chat --plan-only
+```
+
+**Equivalent installed CLI**
+
+```bash
+ncm pilot train --steps 100 --fresh --canvas-size medium --prepare --no-chat
+```
+
+Omit `--prepare` to require already verified matching prerequisites. The same
+`--data-config` selection is part of an experiment; for a custom data configuration,
+use `--prepare --data-config` again to verify/reuse that exact experiment. A small
+OASST slice may have insufficient complete short answers for usable whole-group
+train/dev partitions. That produces a data-capacity blocker with inspected rows,
+exclusions and admitted counts, before teacher loading. To explicitly adjust source
+bounds or supply approved short-answer data, copy `configs/data/real_pilot.yaml`,
+edit its bounded `data` settings and source hash/revision/license, then pass the
+native data-stage configuration. `PATH` below is a placeholder for that file:
+
+```sh
+python scripts/run_100_step_pilot.py --fresh --canvas-size xsmall --prepare --data-config PATH --no-chat
+```
+
+No synthetic references are invented. Longer answers default to exclusion, not
+prefixes with fabricated EOS. Group splits stay stable across canvas filters;
+repetition increases exposures, never distinct-data counts. Real-data capacity at
+all five sizes remains unverified here. These are operational and early-learning
+inspections, with no guarantee of coherent answers or convergence.
+
+### 2 training step pilot and same-size continuation
+
+The two-step pilot uses the same medium default and preparation policy:
+
+```sh
+python scripts/run_2_step_pilot.py --fresh --prepare --no-chat
+```
+
+Stop with Ctrl+C. Use the exact recovery checkpoint printed/recorded by that run.
+`/ABS/2-STEP-RUN/checkpoints/current.json` is a placeholder, not a latest-run lookup:
+
+```sh
+python scripts/run_100_step_pilot.py --resume /ABS/2-STEP-RUN/checkpoints/current.json --no-chat
+```
+
+This restores the checkpoint's verified architecture and immutable bound inputs,
+then targets **100 total updates** (98 more after two), retaining prior phase charges.
+Do not add `--fresh` or `--prepare` to resume. Conflicting size/configuration fails;
+changing canvas requires a fresh independent experiment. This implementation changes
+the package fingerprint: older source checkpoints are **not approved for recovery**
+by the historical clock/chat receipts. Use fresh training with matching rebuilt
+artifacts. Existing explicit 1024 inference exports remain usable. See
+[pilot guide](docs/pilot_chat.md) for precise limitations.
+
+Runs are immutable; stage artifacts live under their run directories. Convenience
+handoffs live under `runs/handoffs/canvas/<preset>/<experiment-fingerprint>/` with
+separate `generator_2_step.json` and `generator_100_step.json`. Architecture,
+source/configuration and implementation fingerprints prevent accidental reuse.
+Completed sealed producer runs and every shard are verified. Writers are guarded;
+failed stages do not publish success or launch later stages. Legacy global handoffs
+and the explicitly 1024 `generator_pilot.yaml` procedure remain unchanged.
+
+### Test an export, or preview the chatbot without a model
+
+`--no-chat` requires no server dependency or free port and exits after export,
+printing the exact immutable export and a runnable chat command. Omit it to launch
+the local server after successful training and after the child has released training
+allocations. Install the optional server in the active CUDA environment if needed:
 
 ```sh
 python -m pip install -e '.[chat]'
 ```
 
-On Spark retain the validated CUDA Torch installation. This extra adds only the
-open-source Werkzeug web dependency; it does not request CPU Torch. For a new
-model-free preview, no ML extras or downloaded weights are needed.
-
-An authorized first pilot starts with acquisition preview and explicit retrieval.
-
-The shared real-pilot budget sets `enforce_wall_time_limits: false`: neither the
-run clock nor the phase clock stops its declared work or finalization. The generator
-targets two optimizer steps here; memory, work/storage and integrity checks remain
-active. Numeric time settings are inactive; elapsed time is still recorded. Smoke
-tests, the separate feasibility profile and larger waves retain their clocks.
-For the reported interrupted checkpoint, follow the explicit, source-validated
-[reviewed recovery procedure](docs/pilot_chat.md#checkpoint-compatibility).
+`/ABS/EMITTED-EXPORT/manifest.json` below is the exact path emitted by your run:
 
 ```sh
-ncm doctor --profile spark
-ncm prepare --config configs/validation/real_pilot.yaml --plan-only
-ncm prepare --config configs/validation/real_pilot.yaml
-ncm data prepare --config configs/data/real_pilot.yaml
-ncm teacher extract --config configs/validation/teacher_features_pilot.yaml
-ncm codec train --config configs/validation/codec_pilot.yaml
-ncm targets build --config configs/validation/latent_targets_pilot.yaml
-python scripts/run_2_step_pilot.py
+ncm chat serve --checkpoint /ABS/EMITTED-EXPORT/manifest.json --device cuda --profile spark
 ```
 
-The generator launcher uses `configs/validation/generator_2_step_pilot.yaml`, writes
-`runs/handoffs/generator.json`, then starts the chatbot at
-[http://127.0.0.1:7860](http://127.0.0.1:7860) after successful objective completion.
-For recovery, add `--resume /ABS/2-STEP-RUN/checkpoints/current.json`. The legacy
-`generator_pilot.yaml` and direct `ncm generator train` command remain available;
-only the named pilot launcher automatically starts the chatbot.
-
-### 100 step pilot
-
-Continue from the completed two-step run's **recovery checkpoint**, with the same
-prepared data, codec, targets, numerical policy and phase accounting:
-
 ```sh
-python scripts/run_100_step_pilot.py --resume /ABS/2-STEP-RUN/checkpoints/current.json
-```
-
-This targets **100 total optimizer steps** (98 additional updates after step two).
-`configs/validation/generator_100_step_pilot.yaml` evaluates the unchanged held-out
-set, writes recovery state and samples up to four fixed prompts every 25 steps.
-It publishes `runs/handoffs/generator_100_step.json`, separately from the two-step
-export. The training child exits before the chatbot loads the selected export, so
-training optimizer/gradient allocations are released first. Failed, blocked,
-cancelled or incomplete training never starts the chatbot.
-The held-out selected export can come from an earlier checkpoint if it scored
-better; the samples at 25/50/75/100 show the actual in-memory model at those steps.
-
-Use `--fresh` instead of `--resume` only for an intentional fresh 100-step run.
-There is no checkpoint scan, automatic fresh-weight fallback or implicit download.
-Both named pilot launchers retain disabled training clocks and active work/storage,
-memory and integrity safeguards. The chatbot separately defaults to two hours and
-100 requests; change those with `--chat-seconds` and `--chat-requests`, or choose a
-different local port with `--port`. Press Ctrl+C to stop the foreground chatbot
-after training; the completed run remains intact.
-
-### Test an export, or preview the chatbot without a model
-
-```sh
-# Existing completed export; use generator.json for the two-step pilot:
-ncm chat serve --checkpoint runs/handoffs/generator_100_step.json --device cuda --profile spark
-# Interface only: no model loading, downloads or generated answers:
 ncm chat serve --preview
 ```
 
-Open [http://127.0.0.1:7860](http://127.0.0.1:7860). Preview responses explicitly say
-that no inference occurred. Connected mode loads one verified export for all turns;
-conversation history is prompt context only, limited to 512 tokens without silent
-truncation. On another computer, use an SSH tunnel to Spark's loopback port.
-See [pilot/chat operator guide](docs/pilot_chat.md) for commands, budgets, compatibility,
-failure records and remote viewing. The 100-step target is an early inspection
-budget, not a guarantee of useful answers or convergence.
+Open [http://127.0.0.1:7860](http://127.0.0.1:7860). Chat derives capacity from the
+export, including legacy 1024 exports. All C answer positions compute before EOS
+trimming; returned text may be shorter. The export labels its actual selected
+optimizer step, which may precede the final update. The default server lifetime is
+two hours/100 chat requests, separately bounded from training. Use an SSH tunnel
+for Spark. See [pilot/chat guide](docs/pilot_chat.md).
 
-Named `runs/handoffs/*.json` receipts connect stages by exact manifest hashes.
-There is no historical-run scan or arbitrary latest checkpoint selection. Resume
-uses a complete native recovery checkpoint; an inference export cannot resume
-training. See [training](docs/training.md) for timing, storage, and precision rules.
+Software verification on 2026-11-04: **367 passed, 1 CUDA skip**; lint, all six
+model-free plans and offline packaging checks passed. See the
+[canvas validation receipt](docs/configurable_canvas_validation_2026-11-04.json).
+These CPU fixtures do not establish all-size real-data or Spark feasibility.
 
-The old OASST-only `initial_100m_*`/`initial_10m_*` configs are preserved historical
-envelopes; they do not establish a 100M source pool or 10M distinct training answer
-positions. The Tülu wave above supersedes them as the recommended larger route.
-Repetition increases exposures, never distinct-data counts. Real extension budgets
-and CPU validation remain separate explicit operations.
+The larger Tulu wave and deliberately configured legacy feasibility workflows keep
+their explicit 1024 geometry and finite default clocks. They are separate operations;
+no larger wave is started or redesigned by these commands.
 
 ## Current limitations and extension
 

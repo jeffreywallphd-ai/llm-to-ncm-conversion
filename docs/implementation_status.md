@@ -2,7 +2,7 @@
 
 | Milestone | Implementation | Actual evidence |
 |---|---|---|
-| 36 original blocks, 32 updates, 1024 canvas, 384-wide real spec | implemented | Tiny-width full geometry test; no real-8B claim |
+| 36 original blocks, 32 updates, 8/32/64/256/1024 canvases, width 384 | implemented | Tiny-width all-size geometry/gradient tests and meta shape inspection; no real-8B claim |
 | Frozen teacher alignment and shared progressive codec | implemented | Native CPU gradients/alignment/cache checks |
 | Sixteen cumulative losses and full-backbone tuning | implemented | Tiny production-class optimizer updates |
 | Complete sharded recovery and independent export | implemented | CPU deterministic recovery, corruption and interruption checks |
@@ -98,3 +98,27 @@ production 2→100 continuation and actual export inference, fixed-prompt sample
 preview/live HTTP, launch failure gates and genuine pre-edit BF16 state continuation
 passed. See [operator guide](pilot_chat.md) and [dated receipt](pilot_chat_validation_2026-11-03.json).
 The actual user's Spark checkpoint and real-8B 100-step run remain untested here.
+
+## Configurable canvas pilots (2026-11-04)
+
+The five production presets, medium default, shared script/CLI flags, isolated
+local per-size preparation, complete-reference qualification, exact receipt reuse,
+strict same-size recovery, no-chat mode and canvas-aware export/monitoring are
+implemented. See [canvas contracts](configurable_canvas.md) and the root README.
+The historical 1024 procedure and Tulu wave retain their explicit geometry.
+
+Real short-answer availability for every preset, full-Qwen all-size optimization,
+Spark kernel/memory/recovery peaks and trained output quality remain unverified.
+The codec pilot remains two updates and its adequacy is not established. Older
+source training checkpoints cannot resume through this scientific implementation
+change; historical compatibility receipts remain unchanged. Fresh matching
+experiments and existing inference exports are the supported routes.
+
+Final canvas verification: **367 passed, 1 CUDA skip** in 371.68 seconds;
+`python -m pytest -q`, `ruff check .`, whitespace checks, six actual model-free
+README plans and offline wheel/package-content checks passed. Focused final guards
+passed 101 tests. These are CPU software fixtures, including actual C-position
+forward/backward/export checks at all five sizes and an 8-position local preparation
+chain followed by 98 additional updates to 100 total. See the
+[dated evidence receipt](configurable_canvas_validation_2026-11-04.json), which also
+retains the initial two development failures and their corrected reruns.

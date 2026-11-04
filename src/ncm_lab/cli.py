@@ -39,6 +39,8 @@ def parser():
             operation.add_argument('--resume', type=Path)
     preflight = commands.add_parser('preflight')
     preflight.add_argument('--config', type=Path, required=True)
+    from ncm_lab.config.canvas import add_canvas_argument
+    add_canvas_argument(preflight)
     for name, action in [
         ("data", "prepare"),
         ("teacher", "extract"),
@@ -50,6 +52,7 @@ def parser():
         group = commands.add_parser(name).add_subparsers(dest="action", required=True)
         stage = group.add_parser(action)
         stage.add_argument("--config", type=Path, required=True)
+        add_canvas_argument(stage)
         if name in {"codec", "generator", "profile"}:
             stage.add_argument("--resume", type=Path)
             stage.add_argument("--recovery-compatibility", choices=["clock-policy-v1", "pilot-chat-v1"])
@@ -99,7 +102,9 @@ def main(argv=None):
             from ncm_lab.runtime.pilot import run_pilot
             result = run_pilot(args.steps, config_path=args.config_path, resume=args.resume,
                 fresh=args.fresh, compatibility=args.compatibility, port=args.port,
-                chat_seconds=args.chat_seconds, chat_requests=args.chat_requests)
+                chat_seconds=args.chat_seconds, chat_requests=args.chat_requests,
+                canvas_size=args.canvas_size, prepare=args.prepare, no_chat=args.no_chat,
+                plan_only=args.plan_only, data_config=args.data_config)
         elif args.command == 'wave':
             from ncm_lab.runtime.wave import plan, run_wave
             from ncm_lab.config.waves import wave_config
@@ -111,7 +116,7 @@ def main(argv=None):
             from ncm_lab.config.stages import config
             from ncm_lab.runtime.io import root
 
-            value = config(args.config)
+            value = config(args.config, args.canvas_size)
             result = preflight(value, root(), training=value['stage'] in {'generator','profile'})
             result['status'] = 'blocked' if result['blockers'] else 'completed'
         elif args.command == "monitor":
@@ -210,7 +215,7 @@ def main(argv=None):
             from ncm_lab.config.stages import config
             from ncm_lab.runtime.runner import execute
 
-            value = config(args.config)
+            value = config(args.config, getattr(args, "canvas_size", None))
             expected = {
                 "teacher": "teacher",
                 "targets": "targets",

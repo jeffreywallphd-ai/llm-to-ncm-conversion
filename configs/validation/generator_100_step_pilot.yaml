@@ -1,7 +1,7 @@
 {
   "schema": "native_stage_v1",
   "model": "configs/models/qwen3_8b.yaml",
-  "architecture": "configs/architecture/embedded_1024.yaml",
+  "architecture": "configs/architecture/embedded_medium.yaml",
   "budget": "configs/budgets/real_pilot.yaml",
   "device": "cuda",
   "dtype": "bfloat16",
@@ -18,11 +18,11 @@
   },
   "stage": "generator",
   "inputs": {
-    "targets": "runs/handoffs/targets.json"
+    "targets": "runs/handoffs/canvas/medium/RESOLVED-EXPERIMENT/targets.json"
   },
-  "output_ref": "runs/handoffs/generator_100_step.json",
+  "output_ref": "runs/handoffs/canvas/medium/RESOLVED-EXPERIMENT/generator_100_step.json",
   "hardware_profile": "spark",
-  "notes": "100 training step pilot. Launcher starts the local chatbot after objective completion.",
+  "notes": "Named pilot: medium/64 default. Use the shared pilot launcher to resolve experiment-specific inputs; legacy global handoffs are never selected.",
   "monitoring": {
     "enabled": true,
     "sample_interval": 25,

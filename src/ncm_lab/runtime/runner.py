@@ -8,9 +8,18 @@ from ncm_lab.runtime.provenance import Run
 from ncm_lab.runtime.io import write_json
 from ncm_lab.runtime.budget import BudgetStop
 from ncm_lab.runtime.doctor import preflight
+from ncm_lab.data.prepare import DataCapacityError
 
 
 def execute(value, resume=None, stop_after=None, *, recovery_compatibility=None):
+    if value.get("experiment_context"):
+        from ncm_lab.runtime.canvas_pipeline import exclusive_writer
+        with exclusive_writer(str(value["output_ref"]) + ".writer.lock"):
+            return _execute(value, resume, stop_after, recovery_compatibility=recovery_compatibility)
+    return _execute(value, resume, stop_after, recovery_compatibility=recovery_compatibility)
+
+
+def _execute(value, resume=None, stop_after=None, *, recovery_compatibility=None):
     torch.set_num_threads(value["threads"])
     bound, missing = bind_inputs(value)
     run = Run(value, bound)
@@ -18,6 +27,9 @@ def execute(value, resume=None, stop_after=None, *, recovery_compatibility=None)
         return run.close("blocked", {"blockers": missing, "model_loaded": False})
     try:
         run.start()
+        if value.get("experiment_context") and value["stage"] != "data":
+            from ncm_lab.runtime.canvas_pipeline import verify_bound_inputs
+            verify_bound_inputs(value)
         if recovery_compatibility and (not resume or value["stage"] not in {"codec", "generator", "profile"}):
             raise ValueError("recovery compatibility requires an explicit training resume")
         if value["stage"] not in {"data", "validation"}:
@@ -76,6 +88,9 @@ def execute(value, resume=None, stop_after=None, *, recovery_compatibility=None)
                 "artifact_published": False,
             },
         )
+    except DataCapacityError as exc:
+        return run.close("blocked", {"error": str(exc), "model_loaded": False,
+                                    "qualification": str(run.path / "data_qualification.json")})
     except KeyboardInterrupt:
         return run.close(
             "cancelled", {"reason": "user interruption; resume last complete optimizer boundary"}

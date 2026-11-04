@@ -25,7 +25,7 @@ def fixture_tokenizer():
     return result
 
 
-def export_generator(model, metadata, path, meter, shard_bytes, spec):
+def export_generator(model, metadata, path, meter, shard_bytes, spec, *, selected_step=None):
     path = Path(path)
     path.mkdir(parents=True, exist_ok=False)
     tokenizer = (
@@ -59,6 +59,7 @@ def export_generator(model, metadata, path, meter, shard_bytes, spec):
         "thinking": False,
         "eos_ids": spec.get("eos_ids", [tokenizer.eos_token_id]),
         "architecture": metadata["architecture"],
+        "selected_optimizer_step": selected_step,
         "model": metadata["model"],
         "dtype": metadata["dtype"],
         "backbone_config": metadata["backbone_config"],
@@ -85,6 +86,8 @@ def load_export(path, device="cpu", check=None):
             raise ValueError("exported tokenizer changed")
     reader = CheckpointReader(weights, expected_kind=INFERENCE, identity=manifest["identity"], check=check)
     metadata = reader.materialize(reader.field("metadata"))
+    if metadata["architecture"] != manifest["architecture"] or canonical_hash(metadata) != manifest["identity"]:
+        raise ValueError("inference export architecture/metadata identity changed")
     model = from_metadata(metadata, device)
     reader.load_model(model)
     model.eval()

@@ -158,3 +158,13 @@ overhead excludes waiting for children; child time is reserved/charged only by t
 existing stage meters. Acquisition also retains conservative crash wall reservations.
 The [operator guide](extension_training.md) lists every finite wall/work/storage
 ceiling, partial-preprocessing behavior and simultaneous storage estimates.
+
+## Canvas-qualified pilots
+
+Fresh named two/100-step pilots now default to medium/64, with optional explicit
+8/32/256/1024 capacities. The existing 1024 feasibility procedure and larger Tulu
+wave retain their configured geometry. See the root README and
+[canvas contracts](configurable_canvas.md) for preparation, exact artifact bindings,
+100-total-update continuation, no-chat/planning flags and the legacy recovery blocker.
+Pilot preparation and optimization disable training clocks while retaining finite
+non-time budgets and elapsed observations. Other workflows retain default clocks.

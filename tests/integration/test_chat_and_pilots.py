@@ -39,7 +39,7 @@ def test_actual_100_step_resume_then_model_chat_after_child_exit(native_artifact
 
     def chat(*, checkpoint, device, profile, run_root, on_ready, **kwargs):
         runs = Path(value["run_root"])
-        launch = max((runs / "pilots").glob("*"), key=lambda p: p.stat().st_mtime)
+        launch = max((runs / "pilots/explicit").glob("*"), key=lambda p: p.stat().st_mtime) / "generator"
         assert read(launch / "exit.json")["exit_status"] == 0
         result = read(launch / "stdout.json")
         assert result["optimizer_steps"] == 100 and result["charged_work"]["steps"] == 98

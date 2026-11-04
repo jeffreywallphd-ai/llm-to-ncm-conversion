@@ -116,7 +116,7 @@ def test_disabled_pilot_completes_and_projects_truthful_monitoring(native_artifa
 
 
 @pytest.mark.parametrize("at_target", [False, True])
-def test_explicit_clock_transition_recovers_exact_state_and_target_finalization(
+def test_same_implementation_recovers_exact_state_and_target_finalization(
     native_artifacts, tmp_path, monkeypatch, at_target
 ):
     value = generator_config(native_artifacts, tmp_path)
@@ -124,7 +124,7 @@ def test_explicit_clock_transition_recovers_exact_state_and_target_finalization(
     assert full["status"] == "completed", full
     original = full if at_target else execute(value, stop_after=1)
     assert original["status"] == "completed", original
-    old = synthetic_predecessor(original["checkpoint"], tmp_path / "synthetic-predecessor")
+    old = {"manifest": str(CheckpointReader(original["checkpoint"]).path)}
     before = digest(old["manifest"])
     advancing_clock(monkeypatch)
     result = execute(value, old["manifest"], recovery_compatibility=POLICY)
@@ -146,9 +146,7 @@ def test_explicit_clock_transition_recovers_exact_state_and_target_finalization(
     # At-target finalization performs validation charges, but no extra optimizer update.
     assert result["charged_work"]["steps"] == (0 if at_target else 1)
     events = [json.loads(line) for line in (Path(result["path"]) / "events.jsonl").read_text().splitlines()]
-    transition = next(row for row in events if row["status"] == "policy_recovery_transition")
-    assert transition["predecessor_implementation_sha256"] == PREDECESSOR
-    assert transition["parent_checkpoint"]["sha256"] == before
+    assert not any(row["status"] == "policy_recovery_transition" for row in events)
     if at_target:
         assert any(
             row.get("finalization_only")
@@ -159,7 +157,7 @@ def test_explicit_clock_transition_recovers_exact_state_and_target_finalization(
         )
 
 
-@pytest.mark.parametrize("case", ["no_option", "unknown", "optimizer", "phase", "model", "corrupt"])
+@pytest.mark.parametrize("case", ["no_option", "known_old_source", "unknown", "optimizer", "phase", "model", "corrupt"])
 def test_transition_cannot_bypass_integrity_or_contract(native_artifacts, tmp_path, case):
     value = generator_config(native_artifacts, tmp_path)
     original = execute(value, stop_after=1)
@@ -184,7 +182,7 @@ def test_transition_cannot_bypass_integrity_or_contract(native_artifacts, tmp_pa
     result = execute(value, old["manifest"], recovery_compatibility=None if case == "no_option" else POLICY)
     assert result["status"] == "failed", result
     assert not Path(value["output_ref"]).exists()
-    assert any(word in result["error"] for word in ("identity", "unreviewed", "corrupt"))
+    assert any(word in result["error"] for word in ("identity", "unreviewed", "corrupt", "mismatch", "receipt does not approve"))
 
 
 def test_disabled_clock_cancellation_is_still_cancelled(native_artifacts, tmp_path, monkeypatch):

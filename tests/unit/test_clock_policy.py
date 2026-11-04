@@ -229,14 +229,17 @@ def transition_metadata():
     }
 
 
-def test_only_reviewed_transition_is_allowed_with_explicit_option(tmp_path, transition_metadata):
+def test_historical_reviewed_transition_stays_narrow(tmp_path, transition_metadata, monkeypatch):
+    import ncm_lab.training.recovery_compatibility as compatibility
+    successor = read("configs/recovery/pilot_chat_v1.json")["successor_implementation_sha256"]
+    monkeypatch.setattr(compatibility, "implementation_hash", lambda: successor)
     old = recovery(tmp_path, transition_metadata)
-    current = {**transition_metadata, "implementation_sha256": implementation_hash()}
+    current = {**transition_metadata, "implementation_sha256": successor}
     with pytest.raises(ValueError, match="unreviewed implementation"):
         verify_recovery(old, current)
     receipt = verify_recovery(old, current, POLICY)
     assert receipt["predecessor_implementation_sha256"] == PREDECESSOR
-    assert receipt["current_implementation_sha256"] == implementation_hash()
+    assert receipt["current_implementation_sha256"] == successor
     assert Path(receipt["parent_checkpoint"]["manifest"]) == old.path
 
 

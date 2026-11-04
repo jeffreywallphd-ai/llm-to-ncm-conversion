@@ -199,6 +199,17 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
     restored_checkpoint_ref = None
     reader = CheckpointReader(resume, check=run.meter.check) if resume else None
     previous_metadata = reader.materialize(reader.field("metadata")) if reader else None
+    if reader:
+        # Validate implementation/scheduler/identity before allocating model or optimizer.
+        verify_recovery(reader, {**previous_metadata, "implementation_sha256": implementation_hash()}, recovery_compatibility)
+    if previous_metadata and (
+        previous_metadata["architecture"] != architecture.to_dict()
+        or previous_metadata["dataset_sha256"] != dataset.sha256
+        or previous_metadata["source"] != source
+        or previous_metadata["phase_id"] != value["budget"]["phase_id"]
+        or previous_metadata["dtype"] != value["dtype"]
+    ):
+        raise ValueError("resume architecture/data/codec/phase mismatch before model allocation; changing canvas requires fresh training")
     if (
         previous_metadata
         and previous_metadata.get("optimizer_precision", {}).get("policy")
@@ -882,6 +893,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
     if transition:
         run.event("selected_policy_recovery_transition", **transition)
     selected_reader.load_model(model)
+    selected_step = selected_reader.materialize(selected_reader.field("training"))["optimizer_steps"]
     selected_reader = None
     if generator:
         from ncm_lab.inference.export import export_generator
@@ -893,6 +905,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             run.meter,
             options["shard_bytes"],
             value["model"],
+            selected_step=selected_step,
         )
         changed = {
             n: bool(
@@ -1007,6 +1020,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         "restoration_peak_allocated_bytes": restored_peak,
         "checkpoint": str(run.path / "checkpoints/current.json"),
         "selected_checkpoint": state["selected"],
+        "selected_optimizer_step": selected_step,
         "first_step_included_in_wall_budget": True,
         **diagnostics,
     }

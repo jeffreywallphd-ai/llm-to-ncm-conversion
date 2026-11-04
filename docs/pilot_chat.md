@@ -1,59 +1,64 @@
 # Named pilots and local model playground
 
 The **2 training step pilot** checks basic operations. The **100 step pilot** is an
-explicit continuation for early learning inspection. Existing targets/data/codec,
-full-backbone training, loss and optimizer precision are unchanged. Neither script
+explicit continuation for early learning inspection. Canvas-specific preparation binds matching targets/data/codec.
+Full-backbone training, losses and optimizer precision are retained. Neither script
 acquires assets or silently searches for a checkpoint.
 
 ## Setup and launch
 
-In the existing CUDA environment on Spark:
+See the root README's **Configurable canvas sizes and 100-step pilots** and
+[canvas contracts](configurable_canvas.md). Fresh pilots default to medium/64,
+with five real-model answer capacities. These change answer positions, never the
+pinned Qwen3-8B backbone size. Run from the repository root in the installed active
+environment, preserving CUDA Torch. Explicit asset acquisition remains separate.
 
 ```sh
-git switch main
-git pull --ff-only origin main
-python -m pip install -e '.[chat]'
-# First generator pilot, after the existing data/teacher/codec/targets stages:
-python scripts/run_2_step_pilot.py
-# Continue the explicit completed two-step recovery point to 100 TOTAL steps:
-python scripts/run_100_step_pilot.py --resume /ABS/2-STEP-RUN/checkpoints/current.json
+python scripts/run_2_step_pilot.py --fresh --prepare --no-chat
+python scripts/run_100_step_pilot.py --resume /ABS/2-STEP-RUN/checkpoints/current.json --no-chat
 ```
 
-The shared implementation is `runtime/pilot.py`; scripts are thin entry points.
-Equivalent installed commands are `ncm pilot train --steps 2` and
-`ncm pilot train --steps 100 --resume /ABS/checkpoints/current.json`.
-`--fresh` explicitly requests a fresh 100-step initialization. `--config` can name
-an explicit typed config, but its generator target must match the selected pilot.
-The old `generator_pilot.yaml` is preserved as the two-step legacy entry point.
+The checkpoint path is an explicit placeholder for the printed recovery point.
+The continuation targets 100 TOTAL completed generator updates, 98 after two.
+Do not combine resume with fresh or prepare. Different capacities require fresh
+experiments. `--config` preserves explicit geometry unless `--canvas-size` overrides
+it; the two named shipped defaults are medium. `generator_pilot.yaml` remains the
+explicit legacy 1024 procedure. Direct canvas-dependent stage CLI commands accept
+`--canvas-size` but do not execute prerequisites.
+
+```sh
+python scripts/run_100_step_pilot.py --fresh --canvas-size medium --prepare --no-chat --plan-only
+```
+
+`--prepare` qualifies locally available complete references, then runs teacher,
+codec, targets and generator in separate children. It does not acquire weights or
+data. Supply `--data-config PATH` with preparation for an approved source/bounds
+configuration if the bounded slice cannot supply short-answer train/dev partitions.
+Prepared data, normalization, codecs and targets are isolated by canvas and full
+experiment fingerprint. Existing complete matching producers can be reused. The
+codec preparation target remains its independently reported two updates.
 
 | Setting | 2 training step pilot | 100 step pilot |
 |---|---|---|
-| Config | `generator_2_step_pilot.yaml` | `generator_100_step_pilot.yaml` |
-| Target | 2 total optimizer steps | 100 total; 98 additional after step 2 |
-| Validation/checkpoint interval | 1 | 25, plus forced terminal finalization |
-| Held-out allowance | Existing 32 examples | Same 32; no changed selection identity |
-| Automatic fixed-prompt samples | Existing default interval | Up to four at 25/50/75/100 |
-| Handoff | `runs/handoffs/generator.json` | `runs/handoffs/generator_100_step.json` |
+| Target | 2 total generator updates | 100 total generator updates |
+| Validation/checkpoints | 1 | 25, plus terminal finalization |
+| Held-out allowance | 32 examples | 32 examples |
+| Fixed-prompt samples | Configured cadence | Up to four at 25/50/75/100 |
+| Handoff basename | generator_2_step.json | generator_100_step.json |
 
-Both inherit the unchanged numeric work/storage caps and phase identity from
-`real_pilot.yaml`, with run/phase wall enforcement disabled. Elapsed observations
-remain active. The launcher has no additional execution deadline on training.
-Controller work/log storage has separate persistent finite caps; training spending
-still uses the original phase and never comes from a checkpoint or gets reset.
+Pointers live under `runs/handoffs/canvas/<preset>/<experiment-fingerprint>/`.
+Attempts write `runs/pilots/<preset>/<id>/`, with a plan, per-stage configs,
+launch/process/exit records and stdout/stderr, exact export and status. Stage runs
+remain under `runs/<stage>/<id>/`. Completed stage handoffs are published only after
+sealed run validation. Conflicting writers fail; retained failed attempts and ledgers
+are never reset. Run/phase pilot training clocks and outer deadlines are disabled;
+elapsed observations and non-time work/storage/memory/integrity caps remain active.
 
-Each invocation writes `runs/pilots/<id>/`: resolved config, launch/process and exit
-records, child stdout/stderr, exact export reference and `status.json`. The separate
-training child must exit successfully, report `objective_attained` at the exact
-target, seal its run and publish the intended handoff before chat starts. Its
-optimizer/gradient allocations therefore end before inference model allocation.
-The exported model remains the held-out selected state, which can be earlier than
-the final update. Scheduled samples show current weights at each observation step;
-the UI does not claim that the selected export necessarily contains step-100 weights.
-Non-success never launches a UI with an unrelated model. If chat startup fails
-after training, the completed training result/export are retained; launch chat
-separately rather than repeating updates. An interrupted launcher retains the last
-committed checkpoint; forced process termination can leave explicit incomplete
-elapsed accounting, as described in [clock policy](pilot_clock_policy.md).
+`--no-chat` needs no server dependency/free port and prints the immutable export and
+standalone server command. Otherwise the training child must exit successfully at
+the exact objective before chat loads that run's selected export, freeing optimizer
+and gradient allocations first. Non-success never advances to another stage/chat.
+The selected export labels its actual optimizer step, possibly before final update.
 
 ## Chatbot
 
@@ -67,7 +72,7 @@ Existing monitoring installations already include Werkzeug.
 # Honest interface-only preview, without importing Torch/Transformers:
 ncm chat serve --preview
 # An explicit independent generator export or hash-bound handoff:
-ncm chat serve --checkpoint runs/handoffs/generator_100_step.json --device cuda --profile spark
+ncm chat serve --checkpoint /ABS/EMITTED-EXPORT/manifest.json --device cuda --profile spark
 ```
 
 Open [http://127.0.0.1:7860](http://127.0.0.1:7860). Preview mode labels every
@@ -107,34 +112,22 @@ standalone operation; pilot launchers expose `--chat-seconds`, `--chat-requests`
 
 ## Checkpoint compatibility
 
-Adding launcher/chat Python changes the full package implementation hash. The new
-explicit **`pilot-chat-v1`** receipt approves only the captured predecessor at
-`0c9fdd50c637caa92a013c03a0f4a8a9eae23e99` (source
-`e106a014d20dba62e209f7b2432b6789e1cd34e2cd57d6f9c03f152cb901a3aa`) and the exact
-reviewed successor in `configs/recovery/pilot_chat_v1.json`. Named pilot launchers
-supply this option on explicit resume. Direct CLI equivalent:
+Resume uses the exact original checkpoint layout and hash-verified launch config,
+architecture and immutable input manifests. Conflicting canvas/configuration fails
+before model allocation; normal source/optimizer/runtime/phase/RNG checks remain.
+It does not consult a mutable handoff or scan for recent models.
 
-```sh
-ncm generator train --config configs/validation/generator_100_step_pilot.yaml --resume /ABS/2-STEP-RUN/checkpoints/current.json --recovery-compatibility pilot-chat-v1
-```
-
-The original clock-policy receipt is immutable and hash-pinned. Its older reviewed
-predecessor can use only the explicitly verified two-edge chain; there is no
-arbitrary source identity override. Old metadata/manifest/payload identities,
-every shard, model/data/codec/runtime/dtype/phase/training metadata, scheduler,
-optimizer moments/groups, RNG and cursor still pass normal strict checks.
-The source transition is recorded in the new attempt and never edits an original
-checkpoint. Goal/interval changes are existing config-only continuation controls;
-changing the held-out subset, data, learning rates or codec is not bypassed.
-
-The actual Spark checkpoint is not present locally and is untested here. Tiny
-pre-edit BF16 checkpoints were captured before source edits for genuine transition
-verification. Unsupported predecessors/contracts fail rather than restart weights.
+The historical `clock-policy-v1` and `pilot-chat-v1` receipts remain immutable. They
+approve only their recorded historical successors, not this scientific source
+change. No legacy training transition is approved here. An old-source recovery
+fails honestly: use a fresh experiment and rebuild matching prerequisites. Existing
+independent 1024 inference exports still reconstruct their explicit 1024 geometry.
+Same-source, same-size 2-to-100 continuation is tested with tiny CPU fixtures.
 
 ## Verification and interpretation
 
 ```sh
-python -m pytest -q tests/unit/test_pilot_chat.py tests/integration/test_chat_and_pilots.py
+python -m pytest -q tests/unit/test_canvas_presets.py tests/integration/test_canvas_pipeline.py tests/unit/test_pilot_chat.py tests/integration/test_chat_and_pilots.py
 python -m pytest -q
 ruff check .
 ```
@@ -150,3 +143,6 @@ dataset acquisition or Spark training is started during implementation.
 
 Primary library references: [Werkzeug serving](https://werkzeug.palletsprojects.com/en/stable/serving/)
 and [WSGI testing](https://werkzeug.palletsprojects.com/en/stable/test/).
+
+Current canvas verification and preserved failures are recorded in the
+[2026-11-04 validation receipt](configurable_canvas_validation_2026-11-04.json).

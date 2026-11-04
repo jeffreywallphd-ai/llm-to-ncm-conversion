@@ -92,3 +92,14 @@ that identity. Capacity distinguishes complete from bounded partial scans, eligi
 from selected train/dev, distinct positions from repeated exposures, and unknown
 from qualified. Both the wave and standalone teacher recompute the committed
 codec subset before allocating the teacher.
+
+## Per-canvas pilots
+
+Canvas-specific preparation keeps the 512-token prompt limit independent from
+answer capacity. Complete references include EOS; xsmall/8 fits seven content
+positions plus EOS. Capacity reports count source rows inspected, eligible pairs,
+exclusions, admitted split lengths and distinct supervised positions. Missing usable
+train/dev partitions block before frozen teacher allocation. Group split hashes do
+not depend on canvas. The per-size codec, normalization/scales and target manifests
+are rebuilt or reused only through sealed exact experiment receipts; no cache is
+cropped or relabeled. See [configurable canvas contracts](configurable_canvas.md).

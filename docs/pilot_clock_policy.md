@@ -146,3 +146,12 @@ RNG, global RNG, sampler/cursor and counters. Repeatable synthetic-transition te
 also check positive/negative cases. These are CPU software fixtures. No real model,
 corpus download, Spark/GPU training or reported-checkpoint execution occurred; no
 fit, convergence, quality or speed conclusion follows.
+
+## Configurable-canvas follow-up (2026-11-04)
+
+The results above are historical source-transition evidence. The canvas implementation
+retains disabled pilot clocks and active non-time safeguards, with experiment-scoped
+per-stage ledgers. It changes scientific source/geometry contracts and adds no reviewed
+legacy recovery edge. Historical clock/chat receipts do not approve this successor.
+Use a fresh matching experiment for old-source training checkpoints; existing independent
+inference exports keep their saved capacity. See [canvas contracts](configurable_canvas.md).

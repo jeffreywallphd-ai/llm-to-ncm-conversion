@@ -42,8 +42,13 @@ def test_named_pilots_preserve_training_contract_and_separate_handoffs():
     assert changed == {"steps", "validation_interval", "checkpoint_interval"}
     assert hundred["training"]["validation_interval"] == hundred["training"]["checkpoint_interval"] == 25
     assert hundred["training"]["max_validation_examples"] == 32
-    assert hundred["budget"] == old["budget"] and not hundred["budget"]["enforce_wall_time_limits"]
-    assert hundred["inputs"] == old["inputs"]
+    assert {k: v for k, v in hundred["budget"].items() if k != "phase_id"} == {
+        k: v for k, v in old["budget"].items() if k != "phase_id"
+    }
+    assert not hundred["budget"]["enforce_wall_time_limits"]
+    assert two["architecture"]["canvas"] == hundred["architecture"]["canvas"] == 64
+    assert old["architecture"]["canvas"] == 1024  # Explicit legacy procedure stays intact.
+    assert hundred["inputs"] != old["inputs"]
     assert hundred["output_ref"] != old["output_ref"]
     assert hundred["monitoring"]["sample_interval"] == 25 and hundred["monitoring"]["sample_prompts"] == 4
 
@@ -161,6 +166,7 @@ def test_launcher_never_starts_chat_after_unsuccessful_training(tmp_path, monkey
     path = tmp_path / "config.json"
     atomic_json(path, cfg)
     monkeypatch.setattr(pilot, "train_child", lambda *args: {"status": status})
+    monkeypatch.setattr(pilot, "verify_generator_inputs", lambda value: None)
     result = pilot.run_pilot(
         2, config_path=path, port=0, serve_fn=lambda **kwargs: pytest.fail("chat started")
     )
@@ -195,6 +201,34 @@ def test_hundred_steps_requires_deliberate_resume_or_fresh():
         pilot.run_pilot(100)
 
 
+@pytest.mark.parametrize(
+    "status", ["blocked", "failed", "cancelled", "incomplete", "budget_stopped", "unknown", None]
+)
+def test_zero_exit_is_not_semantic_stage_success(tmp_path, monkeypatch, status):
+    folder = tmp_path / "launcher"
+    folder.mkdir()
+    meter = Meter(Budget("semantic-status", max_storage_bytes=10000000), folder, tmp_path / "ledgers")
+
+    class Child:
+        pid = 12345
+        returncode = 0
+
+        def __init__(self, *args, stdout, **kwargs):
+            import json
+
+            stdout.write(json.dumps({"status": status}).encode())
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(pilot.subprocess, "Popen", Child)
+    try:
+        result = pilot.stage_child({}, folder, meter)
+        assert result["status"] == (status if status not in {"unknown", None} else "failed")
+    finally:
+        meter.close()
+
+
 def test_reviewed_recent_predecessor_needs_new_explicit_policy(tmp_path):
     previous = {"implementation_sha256": CHAT_PREDECESSOR, "model": "fixture", "phase_id": "same"}
     identity = native_identity(previous)
@@ -211,6 +245,6 @@ def test_reviewed_recent_predecessor_needs_new_explicit_policy(tmp_path):
     expected = {**previous, "implementation_sha256": implementation_hash()}
     with pytest.raises(ValueError, match="unreviewed implementation"):
         verify_recovery(reader, expected, "clock-policy-v1")
-    result = verify_recovery(reader, expected, CHAT_POLICY)
-    assert result["predecessor_implementation_sha256"] == CHAT_PREDECESSOR
-    assert len(result["reviewed_chain"]) == 1
+    # The historical receipt is immutable; this scientific source change is not approved by it.
+    with pytest.raises(ValueError, match="receipt does not approve"):
+        verify_recovery(reader, expected, CHAT_POLICY)

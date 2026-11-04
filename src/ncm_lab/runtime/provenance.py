@@ -8,12 +8,14 @@ import os
 from ncm_lab.runtime.io import root, write_json, read, digest, implementation_hash, atomic_json, reference
 from ncm_lab.runtime.budget import Budget, Meter
 from ncm_lab.runtime.doctor import doctor
+from ncm_lab.config.canvas import canvas_metadata
 
 
 class Run:
     def __init__(self, value, bound=None):
         self.id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:10]
         self.value = value
+        self.pending_artifact = None
         self.stage = value["stage"]
         self.started = time.perf_counter()
         if value.get("run_root"):
@@ -98,6 +100,8 @@ class Run:
             self.meter.close()
         summary = {
             **summary,
+            "canvas": canvas_metadata(self.value["architecture"]),
+            "experiment": self.value.get("experiment_context"),
             "status": status,
             "elapsed_seconds": time.perf_counter() - self.started,
             "charged_work": self.meter.used if self.meter else {},
@@ -122,10 +126,17 @@ class Run:
             },
             exclusive=True,
         )
+        if status == "completed" and self.pending_artifact:
+            atomic_json(root() / self.value["output_ref"], {
+                **reference(self.pending_artifact), "run": reference(self.path / "manifest.json")
+            })
         return {"run_id": self.id, "path": str(self.path), "status": status, **summary}
 
     def publish(self, artifact_manifest):
         if self.value.get("output_ref"):
+            if self.value.get("experiment_context"):
+                self.pending_artifact = artifact_manifest
+                return  # Only publish after completed run and hashes have been sealed.
             atomic_json(root() / self.value["output_ref"], reference(artifact_manifest))
 
 

@@ -113,3 +113,12 @@ failed run and report the actual blocker; do not freeze the backbone to claim fi
 
 Read-only TensorBoard monitoring, optional installation, canonical logs, samples,
 resume attempts and SSH viewing are documented in [monitoring](monitoring.md).
+
+## Canvas pilots
+
+The explicit 1024 feasibility procedure above remains a legacy experiment; it is
+not silently resized by the new default. Named pilots now default to medium/64.
+All five capacities retain pinned Qwen3-8B/full-backbone FP32-moment optimization,
+so smaller sequences do not remove the optimizer-state memory requirement. Use
+[canvas-qualified preparation and pilot commands](../README.md#configurable-canvas-sizes-and-100-step-pilots).
+All-size hardware/data/recovery feasibility and quality require operator measurements.
