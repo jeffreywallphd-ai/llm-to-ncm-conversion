@@ -232,3 +232,20 @@ Ruff passed. The current run also executes the earlier SQLite tests whose execut
 was waived at their original delivery. See
 [console validation](timer_status_validation_2026-11-04.json). An AST comparison
 confirms that no other implementation code changed, and README bytes match the base.
+
+## 2026-11-05 — Fixed-target unattended Stage 2
+
+Keep the 64-position geometry and Stage 1 objectives, selection and precision.
+Use 16,000 distinct training pairs, 200 dev pairs and 200 locked test pairs,
+with fixed 1,000/4,000 codec/generator updates. The single launcher keeps the
+codec gate and locked final evaluation; no intermediate review, override or
+step extension is part of Stage 2. A full run launches chat only after all
+training and evaluation children have exited and their results are verified.
+
+Keep pinned OASST as the default with the same group partition and exclude
+the standard Stage 1 locked test's groups from Stage 2 test selection. Offer
+the pinned Tülu short-answer slice as an explicit alternative rather than
+automatically changing the training source. Keep the 1,024-position Tülu wave
+and its distinct codec quota separate. Data qualification, finite work and
+resource gates remain in force. Existing manifests still require the exact
+implementation fingerprint; no historical attempts were changed.

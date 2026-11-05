@@ -11,7 +11,7 @@ from ncm_lab.data.artifacts import ArtifactWriter, LOCKED
 from ncm_lab.data.tokenization import prompt_tokens
 from ncm_lab.runtime.io import root, digest, canonical_hash, write_json, reference
 from ncm_lab.teacher.model import load_tokenizer, model_identity
-from ncm_lab.stage1.config import DataSettings, ACQUIRE
+from ncm_lab.stage1.config import DataSettings, Stage2DataSettings, ACQUIRE
 
 
 def normalized(text):
@@ -38,9 +38,34 @@ def stratified(rows, count, seed):
     return selected
 
 
+def partition(group, policy):
+    fraction = int(hashlib.sha256(f"{policy.split_seed}:{group}".encode()).hexdigest()[:16], 16) / 2**64
+    if fraction < policy.test_fraction:
+        return "test"
+    if fraction < policy.test_fraction + policy.dev_fraction:
+        return "dev"
+    return "train"
+
+
+def example_stats(items):
+    return {
+        "examples": len(items),
+        "unique_answer_positions": sum(len(e.answer_ids) for e in items),
+        "prompt_positions": sum(len(e.prompt_ids) for e in items),
+        "length_histogram": dict(Counter(str(len(e.answer_ids)) for e in items)),
+        "ids": [e.original_id for e in items],
+        "groups": sorted({e.group_id for e in items}),
+    }
+
+
 def prepare(run, value):
     settings = value["data"]
-    policy = DataSettings(**value["stage1_data"])
+    stage2 = value.get("stage1_context", {}).get("experiment_kind") == "stage2"
+    policy = (Stage2DataSettings if stage2 else DataSettings)(**value["stage1_data"])
+    if stage2 and settings.get("format") == "tulu_parquet":
+        from ncm_lab.data.sources.tulu import prepare_tulu
+
+        return prepare_tulu(run, value, stage2_policy=policy)
     if settings.get("format", "jsonl") not in {"jsonl", "oasst_parquet"}:
         raise ValueError(
             "Stage 1 uses the approved OASST or explicit approved JSONL source; no automatic Tulu substitution"
@@ -106,17 +131,7 @@ def prepare(run, value):
     assignments = {}
     for group in sorted(parents):
         canonical = find(group)
-        fraction = (
-            int(hashlib.sha256(f"{policy.split_seed}:{canonical}".encode()).hexdigest()[:16], 16) / 2**64
-        )
-        split = (
-            "test"
-            if fraction < policy.test_fraction
-            else "dev"
-            if fraction < policy.test_fraction + policy.dev_fraction
-            else "train"
-        )
-        assignments[group] = {"parent_group": canonical, "split": split}
+        assignments[group] = {"parent_group": canonical, "split": partition(canonical, policy)}
     for _, row in sorted(rows, key=lambda pair: pair[1]["original_id"]):
         prompt = prompt_tokens(tokenizer, row["prompt"])
         content = tokenizer.encode(row["answer"], add_special_tokens=False)
@@ -165,29 +180,17 @@ def prepare(run, value):
                 schema=LOCKED_SCHEMA if split == "test" else "native_answer_example_v1",
             )
         )
+    reserved_groups = set()
+    if stage2 and settings.get("format") == "oasst_parquet":
+        # Keep the group partition stable and reserve the standard Stage 1 test groups.
+        reserved_groups = {e.group_id for e in stratified(pools["test"], 200, 20261029)}
+        pools["test"] = [e for e in pools["test"] if e.group_id not in reserved_groups]
+        excluded["stage1_test_groups"] = len(reserved_groups)
     selected = {
         s: stratified(items, getattr(policy, s + "_examples"), policy.validation_seed)
         for s, items in pools.items()
     }
-
-    def stats(items):
-        return {
-            "examples": len(items),
-            "unique_answer_positions": sum(len(e.answer_ids) for e in items),
-            "prompt_positions": sum(len(e.prompt_ids) for e in items),
-            "length_histogram": dict(Counter(str(len(e.answer_ids)) for e in items)),
-            "ids": [e.original_id for e in items],
-            "groups": sorted({e.group_id for e in items}),
-        }
-
-    blockers = [
-        f"{s}: need {getattr(policy, s + '_examples')} distinct complete pairs, available {len(pools[s])}"
-        for s in pools
-        if len(selected[s]) < getattr(policy, s + "_examples")
-    ]
     report = {
-        "schema": "stage1_data_qualification_v1",
-        "policy": asdict(policy),
         **observations,
         "source_size_bytes": source_path.stat().st_size,
         "scan_cap_rows": settings["max_source_rows"],
@@ -196,12 +199,37 @@ def prepare(run, value):
         "canvas": value["architecture"]["canvas"],
         "excluded": dict(excluded),
         "group_assignments": assignments,
-        "natural_eligible_pool": {s: stats(items) for s, items in pools.items()},
-        "selected": {s: stats(items) for s, items in selected.items()},
+        "natural_eligible_pool": {s: example_stats(items) for s, items in pools.items()},
         "common_8_position_eligible_subset": {
-            s: stats([e for e in items if len(e.answer_ids) <= 8]) for s, items in pools.items()
+            s: example_stats([e for e in items if len(e.answer_ids) <= 8]) for s, items in pools.items()
         },
         "common_subset_note": "Report matched IDs when comparing sizes; differing natural eligibility pools do not isolate architectural effects.",
+    }
+    if stage2:
+        report["reserved_stage1_test_groups"] = sorted(reserved_groups)
+    identity = {
+        "model": model_identity(value["model"]),
+        "template_sha256": template,
+        "source_sha256": source_sha,
+        "canvas": value["architecture"]["canvas"],
+        "thinking": False,
+    }
+    return publish_qualified(run, policy, selected, report, identity)
+
+
+def publish_qualified(run, policy, selected, report, identity):
+    stage2 = isinstance(policy, Stage2DataSettings)
+    blockers = [
+        f"{split}: need {getattr(policy, split + '_examples')} distinct complete pairs, available "
+        f"{report['natural_eligible_pool'][split]['examples']}"
+        for split, examples in selected.items()
+        if len(examples) < getattr(policy, split + "_examples")
+    ]
+    report = {
+        "schema": "stage2_data_qualification_v1" if stage2 else "stage1_data_qualification_v1",
+        "policy": asdict(policy),
+        **report,
+        "selected": {split: example_stats(items) for split, items in selected.items()},
         "status": "blocked" if blockers else "qualified",
         "blockers": blockers,
         "diagnostic": policy.diagnostic,
@@ -210,20 +238,23 @@ def prepare(run, value):
     qualification = run.path / "qualification.json"
     write_json(qualification, report, exclusive=True)
     if blockers:
+        action = (
+            "Use a new experiment with the explicit alternate --source, after its assets are available."
+            if stage2
+            else "Supply an explicit approved --data-config during new planning; no quota/canvas changes are automatic."
+        )
         raise DataCapacityError(
-            "Stage 1 data capacity blocked before teacher allocation: "
+            f"Stage {'2' if stage2 else '1'} data capacity blocked before teacher allocation: "
             + "; ".join(blockers)
-            + f". Report: {qualification}. Supply an explicit approved --data-config during new planning; no quota/canvas changes are automatic."
+            + f". Report: {qualification}. {action}"
         )
     identity = {
-        "model": model_identity(value["model"]),
-        "template_sha256": template,
-        "source_sha256": source_sha,
-        "canvas": value["architecture"]["canvas"],
-        "thinking": False,
+        **identity,
         "stage1_split_policy": asdict(policy),
         "qualification_sha256": digest(qualification),
     }
+    if stage2:
+        identity["qualification_mode"] = "stage2_locked_short_answers_v1"
     identity["source_contract_sha256"] = canonical_hash(
         {**identity, "selected_ids": {s: [e.original_id for e in items] for s, items in selected.items()}}
     )

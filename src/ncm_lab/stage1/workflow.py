@@ -23,9 +23,10 @@ from ncm_lab.runtime.io import (
 )
 from ncm_lab.runtime.canvas_pipeline import exclusive_writer
 from ncm_lab.runtime.budget import Budget, Meter, BudgetStop
-from ncm_lab.stage1.config import STAGES, ACQUIRE
+from ncm_lab.stage1.config import STAGES, ACQUIRE, ACQUIRE_TULU, STAGE2_SCHEMA, report_stem
 
 SCHEMA = "stage1_experiment_v1"
+STAGE2_MANIFEST = "stage2_experiment_v1"
 DEPENDENCIES = {
     "prepare": (),
     "teacher": ("prepare",),
@@ -47,23 +48,37 @@ def checked(ref):
     return path
 
 
+def manifest_schema(settings):
+    return STAGE2_MANIFEST if settings["schema"] == STAGE2_SCHEMA else SCHEMA
+
+
 def plan(settings, experiment_dir=None):
-    source = root() / settings["stages"]["prepare"]["data"]["source_path"]
+    data = settings["stages"]["prepare"]["data"]
+    if data.get("format") == "tulu_parquet":
+        source_info = {
+            "format": "tulu_parquet",
+            "asset_ids": data["source_asset_ids"],
+            "scan_cap_rows": data["max_source_rows"],
+            "content_verified": False,
+        }
+    else:
+        source = root() / data["source_path"]
+        source_info = {
+            "exists": source.is_file(),
+            "declared_sha256": data.get("source_sha256"),
+            "size_bytes": source.stat().st_size if source.is_file() else None,
+            "content_verified": False,
+        }
     proposal = {
-        "schema": "stage1_plan_v1",
+        "schema": "stage2_plan_v1" if settings["schema"] == STAGE2_SCHEMA else "stage1_plan_v1",
         "canvas": settings["canvas"],
         "seed": settings["seed"],
         "contract_sha256": settings["contract_sha256"],
         "scientific_settings": settings,
         "qualification": "unknown until actual source scan/tokenization; not executable qualified evidence",
-        "source": {
-            "exists": source.is_file(),
-            "declared_sha256": settings["stages"]["prepare"]["data"].get("source_sha256"),
-            "size_bytes": source.stat().st_size if source.is_file() else None,
-            "content_verified": False,
-        },
+        "source": source_info,
         "work_disk_memory": "derived after qualification before teacher allocation; no full-model hashing or allocation in planning",
-        "missing_asset_instruction": ACQUIRE,
+        "missing_asset_instruction": ACQUIRE_TULU if data.get("format") == "tulu_parquet" else ACQUIRE,
         "training_clock_limits": "disabled",
         "research_work_started": False,
         "stage_order": list(STAGES),
@@ -78,7 +93,7 @@ def plan(settings, experiment_dir=None):
     write_json(folder / "configs/proposal.json", settings, exclusive=True)
     write_json(folder / "plan.json", proposal, exclusive=True)
     state = {
-        "schema": SCHEMA,
+        "schema": manifest_schema(settings),
         "experiment_id": folder.name,
         "repository_root": str(root()),
         "contract": reference(folder / "configs/proposal.json"),
@@ -98,9 +113,11 @@ def plan(settings, experiment_dir=None):
 def load(experiment):
     path = Path(experiment).resolve()
     state = read(path)
-    if state.get("schema") != SCHEMA or set(state.get("stages", {})) != set(STAGES):
-        raise ValueError("an explicit Stage 1 experiment manifest is required")
+    if state.get("schema") not in {SCHEMA, STAGE2_MANIFEST} or set(state.get("stages", {})) != set(STAGES):
+        raise ValueError("an explicit single-pass experiment manifest is required")
     settings = read(checked(state["contract"]))
+    if manifest_schema(settings) != state["schema"]:
+        raise ValueError("experiment manifest and recipe schema differ")
     checked(state["plan"])
     if settings["implementation_sha256"] != implementation_hash():
         raise ValueError(
@@ -111,6 +128,12 @@ def load(experiment):
         != settings["contract_sha256"]
     ):
         raise ValueError("Stage 1 proposed scientific contract changed")
+    if state["schema"] == STAGE2_MANIFEST and (
+        state.get("targets")
+        != {n: settings["stages"][n]["training"]["steps"] for n in ("codec", "generator")}
+        or state.get("codec_review_override") is not None
+    ):
+        raise ValueError("Stage 2 requires its codec gate and the original fixed training targets")
     return path, state, settings
 
 
@@ -119,6 +142,9 @@ def configuration(name, path, state, settings):
     if name == "prepare":
         value = deepcopy(settings["stages"][name])
         rows = value["data"]["max_source_rows"]
+        tulu = value["data"].get("format") == "tulu_parquet"
+        if tulu:
+            rows += value["data"]["overlap"].get("max_source_rows", 0)
         from dataclasses import asdict
 
         cap = int(
@@ -133,6 +159,14 @@ def configuration(name, path, state, settings):
                 max_phase_steps=(rows + 1) * settings["resources"]["retry_allowance"],
                 max_source_tokens=cap,
                 max_phase_source_tokens=cap * settings["resources"]["retry_allowance"],
+                **(
+                    {
+                        "max_answer_positions": cap,
+                        "max_phase_answer_positions": cap * settings["resources"]["retry_allowance"],
+                    }
+                    if tulu
+                    else {}
+                ),
                 max_storage_bytes=settings["resources"]["max_retained_bytes"],
                 max_phase_storage_bytes=settings["resources"]["max_phase_retained_bytes"],
             )
@@ -174,6 +208,8 @@ def configuration(name, path, state, settings):
         if name in {"targets", "generator", "evaluate"}
         else None,
     }
+    if settings["schema"] == STAGE2_SCHEMA:
+        value["stage1_context"]["experiment_kind"] = "stage2"
     if name in {"codec", "generator"}:
         value["training"]["steps"] = state["targets"][name]
     return value
@@ -495,8 +531,11 @@ def reports(path, state, settings):
     complete = state["status"] == "completed" and all(
         v["status"] == "completed" for v in state["stages"].values()
     )
+    stage2 = settings["schema"] == STAGE2_SCHEMA
+    stem = report_stem(settings)
+    diagnostic = settings["qualification"]["diagnostic"]
     report = {
-        "schema": "stage1_summary_v1",
+        "schema": f"{stem}_v1",
         "experiment": str(path),
         "status": state["status"],
         "workflow_completed": complete,
@@ -531,7 +570,7 @@ def reports(path, state, settings):
         "origin": "software_fixture"
         if settings["stages"]["generator"]["model"].get("fixture")
         else "real_model",
-        "diagnostic_not_standard_stage1": settings["qualification"]["diagnostic"],
+        ("diagnostic_not_standard_stage2" if stage2 else "diagnostic_not_standard_stage1"): diagnostic,
     }
     if not report["qualification"] and isinstance(state.get("failure"), dict):
         qualification = state["failure"].get("result", {}).get("qualification")
@@ -549,9 +588,9 @@ def reports(path, state, settings):
     report["all_fixed_development_samples"] = samples
     folder = path.parent / "reports"
     folder.mkdir(exist_ok=True)
-    atomic_json(folder / "stage1_summary.json", report)
+    atomic_json(folder / f"{stem}.json", report)
     lines = [
-        "# Stage 1 single-pass experiment",
+        f"# Stage {2 if stage2 else 1} single-pass experiment",
         "",
         f"Status: **{state['status']}**. Workflow completed: **{complete}**.",
         "",
@@ -560,9 +599,9 @@ def reports(path, state, settings):
         "| Stage | Status | Completed updates | Selected update |",
         "|---|---|---:|---:|",
     ]
-    if report["diagnostic_not_standard_stage1"]:
+    if diagnostic:
         lines[4:4] = [
-            "**Reduced-data diagnostic: not the standard Stage 1 experiment or generalization evidence.**",
+            f"**Reduced-data diagnostic: not the standard Stage {2 if stage2 else 1} experiment or generalization evidence.**",
             "",
         ]
     for name in STAGES:
@@ -624,10 +663,10 @@ def reports(path, state, settings):
     ]
     if state.get("failure"):
         lines += ["", "Failure/review details: " + str(state["failure"])]
-    (folder / "stage1_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (folder / f"{stem}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return {
-        "json": reference(folder / "stage1_summary.json"),
-        "markdown": reference(folder / "stage1_summary.md"),
+        "json": reference(folder / f"{stem}.json"),
+        "markdown": reference(folder / f"{stem}.md"),
     }
 
 
@@ -641,6 +680,8 @@ def run(
     extend_generator_steps=None,
 ):
     path, state, settings = load(experiment)
+    if settings["schema"] == STAGE2_SCHEMA and (allow_codec_review or extend_generator_steps is not None):
+        raise ValueError("Stage 2 requires its codec gate and the original fixed generator target")
     if stage not in {*STAGES, "all"}:
         raise ValueError("unknown Stage 1 stage")
     if allow_codec_review and not reason:
@@ -660,6 +701,7 @@ def run(
         ):
             raise ValueError("explicit Stage 1 recovery component/selection policy mismatch")
     with exclusive_writer(path.parent / "execution.lock"):
+        _, state, settings = load(path)
         original_state = canonical_hash(state)
         if extend_generator_steps is not None:
             if (
@@ -847,8 +889,12 @@ def run(
             "status": "already_completed" if len(already) == len(requested) else state["status"],
             "experiment": str(path),
             "stages": {n: e["status"] for n, e in state["stages"].items()},
-            "report": str(path.parent / "reports/stage1_summary.md"),
-            **({"asset_acquisition_if_missing": ACQUIRE} if state.get("failure") else {}),
+            "report": str(path.parent / "reports" / f"{report_stem(settings)}.md"),
+            **(
+                {"asset_acquisition_if_missing": read(checked(state["plan"]))["missing_asset_instruction"]}
+                if state.get("failure")
+                else {}
+            ),
             "failure": (
                 {
                     "stage": state["failure"].get("stage"),

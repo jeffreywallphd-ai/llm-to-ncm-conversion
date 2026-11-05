@@ -1,5 +1,21 @@
 # Native implementation status
 
+## Stage 2 unattended workflow — 2026-11-05
+
+The Stage 2 launcher composes the six native stages at fixed 64-position
+geometry, with 16,000 train / 200 dev / 200 locked test pairs, a 1,000-update
+FP32 codec and a 4,000-update BF16 generator. It enforces the existing codec
+gate, runs final evaluation, and starts the bounded loopback chatbot on the
+verified selected export. It can reuse completed stages via its exact
+manifest. The README covers pinned OASST and the explicit bounded Tülu option.
+
+Verification: **466 passed, 1 CUDA-only skip** in the full suite; Ruff passed.
+A separate tiny CPU run completed the single launcher through real loopback
+chat startup on the selected export and bounded shutdown.
+
+Production data capacity, Spark memory and recovery, runtime, and quality
+remain unverified. No research run was started for this implementation.
+
 ## Stage 1 console correction — 2026-11-04
 
 Removed the shared child runner's 15-second timer-only status output. Initial stage

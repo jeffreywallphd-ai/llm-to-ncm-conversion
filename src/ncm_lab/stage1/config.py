@@ -3,6 +3,7 @@
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import ClassVar
 from ncm_lab.config.canvas import resolve_canvas, canvas_metadata, validate_production
 from ncm_lab.config.stages import config
 from ncm_lab.runtime.io import read, root, canonical_hash, implementation_hash
@@ -10,10 +11,18 @@ from ncm_lab.stage1.policy import SCHEMA, Policy, GENERATOR_SELECTION, CODEC_SEL
 
 STAGES = ("prepare", "teacher", "codec", "targets", "generator", "evaluate")
 ACQUIRE = "ncm prepare --config configs/validation/real_pilot.yaml"
+ACQUIRE_TULU = "ncm prepare --config configs/preparation/tulu3_sources.yaml"
+STAGE2_SCHEMA = "stage2_single_pass_v1"
+STAGE2_TULU_ROWS = 400_000
+
+
+def report_stem(settings):
+    return "stage2_summary" if settings["schema"] == STAGE2_SCHEMA else "stage1_summary"
 
 
 @dataclass(frozen=True)
 class DataSettings:
+    standard_quotas: ClassVar[tuple] = (2000, 200, 200)
     train_examples: int = 2000
     dev_examples: int = 200
     test_examples: int = 200
@@ -39,12 +48,15 @@ class DataSettings:
             and self.dev_fraction + self.test_fraction < 1
         ):
             raise ValueError("nonempty group partition fractions required")
-        if not self.diagnostic and (self.train_examples, self.dev_examples, self.test_examples) != (
-            2000,
-            200,
-            200,
+        if (
+            not self.diagnostic
+            and (self.train_examples, self.dev_examples, self.test_examples) != self.standard_quotas
         ):
-            raise ValueError("reduced data requires diagnostic: true; not the standard Stage 1 result")
+            raise ValueError("nonstandard quotas require diagnostic: true")
+
+
+class Stage2DataSettings(DataSettings):
+    standard_quotas = (16000, 200, 200)
 
 
 @dataclass(frozen=True)
@@ -70,18 +82,34 @@ class Resources:
 
 
 def resolve(
-    path=None, *, canvas_size=None, seed=None, data_config=None, codec_steps=None, generator_steps=None
+    path=None,
+    *,
+    canvas_size=None,
+    seed=None,
+    data_config=None,
+    codec_steps=None,
+    generator_steps=None,
+    stage2_source=None,
 ):
     path = Path(path or root() / "configs/stage1/experiment.yaml").resolve()
     value = read(path)
     allowed = {"schema", "canvas_size", "seed", "stages", "qualification", "resources", "notes"}
-    if set(value) - allowed or value.get("schema") != SCHEMA or set(value.get("stages", {})) != set(STAGES):
-        raise ValueError("typed Stage 1 experiment schema and all six stage configs required")
+    schema = value.get("schema")
+    if (
+        set(value) - allowed
+        or schema not in {SCHEMA, STAGE2_SCHEMA}
+        or set(value.get("stages", {})) != set(STAGES)
+    ):
+        raise ValueError("typed single-pass experiment schema and all six stage configs required")
+    stage2 = schema == STAGE2_SCHEMA
+    if stage2_source is not None and (not stage2 or stage2_source not in {"oasst", "tulu"}):
+        raise ValueError("choose a supported source on a Stage 2 recipe")
     selected = resolve_canvas(canvas_size if canvas_size is not None else value.get("canvas_size", "medium"))
     selected_seed = seed if seed is not None else value.get("seed", 17)
     if type(selected_seed) is not int or selected_seed < 0:
         raise ValueError("training seed must be a nonnegative integer")
-    qualification = asdict(DataSettings(**value.get("qualification", {})))
+    data_settings = Stage2DataSettings if stage2 else DataSettings
+    qualification = asdict(data_settings(**value.get("qualification", {})))
     resources = asdict(Resources(**value.get("resources", {})))
     stages = {}
     for name, filename in value["stages"].items():
@@ -95,6 +123,9 @@ def resolve(
             raise ValueError("--data-config must be an approved native data configuration")
         stages["prepare"]["data"] = other["data"]
     model = stages["generator"]["model"]
+    if stage2_source == "tulu":
+        data = config("configs/data/tulu3_extension.yaml", _bind_canvas=False)["data"]
+        stages["prepare"]["data"] = {**data, "max_source_rows": STAGE2_TULU_ROWS, "max_answer_tokens": 64}
     base_architecture = __import__("ncm_lab.config.architecture", fromlist=["Architecture"]).Architecture(
         **stages["generator"]["architecture"]
     )
@@ -121,6 +152,46 @@ def resolve(
             stages[name]["training"]["steps"] = override
     if stages["generator"]["training"]["steps"] > resources["max_generator_steps"]:
         raise ValueError("generator target exceeds the explicit finite extension ceiling")
+    if stage2:
+        if selected.positions != 64:
+            raise ValueError("Stage 2 requires the 64-position canvas")
+        if not model.get("fixture"):
+            if qualification["diagnostic"]:
+                raise ValueError("production Stage 2 requires 16,000/200/200 qualified pairs")
+            if (
+                qualification["split_seed"],
+                qualification["dev_fraction"],
+                qualification["test_fraction"],
+            ) != (17, 0.15, 0.15):
+                raise ValueError("production Stage 2 retains the standard Stage 1 group split")
+            if (
+                stages["codec"]["training"]["steps"],
+                stages["codec"]["training"]["batch_size"],
+                stages["codec"]["training"]["accumulation"],
+                stages["generator"]["training"]["steps"],
+                stages["generator"]["training"]["batch_size"],
+                stages["generator"]["training"]["accumulation"],
+                resources["max_generator_steps"],
+            ) != (1000, 4, 4, 4000, 1, 8, 4000):
+                raise ValueError(
+                    "production Stage 2 requires 1,000 codec (4 × 4) and 4,000 generator (1 × 8) updates"
+                )
+            expected_data = (
+                {
+                    **config("configs/data/tulu3_extension.yaml", _bind_canvas=False)["data"],
+                    "max_source_rows": STAGE2_TULU_ROWS,
+                    "max_answer_tokens": 64,
+                }
+                if stage2_source == "tulu"
+                else config("configs/stage1/prepare.yaml", _bind_canvas=False)["data"]
+            )
+            if stages["prepare"]["data"] != expected_data:
+                raise ValueError(
+                    "production Stage 2 requires the pinned OASST or explicit pinned Tülu recipe"
+                )
+        data = stages["prepare"]["data"]
+        if data.get("format") == "tulu_parquet" and data.get("max_answer_tokens") != 64:
+            raise ValueError("Stage 2 Tülu requires the complete short-answer cohort")
     if any(
         stages[n]["dtype"] != dtype
         for n, dtype in (
@@ -138,7 +209,7 @@ def resolve(
         raise ValueError("Stage 1 admits complete references only; overlength must be exclude")
     stages["prepare"]["data"]["seed"] = qualification["split_seed"]
     settings = {
-        "schema": SCHEMA,
+        "schema": schema,
         "canvas": canvas_metadata(architecture),
         "seed": selected_seed,
         "qualification": qualification,

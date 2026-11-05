@@ -12,7 +12,7 @@ from ncm_lab.data.tokenization import validated_messages, prompt_tokens
 from ncm_lab.data.selection import band, fair_rows, rank
 from ncm_lab.data.language import EnglishFilter
 from ncm_lab.data.capacity import create_capacity
-from ncm_lab.runtime.io import root, read, canonical_hash, atomic_json, reference
+from ncm_lab.runtime.io import root, read, canonical_hash, atomic_json, reference, disk_path
 from ncm_lab.teacher.model import load_tokenizer, model_identity
 
 DATASET = "allenai/tulu-3-sft-mixture"
@@ -213,12 +213,16 @@ def overlap_index(database, settings, tokenizer, run):
     }
 
 
-def prepare_tulu(run, value):
+def prepare_tulu(run, value, *, stage2_policy=None):
     import pyarrow.parquet as pq
 
     settings = value["data"]
     validate_limits(settings)
-    if not value["model"].get("fixture") and settings["codec_minimum_answer_positions"] < 10000000:
+    if (
+        stage2_policy is None
+        and not value["model"].get("fixture")
+        and settings["codec_minimum_answer_positions"] < 10000000
+    ):
         raise ValueError("real extension requires at least 10M distinct codec training positions")
     if (
         settings["max_examples"] > 1000000
@@ -257,7 +261,7 @@ def prepare_tulu(run, value):
     ):
         raise ValueError("versioned pinned component policy required")
     (run.path / "artifacts").mkdir(exist_ok=True)
-    database = sqlite3.connect(run.path / "artifacts/preparation.sqlite")
+    database = sqlite3.connect(disk_path(run.path / "artifacts/preparation.sqlite"))
     database.execute("PRAGMA cache_size=-4096")
     database.execute("PRAGMA temp_store=FILE")
     database.execute(
@@ -272,7 +276,11 @@ def prepare_tulu(run, value):
         "source_inventory": inventory,
         "admission_order": ADMISSION_ORDER,
     }
-    overlap = overlap_index(database, settings, tokenizer, run)
+    try:
+        overlap = overlap_index(database, settings, tokenizer, run)
+    except BaseException:
+        database.close()
+        raise
     normalized_settings = {
         k: v
         for k, v in settings.items()
@@ -412,6 +420,11 @@ def prepare_tulu(run, value):
                         "preprocessing_sha256": identity["preprocessing_sha256"],
                         "eos_ids": [eos],
                     }
+                    if stage2_policy is not None:
+                        provenance.update(
+                            prompt_text="\n".join(f"{m['role']}: {m['content']}" for m in context),
+                            reference_text=answer,
+                        )
                     payload = {
                         "original_id": original_id,
                         "group_id": node,
@@ -430,9 +443,16 @@ def prepare_tulu(run, value):
                             original_id,
                             node,
                             "",
-                            band(len(target)),
+                            (len(target) - 1).bit_length()
+                            if stage2_policy is not None
+                            else band(len(target)),
                             source,
-                            rank(original_id, settings["seed"]),
+                            rank(
+                                original_id,
+                                stage2_policy.validation_seed
+                                if stage2_policy is not None
+                                else settings["seed"],
+                            ),
                             json.dumps(payload),
                             len(prompt) + len(target),
                         ),
@@ -444,17 +464,25 @@ def prepare_tulu(run, value):
                 break
         scan["complete"] = scan["rows_read"] == total_rows
         scan["release_rows"] = total_rows
+        if stage2_policy is not None:
+            from ncm_lab.stage1.data import partition
+            from ncm_lab.stage2.data import publish_tulu
+
         for key, node in database.execute("SELECT key,node FROM rows ORDER BY key"):
             run.meter.check()
             group = groups.find(node)
             split = (
-                "dev"
+                partition(group, stage2_policy)
+                if stage2_policy is not None
+                else "dev"
                 if int(rank(group, settings["seed"])[:16], 16) / 2**64 < settings["dev_fraction"]
                 else "train"
             )
             database.execute("UPDATE rows SET node=?,split=? WHERE key=?", (group, split, key))
         database.execute("CREATE INDEX ranked ON rows(split,band,source,rank,key)")
         database.commit()
+        if stage2_policy is not None:
+            return publish_tulu(run, database, stage2_policy, scan, identity)
         scan["eligible"] = {
             s: {
                 "examples": database.execute("SELECT count(*) FROM rows WHERE split=?", (s,)).fetchone()[0],
@@ -548,5 +576,7 @@ def prepare_tulu(run, value):
             "blockers": report["blockers"],
         }
     finally:
-        atomic_json(run.path / "artifacts/scan.json", scan)
-        database.close()
+        try:
+            atomic_json(run.path / "artifacts/scan.json", scan)
+        finally:
+            database.close()

@@ -40,7 +40,7 @@ ncm prepare --config configs/validation/real_pilot.yaml --plan-only
 ncm prepare --config configs/validation/real_pilot.yaml
 ```
 
-Pilots and Stage 1 require these local assets. They stop if verification fails;
+Pilots and the staged experiments require these local assets. They stop if verification fails;
 their preparation steps do not silently download replacements.
 
 ## Tests and CPU diagnostics
@@ -58,6 +58,7 @@ For narrower checks, choose the relevant command:
 |---|---|
 | Unit tests | `python -m pytest -q tests/unit` |
 | Stage 1 qualification, selection, recovery and literal README Bash workflow | `python -m pytest -q tests/unit/test_stage1_policy.py tests/unit/test_stage1_data.py tests/integration/test_stage1_workflow.py tests/integration/test_stage1_bash.py` |
+| Stage 2 planning, data gates and unattended training to chat | `python -m pytest -q tests/unit/test_stage2_config.py tests/integration/test_stage2_workflow.py` |
 | Optimizer precision and exact recovery/lifetime | `python -m pytest -q tests/unit/test_optimizer_precision.py tests/integration/test_optimizer_recovery.py` |
 | Canvas sizes, pilot launch and chatbot | `python -m pytest -q tests/unit/test_canvas_presets.py tests/integration/test_canvas_pipeline.py tests/unit/test_pilot_chat.py tests/integration/test_chat_and_pilots.py` |
 | TensorBoard events, HTTP and replay | `python -m pytest -q tests/integration/test_monitoring_tensorboard.py tests/integration/test_replay_corrections.py` |
@@ -287,6 +288,55 @@ new-run settings. Stage 1 disables execution clocks while retaining elapsed
 observations and finite work/storage/I/O caps derived after data qualification.
 See the [Stage 1 guide](docs/stage1.md) for independent stage configs, resource
 requirements, review overrides, total-step extension and the isolated overfit diagnostic.
+
+## Stage 2 single-pass experiment — run everything and launch chat
+
+Stage 2 keeps the **medium 64-position canvas** (up to 63 answer tokens plus EOS)
+and starts from the pinned Qwen3-8B initialization. It requires **16,000 distinct
+training pairs, 200 dev pairs and 200 locked test pairs**. The FP32 codec runs
+1,000 updates (batch 4 × accumulation 4); the BF16 generator runs 4,000 updates
+(batch 1 × accumulation 8, two nominal passes over the training set).
+
+From the Spark environment in [Setup](#setup), run the full experiment on pinned
+OASST:
+
+```sh
+python -u scripts/run_stage2.py --execute
+```
+
+OASST capacity is unverified. To start with the larger corpus instead, explicitly
+stage the pinned Tülu assets once, then run the same experiment on its bounded
+short-answer cohort:
+
+```sh
+ncm prepare --config configs/preparation/tulu3_sources.yaml &&
+python -u scripts/run_stage2.py --source tulu --execute
+```
+
+The launcher qualifies the chosen source, extracts teacher features, fits and
+checks the codec, caches targets, trains the generator, evaluates the selected
+export on the locked test, then serves that export in chat. There are no scheduled
+pauses. Failed data, codec or resource checks stop the workflow without switching
+sources or reducing the target. A failed codec gate cannot be overridden in
+Stage 2. Elapsed time is recorded; training clocks are
+disabled, and finite work, storage and checkpoint-write limits still apply.
+The one-to-two-day runtime is a planning target; Spark runtime is unmeasured.
+
+For an offline preview, run `python -u scripts/run_stage2.py --plan-only` (add
+`--source tulu` for Tülu). The launcher prints the new manifest path and writes
+the final report under `reports/stage2_summary.md` in the experiment directory.
+Resume an interrupted run, or reopen chat after a completed run, with:
+
+```sh
+python -u scripts/run_stage2.py --resume /ABS/EXISTING/EXPERIMENT/manifest.json --execute
+```
+
+Open the printed chat URL (by default [http://127.0.0.1:7860](http://127.0.0.1:7860)).
+For remote Spark, forward that port with SSH (for example,
+`ssh -N -L 7860:127.0.0.1:7860 USER@SPARK_HOST`). Ctrl+C closes the foreground
+server; use `--chat-port 0` if the default port is occupied. See the
+[Stage 2 Codex prompt](docs/CODEX_STAGE2_EXPERIMENTS_PROMPT.md) for source,
+evaluation and verification details.
 
 ## Monitoring and testing an export
 

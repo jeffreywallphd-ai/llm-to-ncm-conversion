@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 from ncm_lab.config.canvas import add_canvas_argument, resolve_canvas
 from ncm_lab.stage1.config import resolve, STAGES
+from ncm_lab.stage1.policy import SCHEMA
 from ncm_lab.stage1.workflow import plan, load, run
 
 
@@ -62,6 +63,8 @@ def main(argv=None, *, fixed_stage=None):
                     "configuration/data/step overrides apply only when planning a NEW experiment; existing manifests retain their settings"
                 )
             path, state, settings = load(experiment)
+            if settings["schema"] != SCHEMA:
+                raise ValueError("use scripts/run_stage2.py for a Stage 2 manifest")
             if (
                 args.canvas_size is not None
                 and resolve_canvas(args.canvas_size).positions != settings["canvas"]["positions"]
@@ -111,6 +114,8 @@ def main(argv=None, *, fixed_stage=None):
                 codec_steps=args.codec_steps,
                 generator_steps=args.generator_steps,
             )
+            if settings["schema"] != SCHEMA:
+                raise ValueError("use scripts/run_stage2.py for a Stage 2 recipe")
             proposal = plan(settings, args.experiment_dir)
             if args.execute:
                 result = run(proposal["experiment"], stage=stage)
