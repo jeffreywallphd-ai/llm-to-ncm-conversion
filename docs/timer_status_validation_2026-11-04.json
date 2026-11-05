@@ -1,0 +1,164 @@
+{
+  "schema": "stage1_console_correction_validation_v1",
+  "date": "2026-11-04",
+  "base_commit": "0e277a86176b1bdced93fb4e9f28db8c0a3084c8",
+  "implementation_sha256": "cc39b44ff99b773732b51c6990cf58d0f677cab18e044b73267abd3fbab9237a",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "win32",
+    "pytest": "9.0.2",
+    "ruff": "0.14.14",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.15.0",
+    "pyarrow": "23.0.0",
+    "tensorboard": "2.20.0"
+  },
+  "source_audit": {
+    "base_commit": "0e277a86176b1bdced93fb4e9f28db8c0a3084c8",
+    "predecessor_implementation_sha256": "8fc6a30cd225184134a572c57b4a88aff80526165e1051e6b084ed72281350df",
+    "successor_implementation_sha256": "cc39b44ff99b773732b51c6990cf58d0f677cab18e044b73267abd3fbab9237a",
+    "only_changed_package_file": "src/ncm_lab/stage1/workflow.py",
+    "ast_change": "Only replace timer bookkeeping with offset=0 and delete the timer-only print condition; all other AST nodes equal.",
+    "readme_bytes_unchanged": true
+  },
+  "behavior": "The shared execute_child runner emits no timer-only liveness text. Its start banner, real worker stderr forwarding, output offset/final drain, polling/backoff, resource checks, cleanup, exit/checkpoint capture and machine-result validation remain intact.",
+  "checks": [
+    {
+      "name": "focused-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit/test_stage1_console.py",
+        "tests/unit/test_stage1_policy.py",
+        "tests/integration/test_stage1_workflow.py::test_controller_cancellation_stops_only_owned_child_and_saves_partial_report",
+        "tests/integration/test_stage1_workflow.py::test_child_failure_stops_dependencies_and_saves_partial_report",
+        "--basetemp=.cache/timer-status-validation/focused-1"
+      ],
+      "seconds_cap": 180,
+      "status": "finished",
+      "implementation_sha256": "cc39b44ff99b773732b51c6990cf58d0f677cab18e044b73267abd3fbab9237a",
+      "exit_code": 0,
+      "elapsed_seconds": 26.04700000002049,
+      "summary": "44 passed in 7.57s",
+      "log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\timer-status-validation\\focused-1.txt",
+      "log_sha256": "e684eeda676057954c50f4512b98eae420d735ed47ca96e6b96d05b7209fb613"
+    },
+    {
+      "name": "full-1",
+      "command": [
+        ".venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "-q",
+        "--basetemp=.cache/timer-status-validation/full-1",
+        "--junitxml=.cache/timer-status-validation/full-1-junit.xml"
+      ],
+      "seconds_cap": 2400,
+      "status": "finished",
+      "implementation_sha256": "cc39b44ff99b773732b51c6990cf58d0f677cab18e044b73267abd3fbab9237a",
+      "exit_code": 0,
+      "elapsed_seconds": 847.3909999998286,
+      "summary": "459 passed, 1 skipped in 842.36s (0:14:02)",
+      "log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\timer-status-validation\\full-1.txt",
+      "log_sha256": "2af087517a0fda586277d8c357a911e13911992f5dabbe825efe59af043d9620"
+    },
+    {
+      "name": "ruff",
+      "command": [
+        ".venv/Scripts/ruff.exe",
+        "check",
+        "."
+      ],
+      "seconds_cap": 60,
+      "status": "finished",
+      "implementation_sha256": "cc39b44ff99b773732b51c6990cf58d0f677cab18e044b73267abd3fbab9237a",
+      "exit_code": 0,
+      "elapsed_seconds": 0.0940000000409782,
+      "summary": null,
+      "log": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\timer-status-validation\\ruff.txt",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    }
+  ],
+  "junit": {
+    "path": "C:\\ai-projects\\llm-to-ncm-conversion\\.cache\\timer-status-validation\\full-1-junit.xml",
+    "sha256": "e67861fdc09856ecd5cedd62b78a357654783a00b6ae9518a91eef79ffd36d48",
+    "testcases": 460,
+    "skipped": [
+      {
+        "classname": "tests.cuda.test_native_cuda",
+        "name": "test_tiny_native_cuda_kernel_forward_backward",
+        "time": "0.000",
+        "reason": "CUDA is not available; no real-8B validation implied"
+      }
+    ]
+  },
+  "coverage": {
+    "test_stage1_console": {
+      "testcases": 16,
+      "passed": 16,
+      "skipped": 0
+    },
+    "test_stage1_bash": {
+      "testcases": 8,
+      "passed": 8,
+      "skipped": 0
+    },
+    "test_stage1_workflow": {
+      "testcases": 17,
+      "passed": 17,
+      "skipped": 0
+    },
+    "test_stage1_preparation_sqlite": {
+      "testcases": 4,
+      "passed": 4,
+      "skipped": 0
+    },
+    "test_optimizer_recovery": {
+      "testcases": 11,
+      "passed": 11,
+      "skipped": 0
+    },
+    "test_monitoring_tensorboard": {
+      "testcases": 6,
+      "passed": 6,
+      "skipped": 0
+    },
+    "test_replay_corrections": {
+      "testcases": 4,
+      "passed": 4,
+      "skipped": 0
+    }
+  },
+  "fixture_scope": "New console tests use mocked owned subprocesses/clocks, including more than 7200 simulated seconds with no real interval waits. The full suite also executes existing bounded tiny CPU training, sealed artifacts, exact recovery, all/wrapper routes, TensorBoard events/HTTP and SQLite lifecycle checks. Fixtures are not research or hardware evidence.",
+  "offline_allowance": {
+    "max_seconds": 7200,
+    "reserved_seconds": 2640,
+    "max_retained_bytes": 3000000000,
+    "retained_bytes": 604365594
+  },
+  "compatibility": {
+    "source_hash_changed": true,
+    "stage1_old_manifest_rejected": true,
+    "compatibility_bypass_added": false,
+    "historical_pilot_receipts_changed": false,
+    "operator_procedure": "Keep existing experiments on their exact matching checkout and Python environment for completion/resume. Do not change hashes, remove locks, discard or restart an active run to change output; use updated code separately for future experiments. Loaded processes are not hot-updated."
+  },
+  "unchanged": [
+    "README bytes and combined Bash block",
+    "SQLite preparation fix",
+    "Scientific settings, model/data/precision/loss/optimizer/RNG behavior",
+    "Training-step reporting and monitoring cadence",
+    "Elapsed observations and canonical metrics/events/TensorBoard",
+    "Historical logs, results, checkpoints and locks",
+    "Finite non-time limits and disabled Stage 1 execution clocks"
+  ],
+  "not_performed": [
+    "Research downloads",
+    "Real-model training or GPU/Spark validation",
+    "Active experiment interruption or restart",
+    "Editing historical results/manifests",
+    "Installing dependencies or changing CUDA environment"
+  ]
+}

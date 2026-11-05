@@ -430,7 +430,7 @@ def execute_child(value, attempt, path, state, settings, resume_checkpoint=None)
             {"pid": child.pid, "command": command, "execution_deadline": None},
             exclusive=True,
         )
-        offset, last_message = 0, time.monotonic()
+        offset = 0
         try:
             while child.poll() is None:
                 with (attempt / "stderr.log").open("rb") as stream:
@@ -444,12 +444,6 @@ def execute_child(value, attempt, path, state, settings, resume_checkpoint=None)
                     > settings["resources"]["max_controller_bytes"]
                 ):
                     raise BudgetStop("Stage 1 retained child-log allowance exhausted")
-                if time.monotonic() - last_message >= 15:
-                    print(
-                        f"{name}: process active; elapsed time observed, no clock deadline. Logs: {attempt}",
-                        flush=True,
-                    )
-                    last_message = time.monotonic()
                 time.sleep(0.2)
         finally:
             stop_child(child)

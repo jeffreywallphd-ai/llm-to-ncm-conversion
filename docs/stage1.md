@@ -197,6 +197,18 @@ must identify verified recovery inside that exact experiment. Source, geometry,
 codec, precision, reductions, selection, batching and implementation remain strict.
 No new legacy checkpoint compatibility bridge is introduced.
 
+The timer-only console correction also changes the implementation hash, despite
+leaving numerical behavior unchanged. Updated resume code rejects manifests/recovery
+checkpoints from a different saved implementation; the historical pilot compatibility
+options do not cover Stage 1. The package-wide hash also guards recovery in the other
+training workflows; no new compatibility approval is added. Keep an existing
+experiment and its exact matching checkout and Python environment to finish or
+resume it with the command above. Do not edit
+saved hashes, remove locks, or discard/restart a run merely to change its console
+output. Already-running processes keep their loaded code; newly started experiments
+use the quiet waiting behavior below. Do not replace the checkout used by an active
+experiment; keep it pinned and use a separate updated checkout for future work.
+
 The initial generator target remains 500. Before locked evaluation has started, an
 explicit operator may extend the **total** target within the predeclared 1,000-step
 resource ceiling, preserving input identities, optimizer state and phase charges:
@@ -243,8 +255,11 @@ allowance; each new admission checks current free disk again. It does not promis
 that every retry fits simultaneously within the first-attempt estimate.
 
 Console lines identify phase, completed updates, loss components, gradient norm,
-exposures, selected step and available host memory. Long phases print an elapsed
-heartbeat with log location, not invented progress. Full stdout/stderr, native runs,
+exposures, selected step and available host memory. Stage 1 reports actual progress
+and major state changes, without periodic "still running" messages. An operation
+may be quiet until the next meaningful event; silence alone establishes neither
+progress nor a stall. Detailed diagnostics remain in the printed log location.
+Full stdout/stderr, native runs,
 failed attempts, snapshots and lineage remain under the experiment. Ctrl+C records
 cancellation and stops only owned child groups. An execution lock rejects concurrent
 writers; never remove another process's lock or reset a ledger to evade caps.

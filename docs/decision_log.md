@@ -204,3 +204,31 @@ Stage 1 prepare-only publication/failure-path tests. Test and lint execution wer
 explicitly waived by the user because this system has no configured development
 Python environment; these new checks and the existing suite remain unexecuted.
 No dependencies were installed, research assets downloaded or real training run.
+
+## 2026-11-04 — Remove timer-only Stage 1 console messages
+
+Remove only the 15-second liveness print and its `last_message` bookkeeping in
+`stage1.workflow.execute_child`, shared by all six stages and individual wrappers.
+Keep output offsets, raw worker forwarding and final drain, initial settings/log
+locations, polling/backoff, resource checks, owned cleanup, exit/checkpoint capture
+and result handling unchanged. Training-step reports, elapsed observations and
+monitoring cadences remain untouched. Waiting alone is not progress evidence.
+
+The full-package source hash changes even for this console-only correction.
+Stage 1 checks that hash before admitting an existing experiment; historical
+clock/pilot compatibility receipts do not authorize this transition. Preserve
+these safeguards and old manifests. Existing work stays on its exact matching
+checkout/environment; do not interrupt or discard it to change output. No new
+migration policy, scientific change, automatic restart or instrumentation is added.
+
+Verify silence with mocked long clock advances, real output/duplicate forwarding,
+partial reads/trailing errors, failure/review outcomes, cleanup, non-time caps and
+identity rejection. Reuse the full suite for actual tiny backend, wrapper/all-route,
+monitoring and SQLite coverage. Record actual results separately; no research
+downloads, full-model training or active-experiment interruptions are authorized.
+
+Actual checks: targeted suite 44 passed; full suite 459 passed with one CUDA skip;
+Ruff passed. The current run also executes the earlier SQLite tests whose execution
+was waived at their original delivery. See
+[console validation](timer_status_validation_2026-11-04.json). An AST comparison
+confirms that no other implementation code changed, and README bytes match the base.

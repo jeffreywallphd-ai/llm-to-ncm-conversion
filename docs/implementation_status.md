@@ -1,5 +1,23 @@
 # Native implementation status
 
+## Stage 1 console correction — 2026-11-04
+
+Removed the shared child runner's 15-second timer-only status output. Initial stage
+settings/log locations, actual worker messages and completed-step reports, outcomes,
+final output drain, polling/backoff, cancellation, resource checks and checkpoint
+capture are unchanged. See [quiet waiting and recovery limits](stage1.md).
+
+Verification: **459 passed, 1 CUDA-only skip** in the full suite; **44 passed** in
+targeted checks; Ruff passed. This includes the previously unexecuted SQLite
+regressions and existing monitoring/recovery coverage. The
+[dated receipt](timer_status_validation_2026-11-04.json) records exact commands,
+source hashes and limits. Only the timer bookkeeping/branch changed in package code;
+README bytes and scientific/numerical code are unchanged.
+
+The package source hash changes, so existing experiments/recovery checkpoints still
+require their exact matching code/environment. No compatibility bypass, active-run
+interruption, research download, real-model training or GPU/Spark validation occurred.
+
 ## Stage 1 workflow — 2026-11-04
 
 The separate manifest-bound workflow implements complete-answer qualification,
