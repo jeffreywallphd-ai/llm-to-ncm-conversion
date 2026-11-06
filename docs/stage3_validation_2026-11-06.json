@@ -1,0 +1,174 @@
+{
+  "schema": "stage3_software_validation_v1",
+  "date_utc": "2026-11-06",
+  "recorded_at_utc": "2026-11-06T21:09:44.894117+00:00",
+  "base_commit": "e8ac3e3cb006feb209ba06b5330f1522798d9a1e",
+  "implementation_sha256": "5b18b3eb39c774ae0aa564ccdcb8ff87f10599843d1a3bcbe5da5c6e4af4889c",
+  "scope": "Bounded local software fixtures, synthetic teacher outputs, tiny production-class CPU models and one tiny CUDA forward/backward test; no production assets or experiments.",
+  "standard_settings": {
+    "source": "pinned approved Tulu recipe",
+    "canvas": {
+      "preset": "large",
+      "positions": 256,
+      "resolutions": [
+        4,
+        5,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        15,
+        17,
+        20,
+        23,
+        26,
+        30,
+        34,
+        39,
+        45,
+        51,
+        59,
+        67,
+        77,
+        88,
+        100,
+        114,
+        131,
+        150,
+        171,
+        196,
+        224,
+        256
+      ]
+    },
+    "seed": 17,
+    "target_policy": "teacher-consistent",
+    "qualification": {
+      "train_examples": 100000,
+      "minimum_train_examples": 90000,
+      "dev_examples": 2000,
+      "test_examples": 2000,
+      "split_seed": 17,
+      "validation_seed": 20261029,
+      "dev_fraction": 0.15,
+      "test_fraction": 0.15,
+      "max_candidate_bytes": 4000000000,
+      "diagnostic": false
+    },
+    "training": {
+      "codec": {
+        "dtype": "float32",
+        "steps": 10000,
+        "batch_size": 4,
+        "accumulation": 8,
+        "schedule": {
+          "total": 10000,
+          "warmup": 500,
+          "minimum_ratio": 0.1,
+          "schema": "linear_warmup_cosine_v1"
+        }
+      },
+      "generator": {
+        "dtype": "bfloat16",
+        "steps": 20000,
+        "batch_size": 1,
+        "accumulation": 16,
+        "schedule": {
+          "total": 20000,
+          "warmup": 1000,
+          "minimum_ratio": 0.1,
+          "schema": "linear_warmup_cosine_v1"
+        }
+      }
+    },
+    "all_execution_clocks_disabled": true
+  },
+  "checks": [
+    {
+      "command": "CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 timeout 1200s .venv/bin/python -m pytest -q --maxfail=1",
+      "passed": 498,
+      "skipped": 1,
+      "failed": 0,
+      "seconds": 627.08,
+      "log_sha256": "7ad447606844e2b57d91dbd0aabc04a04837bd561affce6cd4af7096729ffc34"
+    },
+    {
+      "command": "timeout 90s .venv/bin/python -m pytest tests/cuda/test_native_cuda.py -q",
+      "passed": 1,
+      "failed": 0,
+      "seconds": 1.01,
+      "scope": "Tiny CUDA software fixture only; no full-8B feasibility claim."
+    },
+    {
+      "command": "CUDA_VISIBLE_DEVICES='' timeout 300s .venv/bin/python -m pytest tests/integration/test_stage3_workflow.py tests/unit/test_stage3_contracts.py tests/unit/test_stage2_config.py tests/integration/test_stage2_workflow.py tests/unit/test_stage1_policy.py -q",
+      "passed": 56,
+      "failed": 0,
+      "seconds": 170.24
+    },
+    {
+      "check": "Final contract/default/offline/legacy policy checks",
+      "passed": 46,
+      "deselected": 10,
+      "failed": 0,
+      "seconds": 1.49
+    },
+    {
+      "command": ".venv/bin/ruff check .",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "check": "All extracted README bash/sh blocks through bash -n",
+      "blocks": 29,
+      "status": "passed"
+    },
+    {
+      "check": "Literal required README command executed through runpy under explicitly injected fixture settings; complete real training/evaluation implementation and chat handoff exercised",
+      "status": "passed"
+    },
+    {
+      "command": ".venv/bin/python -m pip wheel --no-deps --no-build-isolation --no-index --wheel-dir /tmp/stage3-wheels .",
+      "status": "passed",
+      "wheel_sha256": "759550adb39c21554b7bf60fe694bd3f4bb730910508e8c2b5d5842ff6efb4ef"
+    }
+  ],
+  "resolved_failures": [
+    "Sandbox loopback restrictions prevented temporary local-server tests; the complete suite passed with local-socket permission.",
+    "A historical memory test assumed every host must block 8B admission. It now uses an explicit 8 GiB fixture while retaining real meta inventory and precision arithmetic assertions.",
+    "The new retention test initially omitted the required checkpoint identity field; the fixture was corrected without weakening retention assertions.",
+    "An injected worker initially returned Python objects instead of the real serialized JSON boundary; the fixture now round-trips JSON and actual subprocess workflows are also tested.",
+    "Fixture prompts were made distinct under the fixture tokenizer; admission quotas were not reduced to bypass genuine deduplication.",
+    "Evaluation retry originally lacked its new output directory when reusing cached student results. Parent creation and reloaded-reference warmup are now verified with an interrupted/resumed fixture."
+  ],
+  "versions": {
+    "recipe": "stage3_single_pass_v1",
+    "manifest": "stage3_experiment_v1",
+    "distillation": "sequence_distillation_v1",
+    "schedule": "linear_warmup_cosine_v1",
+    "quality": "validity_required_quality_advisory_v1",
+    "recovery": "native_recovery_v1",
+    "selected_weights": "native_inference_v1"
+  },
+  "integrity": "GPL-3.0 and existing third-party notices preserved. Source/component terms and mixed origins remain recorded; fixtures remain software_fixture.",
+  "not_executed": [
+    "research model or corpus acquisition",
+    "production sequence distillation",
+    "real Qwen3-8B training or optimizer/recovery feasibility",
+    "benchmark sweeps or remote provisioning",
+    "research quality, convergence or speedup evaluation"
+  ],
+  "limitations": [
+    "Production accepted-target capacity remains unknown until authorized distillation and qualification.",
+    "Full-8B 256-position backward/recovery memory and kernel feasibility remain unmeasured.",
+    "Cross-experiment exclusion is limited to explicitly supplied verified locked manifests.",
+    "SQLite/JSON charges are conservative logical-write accounting, not physical device wear.",
+    "Operational completion and finite advisory quality warnings do not establish useful answers."
+  ]
+}

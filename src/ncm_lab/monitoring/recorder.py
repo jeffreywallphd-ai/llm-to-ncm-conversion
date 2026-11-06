@@ -14,9 +14,9 @@ from ncm_lab.config.canvas import canvas_metadata
 class Recorder:
     def __init__(self, run):
         self.run = run
-        from ncm_lab.monitoring.records import Stage1Monitoring
+        from ncm_lab.monitoring.records import Stage1Monitoring, Stage3Monitoring
 
-        self.options = (Stage1Monitoring if run.value.get("stage1") else Monitoring)(
+        self.options = (Stage3Monitoring if run.value.get("stage3") else Stage1Monitoring if run.value.get("stage1") else Monitoring)(
             **run.value.get("monitoring", {})
         )
         self.attempt = uuid.uuid4().hex

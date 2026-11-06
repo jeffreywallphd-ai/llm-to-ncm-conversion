@@ -335,7 +335,7 @@ def recovery_payload(model, optimizer, identity, metadata, state, sampler):
         "optimizer": optimizer.state_dict(),
         "training": state,
         "rng": rng_state(sampler),
-        "scheduler": {"schema": "constant_separate_rates_v1"},
+        "scheduler": state.get("scheduler", {"schema": "constant_separate_rates_v1"}),
         "scaler": None,
     }
 

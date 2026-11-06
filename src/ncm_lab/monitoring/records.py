@@ -45,6 +45,12 @@ class Stage1Monitoring(Monitoring):
 
 
 @dataclass(frozen=True)
+class Stage3Monitoring(Monitoring):
+    def __post_init__(self):
+        self.validate(16)
+
+
+@dataclass(frozen=True)
 class Measure:
     value: float | None
     count: int = 1

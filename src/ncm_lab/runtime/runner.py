@@ -34,16 +34,23 @@ def _execute(value, resume=None, stop_after=None, *, recovery_compatibility=None
             verify_bound_inputs(value)
         if recovery_compatibility and (not resume or value["stage"] not in {"codec", "generator", "profile"}):
             raise ValueError("recovery compatibility requires an explicit training resume")
+        if value.get("stage3") and (value["stage3"].get("schema") != "stage3_single_pass_v1"
+                                   or value.get("stage1_context", {}).get("experiment_kind") != "stage3"):
+            raise ValueError("Stage 3 policies require their own manifest context; historical gates/rates cannot be overridden")
         if value.get("stage1") and not value.get("stage1_context"):
             raise ValueError(
                 "Stage 1 execution requires an explicit experiment manifest, not a standalone template"
             )
-        if value["stage"] not in {"data", "validation", "stage1_prepare"}:
+        if value["stage"] not in {"data", "validation", "stage1_prepare", "stage3_source", "stage3_qualify"}:
             report = preflight(value, run.path, training=value["stage"] in {"generator", "profile"})
             write_json(run.path / "preflight.json", report, exclusive=True)
             if report["blockers"]:
                 return run.close("blocked", {"blockers": report["blockers"], "model_loaded": False})
-        if value["stage"] == "data":
+        if value["stage"].startswith("stage3_"):
+            from ncm_lab.stage3.stages import execute_stage
+
+            result = execute_stage(run, value, bound)
+        elif value["stage"] == "data":
             from ncm_lab.data.prepare import prepare_data
 
             result = prepare_data(run, value)

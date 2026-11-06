@@ -1,0 +1,51 @@
+{
+  "schema": "stage3_single_pass_v1",
+  "canvas_size": "large",
+  "seed": 17,
+  "stages": {
+    "source": "configs/stage3/source.yaml",
+    "distill": "configs/stage3/distill.yaml",
+    "prepare": "configs/stage3/prepare.yaml",
+    "teacher": "configs/stage3/teacher.yaml",
+    "codec": "configs/stage3/codec.yaml",
+    "targets": "configs/stage3/targets.yaml",
+    "generator": "configs/stage3/generator.yaml",
+    "evaluate": "configs/stage3/evaluate.yaml"
+  },
+  "qualification": {
+    "train_examples": 100000,
+    "dev_examples": 2000,
+    "test_examples": 2000,
+    "split_seed": 17,
+    "validation_seed": 20261029,
+    "dev_fraction": 0.15,
+    "test_fraction": 0.15,
+    "max_candidate_bytes": 4000000000,
+    "diagnostic": false,
+    "minimum_train_examples": 90000
+  },
+  "resources": {
+    "reserve_free_bytes": 20000000000,
+    "max_retained_bytes": 1000000000000,
+    "max_phase_retained_bytes": 4000000000000,
+    "max_generator_steps": 20000,
+    "retry_allowance": 3,
+    "work_margin": 1.25,
+    "max_controller_bytes": 2000000000,
+    "max_controller_actions": 100
+  },
+  "notes": "Research-candidate recipe; hardware feasibility, learning and speed require measured evidence.",
+  "target_policy": "teacher-consistent",
+  "distillation": {
+    "schema": "sequence_distillation_v1",
+    "max_candidates": 250000,
+    "max_record_attempts": 3,
+    "repetition_threshold": 0.9,
+    "authoritative_components": []
+  },
+  "evaluation": {
+    "warmup": 1,
+    "repeats": 3
+  },
+  "previous_locked_manifests": []
+}

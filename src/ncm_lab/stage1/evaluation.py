@@ -11,7 +11,10 @@ from ncm_lab.runtime.io import write_json, reference, disk_path
 
 
 def evaluate(run, value, bound):
+    stage3 = value.get("stage3")
+    loading_started = time.perf_counter()
     model, tokenizer, manifest = load_export(bound["generator"]["manifest"], value["device"], run.meter.check)
+    loading_seconds = time.perf_counter() - loading_started
     if manifest["architecture"] != value["architecture"]:
         raise ValueError("evaluation export geometry differs from the stored experiment")
     development = Dataset(bound["data"]["manifest"], "native_data_v1")
@@ -28,6 +31,8 @@ def evaluate(run, value, bound):
     disk_path(folder).mkdir(parents=True)
     raw = folder / "outputs.jsonl"
     summaries = {}
+    if stage3 and value["device"] == "cuda":
+        torch.cuda.reset_peak_memory_stats()
     with disk_path(raw).open("x", encoding="utf-8", newline="\n") as stream, torch.inference_mode():
         for split, dataset, indices in (
             ("dev", development, development.indices("dev")),
@@ -55,13 +60,25 @@ def evaluate(run, value, bound):
                     )
                 )
                 del output
-                generation_started = time.perf_counter()
-                prediction = generate_tokens(
-                    model, ids, mask, manifest["eos_ids"], check=run.meter.check, inference=value["inference"]
-                )
+                timings = []
+                repeats = stage3["evaluation"]["repeats"] if stage3 else 1
+                warmup = stage3["evaluation"]["warmup"] if stage3 and split == "dev" and index == indices[0] else 0
+                for repetition in range(repeats + warmup):
+                    if repetition:
+                        run.meter.charge(source=len(example.prompt_ids), canvas=model.architecture.canvas, steps=1)
+                    if stage3 and value["device"] == "cuda":
+                        torch.cuda.synchronize()
+                    generation_started = time.perf_counter()
+                    prediction = generate_tokens(
+                        model, ids, mask, manifest["eos_ids"], check=run.meter.check, inference=value["inference"]
+                    )
+                    if stage3 and value["device"] == "cuda":
+                        torch.cuda.synchronize()
+                    if repetition >= warmup:
+                        timings.append(time.perf_counter() - generation_started)
                 content = [t for t in prediction["tokens"] if t not in manifest["eos_ids"]]
                 text = tokenizer.decode(prediction["tokens"], skip_special_tokens=True)
-                elapsed = time.perf_counter() - generation_started
+                elapsed = sum(timings) / len(timings)
                 reference_text = example.provenance.get(
                     "reference_text", tokenizer.decode(example.answer_ids, skip_special_tokens=True)
                 )
@@ -96,6 +113,7 @@ def evaluate(run, value, bound):
                     if rule
                     else None,
                     "generation_seconds": elapsed,
+                    **({"latency_repeats_seconds": timings, "target_origin": example.provenance.get("target_origin", example.source_type)} if stage3 else {}),
                     "ce_and_generation_seconds": time.perf_counter() - started,
                     "allocated_answer_positions": prediction["allocated_answer_positions"],
                     "computed_answer_positions": prediction["computed_answer_positions"],
@@ -149,6 +167,10 @@ def evaluate(run, value, bound):
         "splits": summaries,
         "raw_outputs": reference(raw),
         "teacher_or_codec_loaded": False,
+        **({"model_loading_seconds": loading_seconds,
+            "peak_allocated_bytes": torch.cuda.max_memory_allocated() if value["device"] == "cuda" else None,
+            "timing_policy": stage3["evaluation"], "synchronized_cuda": value["device"] == "cuda",
+            "time_to_first_token": "unsupported; whole-answer return"} if stage3 else {}),
         "limitations": [
             "Exact match is diagnostic for open-ended language.",
             "Premature stopping is a length comparison, not a semantic judgment.",

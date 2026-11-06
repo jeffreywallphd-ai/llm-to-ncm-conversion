@@ -217,6 +217,7 @@ def prepare_tulu(run, value, *, stage2_policy=None):
     import pyarrow.parquet as pq
 
     settings = value["data"]
+    stage3 = bool(value.get("stage3"))
     validate_limits(settings)
     if (
         stage2_policy is None
@@ -327,6 +328,9 @@ def prepare_tulu(run, value, *, stage2_policy=None):
     total_rows = sum(
         pq.ParquetFile(asset_path(root() / settings["assets_root"], a)).metadata.num_rows for a in assets
     )
+    if stage3 and total_rows > settings["max_source_rows"]:
+        database.close()
+        raise ValueError("pinned source metadata exceeds declared complete-pass row cap")
     try:
         for asset in assets:
             parquet = pq.ParquetFile(asset_path(root() / settings["assets_root"], asset))
@@ -382,7 +386,7 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                     if len(prompt) > settings["max_prompt_tokens"]:
                         excluded["prompt_length"] += 1
                         continue
-                    if len(target) > settings["max_answer_tokens"]:
+                    if not stage3 and len(target) > settings["max_answer_tokens"]:
                         excluded["answer_length"] += 1
                         continue
                     prompt_key = canonical_hash(prompt)
@@ -394,6 +398,9 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                         [DATASET, source, row.get("group_id") or row.get("conversation_id") or original]
                     )
                     groups.union(node, "prompt:" + prompt_key)
+                    if stage3:
+                        from ncm_lab.stage1.data import normalized
+                        groups.union(node, "normalized_prompt:" + canonical_hash([(m["role"], normalized(m["content"])) for m in context]))
                     key = canonical_hash([context, answer])
                     existing = database.execute("SELECT id,node FROM rows WHERE key=?", (key,)).fetchone()
                     if existing:
@@ -420,6 +427,9 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                         "preprocessing_sha256": identity["preprocessing_sha256"],
                         "eos_ids": [eos],
                     }
+                    if stage3:
+                        provenance.update(authoritative_reference=component.get("authoritative_reference") is True,
+                                          objective_rule=component.get("reference_validation_rule"))
                     if stage2_policy is not None:
                         provenance.update(
                             prompt_text="\n".join(f"{m['role']}: {m['content']}" for m in context),
@@ -436,6 +446,9 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                         "censored": False,
                         "provenance": provenance,
                     }
+                    if stage3:
+                        from ncm_lab.stage3.storage import charge
+                        charge(run, len(json.dumps(payload).encode()) + 16384)
                     database.execute(
                         "INSERT OR REPLACE INTO rows VALUES (?,?,?,?,?,?,?,?,?,NULL)",
                         (
@@ -458,6 +471,8 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                         ),
                     )
                 database.commit()
+                if stage3 and (run.path / "artifacts/preparation.sqlite").stat().st_size > stage2_policy.max_candidate_bytes:
+                    raise ValueError("source candidate index byte allowance exhausted")
                 if scan["rows_read"] >= settings["max_source_rows"]:
                     break
             if scan["rows_read"] >= settings["max_source_rows"]:
@@ -467,6 +482,8 @@ def prepare_tulu(run, value, *, stage2_policy=None):
         if stage2_policy is not None:
             from ncm_lab.stage1.data import partition
             from ncm_lab.stage2.data import publish_tulu
+            if stage3:
+                from ncm_lab.stage3.data import publish_candidates as publish_tulu
 
         for key, node in database.execute("SELECT key,node FROM rows ORDER BY key"):
             run.meter.check()

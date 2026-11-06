@@ -37,6 +37,13 @@ DEPENDENCIES = {
 }
 
 
+def stage_names(settings):
+    if settings["schema"] == "stage3_single_pass_v1":
+        from ncm_lab.stage3.config import STAGES as stage3_stages
+        return stage3_stages
+    return STAGES
+
+
 def identifier():
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
 
@@ -49,11 +56,11 @@ def checked(ref):
 
 
 def manifest_schema(settings):
-    return STAGE2_MANIFEST if settings["schema"] == STAGE2_SCHEMA else SCHEMA
+    return "stage3_experiment_v1" if settings["schema"] == "stage3_single_pass_v1" else STAGE2_MANIFEST if settings["schema"] == STAGE2_SCHEMA else SCHEMA
 
 
 def plan(settings, experiment_dir=None):
-    data = settings["stages"]["prepare"]["data"]
+    data = settings["stages"]["source" if settings["schema"] == "stage3_single_pass_v1" else "prepare"]["data"]
     if data.get("format") == "tulu_parquet":
         source_info = {
             "format": "tulu_parquet",
@@ -70,7 +77,7 @@ def plan(settings, experiment_dir=None):
             "content_verified": False,
         }
     proposal = {
-        "schema": "stage2_plan_v1" if settings["schema"] == STAGE2_SCHEMA else "stage1_plan_v1",
+        "schema": "stage3_plan_v1" if settings["schema"] == "stage3_single_pass_v1" else "stage2_plan_v1" if settings["schema"] == STAGE2_SCHEMA else "stage1_plan_v1",
         "canvas": settings["canvas"],
         "seed": settings["seed"],
         "contract_sha256": settings["contract_sha256"],
@@ -81,9 +88,12 @@ def plan(settings, experiment_dir=None):
         "missing_asset_instruction": ACQUIRE_TULU if data.get("format") == "tulu_parquet" else ACQUIRE,
         "training_clock_limits": "disabled",
         "research_work_started": False,
-        "stage_order": list(STAGES),
+        "stage_order": list(stage_names(settings)),
         "dtype_by_stage": {n: v["dtype"] for n, v in settings["stages"].items()},
     }
+    if settings["schema"] == "stage3_single_pass_v1":
+        proposal["model_asset_acquisition"] = ACQUIRE
+        proposal["source_asset_acquisition"] = ACQUIRE_TULU
     if experiment_dir is None:
         return {"status": "planned", "plan": proposal}
     folder = Path(experiment_dir).resolve()
@@ -99,7 +109,7 @@ def plan(settings, experiment_dir=None):
         "contract": reference(folder / "configs/proposal.json"),
         "plan": reference(folder / "plan.json"),
         "status": "planned",
-        "stages": {s: {"status": "pending", "attempts": []} for s in STAGES},
+        "stages": {s: {"status": "pending", "attempts": []} for s in stage_names(settings)},
         "targets": {s: settings["stages"][s]["training"]["steps"] for s in ("codec", "generator")},
         "history": [],
         "resources": None,
@@ -113,10 +123,10 @@ def plan(settings, experiment_dir=None):
 def load(experiment):
     path = Path(experiment).resolve()
     state = read(path)
-    if state.get("schema") not in {SCHEMA, STAGE2_MANIFEST} or set(state.get("stages", {})) != set(STAGES):
+    if state.get("schema") not in {SCHEMA, STAGE2_MANIFEST, "stage3_experiment_v1"}:
         raise ValueError("an explicit single-pass experiment manifest is required")
     settings = read(checked(state["contract"]))
-    if manifest_schema(settings) != state["schema"]:
+    if manifest_schema(settings) != state["schema"] or set(state.get("stages", {})) != set(stage_names(settings)):
         raise ValueError("experiment manifest and recipe schema differ")
     checked(state["plan"])
     if settings["implementation_sha256"] != implementation_hash():
@@ -138,6 +148,9 @@ def load(experiment):
 
 
 def configuration(name, path, state, settings):
+    if settings["schema"] == "stage3_single_pass_v1":
+        from ncm_lab.stage3.workflow import configuration as stage3_configuration
+        return stage3_configuration(name, path, state, settings)
     folder = path.parent
     if name == "prepare":
         value = deepcopy(settings["stages"][name])
@@ -218,6 +231,9 @@ def configuration(name, path, state, settings):
 def verify_artifact(name, result, value):
     from ncm_lab.runtime.io import resolve_reference
 
+    if value.get("stage3") and name in {"source", "distill", "prepare", "evaluate"}:
+        from ncm_lab.stage3.workflow import verify_artifact as verify_stage3
+        return verify_stage3(name, result, value)
     artifact = Path(result["artifact"]).resolve()
     if resolve_reference(value["output_ref"]).resolve() != artifact:
         raise ValueError("Stage 1 handoff differs from the exact completed artifact")
@@ -321,6 +337,8 @@ def verify_record(name, record, experiment):
 
 def ensure_resources(path, state, settings):
     from ncm_lab.stage1.resources import derive
+    if settings["schema"] == "stage3_single_pass_v1":
+        from ncm_lab.stage3.resources import derive
 
     result = read(checked(state["stages"]["prepare"]["receipt"]))["result"]
     resource_path = path.parent / "qualification/resources.json"
@@ -532,6 +550,7 @@ def reports(path, state, settings):
         v["status"] == "completed" for v in state["stages"].values()
     )
     stage2 = settings["schema"] == STAGE2_SCHEMA
+    stage_number = 3 if settings["schema"] == "stage3_single_pass_v1" else 2 if stage2 else 1
     stem = report_stem(settings)
     diagnostic = settings["qualification"]["diagnostic"]
     report = {
@@ -576,6 +595,19 @@ def reports(path, state, settings):
         qualification = state["failure"].get("result", {}).get("qualification")
         if isinstance(qualification, dict):
             report["qualification"] = read(checked(qualification))
+    if settings["schema"] == "stage3_single_pass_v1":
+        import shlex
+        export = values.get("generator", {}).get("artifact")
+        generator_config = settings["stages"]["generator"]
+        report.update(
+            recipe_label=settings["recipe_label"], target_policy=settings["target_policy"], selected_export=export,
+            source_qualification=read(checked(values["source"]["qualification"])) if "source" in values else None,
+            distillation={k: values.get("distill", {}).get(k) for k in ("decisions", "target_origins", "generation_policy")},
+            resume_command=shlex.join([sys.executable, "-u", "scripts/run_stage3.py", "--resume", str(path), "--execute"]),
+            manual_chat_command=shlex.join([sys.executable, "-m", "ncm_lab", "chat", "serve", "--checkpoint", export,
+                                           "--device", generator_config["device"], "--profile", generator_config["hardware_profile"]]) if export else None,
+            rate_history_files=[reference(p) for p in (path.parent / "native_runs").glob("*/*/events.jsonl")],
+        )
     samples = []
     for attempt in state["stages"]["generator"]["attempts"]:
         launch = Path(attempt["path"]) / "launch.json"
@@ -590,7 +622,7 @@ def reports(path, state, settings):
     folder.mkdir(exist_ok=True)
     atomic_json(folder / f"{stem}.json", report)
     lines = [
-        f"# Stage {2 if stage2 else 1} single-pass experiment",
+        f"# Stage {stage_number} single-pass experiment",
         "",
         f"Status: **{state['status']}**. Workflow completed: **{complete}**.",
         "",
@@ -601,10 +633,10 @@ def reports(path, state, settings):
     ]
     if diagnostic:
         lines[4:4] = [
-            f"**Reduced-data diagnostic: not the standard Stage {2 if stage2 else 1} experiment or generalization evidence.**",
+            f"**Reduced-data diagnostic: not the standard Stage {stage_number} experiment or generalization evidence.**",
             "",
         ]
-    for name in STAGES:
+    for name in stage_names(settings):
         result = values.get(name, {})
         lines.append(
             f"| {name} | {state['stages'][name]['status']} | {result.get('optimizer_steps', 'n/a')} | {result.get('selected_optimizer_step', 'n/a')} |"
@@ -656,13 +688,18 @@ def reports(path, state, settings):
         "## Interpretation and resources",
         "",
         report["quality"],
-        "Codec improvement uses a versioned operational component gate, not statistical significance. Test data never fits normalization, targets or checkpoint selection.",
+        "Stage 3 requires valid finite artifacts; finite quality non-improvement warns and continues. Test data never fits normalization, targets or checkpoint selection." if settings["schema"] == "stage3_single_pass_v1" else "Codec improvement uses a versioned operational component gate, not statistical significance. Test data never fits normalization, targets or checkpoint selection.",
         "Losses average actual microbatch objectives; effective batch is not a global-token reduction. Unique data and repeated presentations are separate in the JSON report.",
         "Cumulative checkpoint/cache I/O survives pruning and retry. Peak retained storage and baseline memory are different quantities; activations/kernel/recovery peaks require measured hardware evidence.",
         "Training clocks are disabled; elapsed observations and finite non-time safeguards remain active.",
     ]
+    if settings["schema"] == "stage3_single_pass_v1":
+        lines += ["", "Recipe: " + settings["recipe_label"], "", "Selected export: " + str(report["selected_export"]),
+                  "", "Resume: `" + report["resume_command"] + "`", "", "Manual chat: `" + str(report["manual_chat_command"]) + "`",
+                  "", "Distillation decisions and all fixed examples, rate histories, resource observations and length-bin reports are retained in the JSON companion.",
+                  "Stage 2 is historical context, not a matched ablation. No convergence or speedup is established by completion."]
     if state.get("failure"):
-        lines += ["", "Failure/review details: " + str(state["failure"])]
+        lines +=  ["", "Failure/review details: " + str(state["failure"])]
     (folder / f"{stem}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return {
         "json": reference(folder / f"{stem}.json"),
@@ -680,9 +717,9 @@ def run(
     extend_generator_steps=None,
 ):
     path, state, settings = load(experiment)
-    if settings["schema"] == STAGE2_SCHEMA and (allow_codec_review or extend_generator_steps is not None):
+    if settings["schema"] in {STAGE2_SCHEMA, "stage3_single_pass_v1"} and (allow_codec_review or extend_generator_steps is not None):
         raise ValueError("Stage 2 requires its codec gate and the original fixed generator target")
-    if stage not in {*STAGES, "all"}:
+    if stage not in {*stage_names(settings), "all"}:
         raise ValueError("unknown Stage 1 stage")
     if allow_codec_review and not reason:
         raise ValueError("diagnostic codec review override requires an explicit recorded --reason")
@@ -731,14 +768,14 @@ def run(
                 entry.setdefault("prior_receipts", []).append(entry.pop("receipt"))
             entry["status"] = "pending"
             atomic_json(path, state)
-        requested = STAGES if stage == "all" else (stage,)
+        requested = stage_names(settings) if stage == "all" else (stage,)
         invocation = path.parent / "controller" / identifier()
         invocation.mkdir(parents=True)
         meter = Meter(
             Budget(
                 "s1-controller-" + settings["contract_sha256"][:40],
                 enforce_wall_time_limits=False,
-                max_steps=7,
+                max_steps=len(stage_names(settings)) + 1,
                 max_phase_steps=settings["resources"]["max_controller_actions"],
                 max_storage_bytes=1000000,
                 max_phase_storage_bytes=settings["resources"]["max_controller_bytes"],
@@ -781,14 +818,17 @@ def run(
                     )
                     atomic_json(path, state)
                     continue
-                for dependency in DEPENDENCIES[name]:
+                dependencies = DEPENDENCIES
+                if settings["schema"] == "stage3_single_pass_v1":
+                    from ncm_lab.stage3.workflow import DEPENDENCIES as dependencies
+                for dependency in dependencies[name]:
                     dependency_entry = state["stages"][dependency]
                     if dependency_entry["status"] != "completed":
                         raise ValueError(
                             f"{name} requires completed, qualified {dependency}; explicit wrappers do not run prerequisites"
                         )
                     verify_record(dependency, read(checked(dependency_entry["receipt"])), path)
-                if name != "prepare":
+                if name not in {"prepare", "source", "distill"}:
                     ensure_resources(path, state, settings)
                 meter.charge(steps=1)
                 value = configuration(name, path, state, settings)
@@ -805,6 +845,13 @@ def run(
                     pointer = reference(reader.path)
                 if pointer:
                     checked(pointer)
+                    if settings["schema"] == "stage3_single_pass_v1":
+                        from ncm_lab.training.checkpoints import CheckpointReader
+                        recovered = CheckpointReader(pointer["manifest"])
+                        recovered_step = recovered.materialize(recovered.field("training"))["optimizer_steps"]
+                        state["history"].append({"event": "resume_from_complete_recovery", "stage": name,
+                                                 "completed_update": recovered_step,
+                                                 "replay_policy": "later uncheckpointed work may replay; all earlier attempt charges retained"})
                 attempt = path.parent / "stages" / name / identifier()
                 entry["attempts"].append(
                     {
@@ -891,7 +938,9 @@ def run(
             "stages": {n: e["status"] for n, e in state["stages"].items()},
             "report": str(path.parent / "reports" / f"{report_stem(settings)}.md"),
             **(
-                {"asset_acquisition_if_missing": read(checked(state["plan"]))["missing_asset_instruction"]}
+                {"asset_acquisition_if_missing": {
+                        "model_and_tokenizer": ACQUIRE, "source_and_overlap": ACQUIRE_TULU
+                    } if settings["schema"] == "stage3_single_pass_v1" else read(checked(state["plan"]))["missing_asset_instruction"]}
                 if state.get("failure")
                 else {}
             ),

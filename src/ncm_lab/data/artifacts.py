@@ -8,7 +8,7 @@ from ncm_lab.runtime.io import write_json, read, digest, resolve_reference, disk
 from ncm_lab.data.records import Example
 
 LOCKED = "native_stage1_evaluation_v1"
-KINDS = {"native_data_v1", "native_features_v1", "native_targets_v1", LOCKED}
+KINDS = {"native_data_v1", "native_features_v1", "native_targets_v1", "stage3_candidates_v1", "stage3_distilled_v1", LOCKED}
 
 
 class ArtifactWriter:
@@ -65,7 +65,11 @@ class ArtifactWriter:
                 "dtype": str(tensor.dtype),
                 "bytes": disk_path(path).stat().st_size,
             }
-        self.index.write(json.dumps(row, allow_nan=False) + "\n")
+        encoded = json.dumps(row, allow_nan=False) + "\n"
+        if self.meter and getattr(self.meter, "stage3_run", None):
+            from ncm_lab.stage3.storage import charge
+            charge(self.meter.stage3_run, len(encoded.encode()))
+        self.index.write(encoded)
         self.index.flush()
         self.count += 1
         self.stats["examples"] += 1
@@ -74,7 +78,8 @@ class ArtifactWriter:
         canvas = self.identity.get(
             "canvas", self.identity.get("architecture", {}).get("canvas", len(example.answer_ids))
         )
-        self.stats["padding_positions"] += canvas - len(example.answer_ids)
+        self.stats["padding_positions"] += (max(0, canvas - len(example.answer_ids))
+                                             if self.kind == "stage3_candidates_v1" else canvas - len(example.answer_ids))
         origin = example.source_type
         self.stats["source_types"][origin] = self.stats["source_types"].get(origin, 0) + 1
         bucket = str(min(1024, 2 ** (len(example.answer_ids) - 1).bit_length()))

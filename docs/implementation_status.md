@@ -220,3 +220,32 @@ Full-model/GPU validation remains unexecuted. No research training or downloads
 were launched. See [preparation troubleshooting](stage1.md#preparation-sqlite-troubleshooting)
 for the fresh-experiment procedure and saved failure locations. This fix alone
 does not validate data quotas, downstream stages, feasibility or output quality.
+
+## Stage 3 single-pass workflow — 2026-11-06
+
+The separate Stage 3 launcher/configuration/source-distillation-qualification path
+composes the production teacher, codec, target and generator engine. It adds
+versioned warmup/cosine scheduling, selected-weight snapshots separate from full
+recovery, advisory finite codec quality policy, serial final AR comparison,
+manifest resume and selected-export local chat. See [operator guide](stage3.md).
+
+Validation uses tiny production-class software fixtures, local JSONL/Parquet and
+synthetic teacher outputs. This does not demonstrate accepted production Tülu
+capacity, real teacher answer quality/acceptance, large/256 full-8B backward or
+recovery memory fit, useful generation, convergence or speedup. Those are open
+hardware/data/research milestones. Prior Stage 2 experiments must continue using
+their own existing checkout/artifacts; this implementation does not migrate them.
+
+Logical payload/SQLite write accounting is conservative; it is not a physical
+storage-device wear measurement. Broader cross-experiment contamination remains
+unverified unless exact prior locked manifests are supplied. All quality warnings
+and failed attempts remain in experiment reports rather than being edited away.
+
+Final validation: **498 passed, 1 skipped** in the complete CPU-fixture suite;
+the skipped tiny CUDA forward/backward fixture separately **passed**. Final
+focused integration/policy checks passed (56 tests), Ruff passed, all 29 README
+shell blocks parsed, and the offline wheel build passed. The corrected portable
+memory test uses an explicit 8 GiB fixture rather than asserting this host must
+fail admission. These are software checks, not full-8B Spark evidence. Exact
+commands, scope and resolved failures are recorded in
+[the validation receipt](stage3_validation_2026-11-06.json).

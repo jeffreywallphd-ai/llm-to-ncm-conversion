@@ -1,0 +1,22 @@
+{
+  "schema": "native_stage_v1",
+  "stage": "stage3_evaluate",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_large.yaml",
+  "budget": "configs/stage3/budget.yaml",
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "hardware_profile": "spark",
+  "inputs": {},
+  "output_ref": null,
+  "stage1": {
+    "schema": "stage1_single_pass_v1",
+    "selection": "stage1_codec_fixed_components_v1",
+    "reduction": "equal_actual_microbatch_objectives_v1",
+    "progress_interval": 10,
+    "comparison_atol": 1e-07,
+    "comparison_rtol": 1e-05,
+    "combined_min_delta": 0.0,
+    "generator_target_cast": "explicit_target_to_generator_parameter_dtype_v1"
+  }
+}

@@ -4,6 +4,7 @@ from pathlib import Path
 import gc
 import random
 import time
+import sys
 import torch
 from ncm_lab.codec.model import ContinuousCodec
 from ncm_lab.config.architecture import Architecture
@@ -154,7 +155,7 @@ def _representatives(model):
     return result
 
 
-def prune(folder, selected):
+def prune(folder, selected, *, separate_selection=False):
     """Retain two newest recovery versions plus selected; interrupted writes survive."""
     import shutil
 
@@ -164,10 +165,24 @@ def prune(folder, selected):
         key=lambda p: disk_path(p).stat().st_mtime,
         reverse=True,
     )
-    protected = {p.resolve() for p in candidates[:2]}
+    recent = candidates[:2]
+    if separate_selection:
+        from ncm_lab.training.checkpoints import RECOVERY
+        recoveries = [p for p in candidates if read(p / "manifest.json")["schema"] == RECOVERY]
+        recent = recoveries[:2]
+    protected = {p.resolve() for p in recent}
+    if separate_selection:
+        for version in recent:
+            reader = CheckpointReader(version / "manifest.json")
+            training = reader.materialize(reader.field("training"))
+            prior = training.get("selected")
+            if prior and not training.get("selected_this_step"):
+                if digest(prior["manifest"]) != prior["sha256"]:
+                    raise ValueError("retained recovery selected weights changed")
+                protected.add(Path(prior["manifest"]).parent.resolve())
     if selected:
         protected.add(Path(selected["manifest"]).parent.resolve())
-    for path in candidates[2:]:
+    for path in candidates if separate_selection else candidates[2:]:
         resolved = path.resolve()
         if resolved in protected:
             continue
@@ -181,6 +196,12 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
 
     options = value["training"]
     stage1 = value.get("stage1")
+    stage3 = value.get("stage3")
+    schedule = None
+    peaks = [options["learning_rate"], options["new_learning_rate"] if value["stage"] in {"generator", "profile"} else options["learning_rate"]]
+    if stage3:
+        from ncm_lab.stage3.schedule import Schedule
+        schedule = Schedule(**stage3["schedule"])
     architecture = Architecture(**value["architecture"])
     torch.manual_seed(options["seed"])
     if torch.cuda.is_available():
@@ -238,6 +259,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         raise ValueError(
             "resume architecture/data/codec/phase mismatch before model allocation; changing canvas requires fresh training"
         )
+    if stage3 and previous_metadata and previous_metadata.get("stage3_contract") != stage3:
+        raise ValueError("Stage 3 schedule/recipe changed before allocation")
     if stage1 and previous_metadata:
         from ncm_lab.training.validation_plan import stage1_codec_plan
 
@@ -347,6 +370,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             "attention": "explicit-mask SDPA; no AR KV reuse",
         },
     }
+    if stage3:
+        metadata["stage3_contract"] = stage3
     if stage1:
         metadata["stage1_contract"] = stage1
         metadata["precision_boundary"] = {
@@ -378,6 +403,10 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         if transition:
             run.event("policy_recovery_transition", **transition)
         reader.load_model(model)
+        if schedule:
+            saved_training = reader.materialize(reader.field("training"))
+            if saved_training["optimizer_steps"]:
+                schedule.apply(optimizer, peaks, saved_training["optimizer_steps"])
         reader.load_optimizer(optimizer)
         state = reader.materialize(reader.field("training"))
         restore_rng(reader.materialize(reader.field("rng")), sampler)
@@ -471,7 +500,11 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         from ncm_lab.monitoring.samples import fixed_prompts
         from ncm_lab.teacher.model import load_tokenizer
 
-        sample_prompts = fixed_prompts(dataset, dev, recorder.options.sample_prompts)
+        if stage3:
+            from ncm_lab.stage3.sampling import fixed_prompts as stage3_prompts
+            sample_prompts = stage3_prompts(dataset, dev, recorder.options.sample_prompts, options["validation_seed"])
+        else:
+            sample_prompts = fixed_prompts(dataset, dev, recorder.options.sample_prompts)
         tokenizer = load_tokenizer(value["model"])
 
     def objective(indices, training=True, planned=None):
@@ -744,9 +777,14 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             diagnostic_gradients = gradients(model) if recorder.detail_due(recorder.step) else {}
             limit = options.get("gradient_clip", 1.0)
             report.clip_(limit)
+            if schedule:
+                schedule.apply(optimizer, peaks, state["optimizer_steps"] + 1)
             optimizer.step(report)
             del report  # Its parameter/gradient ownership must end before recovery allocation.
             state["optimizer_steps"] += 1
+            if schedule:
+                state["scheduler"] = schedule.state(peaks, state["optimizer_steps"])
+                run.event("learning_rates", **state["scheduler"])
             state["last_executed_phase"] = executed_phase
             terminal_update = (
                 objective_reached()
@@ -960,6 +998,10 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                     recorder.event(
                         "sampling_completed", duration_seconds=time.perf_counter() - sample_started
                     )
+            if stage3 and generator and state["optimizer_steps"] in {1000, 5000, 10000, 20000}:
+                write_json(run.path / f"milestones/update-{state['optimizer_steps']}.json",
+                           {"training": metrics, "development": last_validation,
+                            "scheduler": state["scheduler"], "locked_test_seen": False}, exclusive=True)
             run.metric(metrics)
             if phase_boundary:
                 run.event(
@@ -973,6 +1015,8 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             improved = selection is not None and (
                 state["best_dev_loss"] is None or selection < state["best_dev_loss"]
             )
+            recovery_due = (state["optimizer_steps"] % options["checkpoint_interval"] == 0
+                            or terminal_update or state["optimizer_steps"] == options["steps"])
             if (
                 state["optimizer_steps"] % options["checkpoint_interval"] == 0
                 or (improved if stage1 else selection is not None)
@@ -991,16 +1035,24 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                         state["selected_optimizer_step"] = state["optimizer_steps"]
                 save_started = time.perf_counter()
                 recorder.event("checkpointing_started")
-                saved = save_checkpoint(
-                    run.path / "checkpoints",
-                    recovery_payload(model, optimizer, identity, metadata, state, sampler),
-                    meter=run.meter,
-                    shard_bytes=options["shard_bytes"],
-                )
+                if stage3 and not recovery_due:
+                    saved = save_checkpoint(
+                        run.path / "checkpoints",
+                        {"identity": identity, "metadata": metadata, "model": model.state_dict(keep_vars=True),
+                         "training": {"optimizer_steps": state["optimizer_steps"]}},
+                        kind=INFERENCE, pointer="selected.json", meter=run.meter,
+                        shard_bytes=options["shard_bytes"],
+                    )
+                else:
+                    saved = save_checkpoint(
+                        run.path / "checkpoints",
+                        recovery_payload(model, optimizer, identity, metadata, state, sampler),
+                        meter=run.meter, shard_bytes=options["shard_bytes"],
+                    )
                 if chosen:
                     state["selected"] = saved
                     atomic_json(run.path / "checkpoints/selected.json", saved)
-                prune(run.path / "checkpoints", state["selected"])
+                prune(run.path / "checkpoints", state["selected"], separate_selection=bool(stage3))
                 recorder.event(
                     "checkpoint_completed",
                     manifest=saved["manifest"],
@@ -1018,7 +1070,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                     if k in metrics
                 }
                 print(
-                    f"{value['stage']} step {recorder.step}/{options['steps']} phase={executed_phase} loss={metrics['loss']:.6g} components={components} dev={metrics.get('dev_loss', state['best_dev_loss'])} grad={norm:.5g} presentations={state['example_presentations']} selected={state.get('selected_optimizer_step')} host_available_bytes={memory['host_available_bytes']} clocks=disabled",
+                    f"{value['stage']} step {recorder.step}/{options['steps']} phase={executed_phase} loss={metrics['loss']:.6g} components={components} dev={metrics.get('dev_loss', state['best_dev_loss'])} grad={norm:.5g} presentations={state['example_presentations']} rates={[g['lr'] for g in optimizer.groups]} selected={state.get('selected_optimizer_step')} host_available_bytes={memory['host_available_bytes']} clocks=disabled",
                     file=__import__("sys").stderr,
                     flush=True,
                 )
@@ -1071,8 +1123,32 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
     # Export the held-out selected state without holding a second model/optimizer copy.
     if stage1 and digest(state["selected"]["manifest"]) != state["selected"]["sha256"]:
         raise ValueError("Stage 1 selected checkpoint manifest changed")
-    selected_reader = CheckpointReader(state["selected"]["manifest"], check=run.meter.check)
-    transition = verify_recovery(selected_reader, metadata, recovery_compatibility)
+    optimizer_summary = {
+        "optimizer_covered_parameter_count": sum(p.numel() for p in optimizer.parameters.values()),
+        "optimizer_state_tensor_bytes": sum(
+            v.numel() * v.element_size()
+            for s in optimizer.state.values()
+            for v in s.values()
+            if isinstance(v, torch.Tensor)
+        ),
+        "optimizer_precision_policy": optimizer.precision_contract(),
+        "optimizer_rounding_draws": optimizer.rounding_draws,
+        "last_optimizer_update": optimizer.last_update_summary,
+    }
+    if stage3:
+        optimizer.zero_grad()
+        optimizer = None
+        gc.collect()
+        if device == "cuda":
+            torch.cuda.empty_cache()
+    selected_kind = read(state["selected"]["manifest"])["schema"]
+    selected_reader = CheckpointReader(state["selected"]["manifest"], expected_kind=selected_kind, check=run.meter.check)
+    transition = None
+    if selected_reader.manifest["schema"] == INFERENCE and stage3:
+        if selected_reader.materialize(selected_reader.field("metadata")) != metadata:
+            raise ValueError("selected weights scientific contract changed")
+    else:
+        transition = verify_recovery(selected_reader, metadata, recovery_compatibility)
     if transition:
         run.event("selected_policy_recovery_transition", **transition)
     selected_reader.load_model(model)
@@ -1101,6 +1177,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
             "answer_position_exposures": state["answer_position_exposures"],
             "source_token_exposures": state["processed_source_tokens"],
             "initialization_is_not_a_trained_selected_checkpoint": True,
+            **({"scheduler": state["scheduler"], "quality_policy": stage3["quality_policy"]} if stage3 else {}),
         }
     if generator:
         from ncm_lab.inference.export import export_generator
@@ -1151,6 +1228,14 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
                 and math.isfinite(normalization["variance"])
                 and normalization["variance"] > 0,
             )
+            if stage3:
+                gate = stage1_report["codec_qualification"]
+                gate.update(schema="stage3_codec_qualification_v1", quality_policy=stage3["quality_policy"],
+                            quality_warning=not gate["codec_qualified_for_generator"],
+                            codec_qualified_for_generator=gate["artifacts_valid"],
+                            status="qualified_with_warning" if not gate["codec_qualified_for_generator"] else "qualified")
+            if stage3 and stage1_report["codec_qualification"].get("quality_warning"):
+                print("WARNING: Stage 3 codec has finite quality non-improvement/regression; continuing under validity_required_quality_advisory_v1. Inspect the selected/initial component report.", file=sys.stderr, flush=True)
             if not stage1_report["codec_qualification"]["artifacts_valid"]:
                 raise ValueError("invalid Stage 1 codec normalization/scales; cannot override")
         folder = run.path / "artifacts/codec"
@@ -1205,16 +1290,7 @@ def fit(run, value, bound, *, resume=None, stop_after=None, recovery_compatibili
         "optimizer_steps": state["optimizer_steps"],
         "parameter_count": sum(p.numel() for p in model.parameters()),
         "trainable_parameter_count_at_end": sum(p.numel() for p in model.parameters() if p.requires_grad),
-        "optimizer_covered_parameter_count": sum(p.numel() for p in optimizer.parameters.values()),
-        "optimizer_state_tensor_bytes": sum(
-            v.numel() * v.element_size()
-            for s in optimizer.state.values()
-            for v in s.values()
-            if isinstance(v, torch.Tensor)
-        ),
-        "optimizer_precision_policy": optimizer.precision_contract(),
-        "optimizer_rounding_draws": optimizer.rounding_draws,
-        "last_optimizer_update": optimizer.last_update_summary,
+        **optimizer_summary,
         "last_executed_phase": state.get("last_executed_phase"),
         "selection_policy": validation_plan,
         "processed_source_tokens": state["processed_source_tokens"],

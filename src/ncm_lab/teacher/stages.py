@@ -27,8 +27,8 @@ def extract(run, value, bound):
         )
         indices = selection["train_indices"] + selection["dev_indices"]
     elif data.manifest["identity"].get("dataset") == "allenai/tulu-3-sft-mixture" and not (
-        value.get("stage1_context", {}).get("experiment_kind") == "stage2"
-        and data.manifest["identity"].get("qualification_mode") == "stage2_locked_short_answers_v1"
+        value.get("stage1_context", {}).get("experiment_kind") in {"stage2", "stage3"}
+        and data.manifest["identity"].get("qualification_mode") in {"stage2_locked_short_answers_v1", "stage3_qualified_v1"}
     ):
         raise ValueError("extension teacher requires explicit qualified codec quota before allocation")
     teacher = load_original(value["model"], value["device"], getattr(torch, value["dtype"]), frozen=True)

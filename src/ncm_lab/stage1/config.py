@@ -17,7 +17,7 @@ STAGE2_TULU_ROWS = 400_000
 
 
 def report_stem(settings):
-    return "stage2_summary" if settings["schema"] == STAGE2_SCHEMA else "stage1_summary"
+    return "stage3_summary" if settings["schema"] == "stage3_single_pass_v1" else "stage2_summary" if settings["schema"] == STAGE2_SCHEMA else "stage1_summary"
 
 
 @dataclass(frozen=True)
@@ -116,6 +116,8 @@ def resolve(
         cfg = config(filename, _bind_canvas=False)
         if cfg["stage"] != {"prepare": "stage1_prepare", "evaluate": "stage1_evaluate"}.get(name, name):
             raise ValueError("Stage 1 stage/config mismatch: " + name)
+        if cfg.get("stage3") or cfg.get("stage3_schedule"):
+            raise ValueError("Stage 3 policies require the independent Stage 3 recipe; historical gates/rates cannot be overridden")
         stages[name] = cfg
     if data_config is not None:
         other = config(data_config, _bind_canvas=False)

@@ -338,6 +338,70 @@ server; use `--chat-port 0` if the default port is occupied. See the
 [Stage 2 Codex prompt](docs/CODEX_STAGE2_EXPERIMENTS_PROMPT.md) for source,
 evaluation and verification details.
 
+## Stage 3 single-pass research-candidate experiment — one command
+
+Before launching:
+
+- Run from the repository root in the existing working Spark Python/CUDA environment.
+- Use the second Spark or a separate development checkout. Do not update code beneath the ongoing Stage 2 process.
+- Pinned Qwen weights, tokenizer, approved Tülu shards and overlap assets must be local and verified. Missing assets stop execution. Acquire Qwen/tokenizer with `ncm prepare --config configs/validation/real_pilot.yaml` and Tülu sources with `ncm prepare --config configs/preparation/tulu3_sources.yaml` separately; execution never installs packages or changes revisions.
+- This starts a new experiment. Retain its printed manifest for recovery. Heavy stages run in owned foreground processes without execution-clock deadlines, with finite work, retry, storage and memory safeguards.
+- Defaults are **Tülu, large/256, seed 17, teacher-consistent targets**. There is no automatic size or seed sweep. `--execute` authorizes the declared offline distillation and training; help/planning performs neither.
+
+<!-- BEGIN REQUIRED README STAGE3 COMMAND -->
+```bash
+python -u scripts/run_stage3.py --execute
+```
+<!-- END REQUIRED README STAGE3 COMMAND -->
+
+This one command prepares source candidates, assigns group-safe splits, constructs
+sequence-level teacher targets, qualifies the final selections, extracts aligned
+teacher features, trains/selects the codec, builds latent targets, trains/selects
+the generator, compares the selected student and original AR Qwen on locked
+prompts, writes reports, then launches the **selected Stage 3 export** in local
+chat. Generation remains single-pass, whole-answer, with no AR repair.
+
+The target is 100,000 distinct training pairs (explicit minimum 90,000 with an
+underfill warning), 2,000 dev and 2,000 locked original-reference test pairs.
+The 256-position answer canvas includes EOS. Train/dev teacher outputs must end
+naturally within that capacity; truncated teacher output never gains a fabricated
+EOS. Original references and source/component licenses remain recorded separately.
+
+The FP32 codec runs 10,000 updates at batch 4 × accumulation 8; the BF16 generator
+runs 20,000 updates at batch 1 × accumulation 16, with FP32 Adam moments and the
+existing stochastic BF16 write-back. Each stage has 320,000 nominal example
+presentations. Learning rates warm up for 500/1,000 updates respectively, then
+cosine-decay to 10% of peak. The original backbone remains trainable throughout.
+Finite codec quality regressions warn and continue under Stage 3's separate
+advisory policy; invalid/nonfinite artifacts stop execution. Stage 1/2 retain
+their existing gates and constant rates.
+
+Alternatives:
+
+```bash
+# Offline preview; omitting an action also plans only.
+python -u scripts/run_stage3.py --plan-only
+
+# Explicit defaults, equivalent scientific recipe.
+python -u scripts/run_stage3.py --source tulu --canvas-size large --execute
+
+# Complete evaluation/reports without serving chat.
+python -u scripts/run_stage3.py --execute --no-chat
+
+# Recover exactly the recorded experiment.
+python -u scripts/run_stage3.py --resume /ABS/EXISTING/EXPERIMENT/manifest.json --execute
+
+# Reopen completed chat on an available local port; no repeated training/evaluation.
+python -u scripts/run_stage3.py --resume /ABS/EXISTING/EXPERIMENT/manifest.json --execute --chat-port 0
+```
+
+The manifest lives under `runs/stage3/large/<UTC-run-id>/`; reports are
+`reports/stage3_summary.md` and `.json`. Selected and terminal steps may differ.
+Chat is loopback-only, with independent session limits; a chat error leaves
+training/evaluation completed. No duration, hardware fit, convergence or speedup
+is guaranteed. Stage 2 is historical context, **not a matched ablation**.
+See [Stage 3 recipes, resource accounting, recovery and manual chat](docs/stage3.md).
+
 ## Monitoring and testing an export
 
 Run TensorBoard in a **separate terminal**, then open

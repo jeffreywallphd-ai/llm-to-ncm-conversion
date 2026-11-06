@@ -120,7 +120,7 @@ def config(path, canvas_size=None, *, _bind_canvas=True):
         "stage1",
         "stage1_context",
         "stage1_data",
-        "stage1_io",
+        "stage1_io", "stage3", "stage3_schedule",
     }
     if set(value) - allowed:
         raise ValueError("unknown native stage fields: " + str(sorted(set(value) - allowed)))
@@ -134,7 +134,7 @@ def config(path, canvas_size=None, *, _bind_canvas=True):
         "profile",
         "prepare",
         "stage1_prepare",
-        "stage1_evaluate",
+        "stage1_evaluate", "stage3_source", "stage3_distill", "stage3_qualify", "stage3_evaluate",
     }:
         raise ValueError("native stage schema required; archived configurations are incompatible")
 
@@ -191,8 +191,8 @@ def config(path, canvas_size=None, *, _bind_canvas=True):
 
     if isinstance(value.get("monitoring"), str):
         value["monitoring"] = read(root() / value["monitoring"])
-    from ncm_lab.monitoring.records import Stage1Monitoring
-    value["monitoring"] = asdict((Stage1Monitoring if value.get("stage1") else Monitoring)(**value.get("monitoring", {})))
+    from ncm_lab.monitoring.records import Stage1Monitoring, Stage3Monitoring
+    value["monitoring"] = asdict((Stage3Monitoring if value.get("stage3") or value.get("stage3_schedule") else Stage1Monitoring if value.get("stage1") else Monitoring)(**value.get("monitoring", {})))
     if value["model"] and not value["model"].get("fixture"):
         from ncm_lab.config.canvas import validate_production
 

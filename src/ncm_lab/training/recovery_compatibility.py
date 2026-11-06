@@ -19,7 +19,16 @@ def verify_recovery(reader, expected, compatibility=None):
     identity = reader.manifest["identity"]
     if native_identity(previous) != identity or reader.materialize(reader.field("identity")) != identity:
         raise ValueError("native recovery metadata/identity inconsistency")
-    if reader.materialize(reader.field("scheduler")) != {"schema": "constant_separate_rates_v1"}:
+    scheduler = reader.materialize(reader.field("scheduler"))
+    expected_scheduler = {"schema": "constant_separate_rates_v1"}
+    if previous.get("stage3_contract"):
+        from ncm_lab.stage3.schedule import Schedule
+        training = reader.materialize(reader.field("training"))
+        peaks = [previous["training_contract"]["learning_rate"],
+                 previous["training_contract"]["new_learning_rate"] if previous["component"] == "generator"
+                 else previous["training_contract"]["learning_rate"]]
+        expected_scheduler = Schedule(**previous["stage3_contract"]["schedule"]).state(peaks, training["optimizer_steps"])
+    if scheduler != expected_scheduler:
         raise ValueError("native recovery scheduler contract mismatch")
     if reader.materialize(reader.field("scaler")) is not None:
         raise ValueError("native recovery scaler contract mismatch")

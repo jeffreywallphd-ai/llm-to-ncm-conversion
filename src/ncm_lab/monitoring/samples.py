@@ -91,6 +91,10 @@ def observe_samples(model, tokenizer, prompts, recorder, meter, eos_ids):
                 else None,
                 **({"sampling_clock_limit": "disabled"} if recorder.run.value.get("stage1") else {}),
             }
+            if recorder.run.value.get("stage3"):
+                row.update(full_prompt=prompt_text, full_prediction=text, raw_token_ids=result["tokens"],
+                           reference=prompt["reference"], target_origin=prompt["target_origin"],
+                           group_id=prompt["group_id"], example_sha256=prompt["example_sha256"])
             recorder.append("samples", split="dev", **row)
             rows.append(row)
     return rows

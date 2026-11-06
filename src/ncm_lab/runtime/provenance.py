@@ -63,6 +63,8 @@ class Run:
 
     def start(self):
         self.meter = Meter(Budget(**self.value["budget"]), self.path, self.path.parents[1] / "ledgers")
+        if self.value.get("stage3"):
+            self.meter.stage3_run = self
         if self.value.get("stage1_io"):
             from ncm_lab.stage1.io import WriteMeter
 

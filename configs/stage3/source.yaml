@@ -1,0 +1,75 @@
+{
+  "schema": "native_stage_v1",
+  "stage": "stage3_source",
+  "model": "configs/models/qwen3_8b.yaml",
+  "architecture": "configs/architecture/embedded_large.yaml",
+  "budget": "configs/stage3/budget.yaml",
+  "device": "cpu",
+  "dtype": "float32",
+  "hardware_profile": "cpu",
+  "inputs": {},
+  "output_ref": null,
+  "stage1": {
+    "schema": "stage1_single_pass_v1",
+    "selection": "stage1_codec_fixed_components_v1",
+    "reduction": "equal_actual_microbatch_objectives_v1",
+    "progress_interval": 10,
+    "comparison_atol": 1e-07,
+    "comparison_rtol": 1e-05,
+    "combined_min_delta": 0.0,
+    "generator_target_cast": "explicit_target_to_generator_parameter_dtype_v1"
+  },
+  "data": {
+    "format": "tulu_parquet",
+    "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+    "asset_lock": "configs/data/tulu3_extension.assets.lock.json",
+    "assets_root": "runs/assets",
+    "source_asset_ids": [
+      "tulu3:data/train-00000-of-00006.parquet",
+      "tulu3:data/train-00001-of-00006.parquet",
+      "tulu3:data/train-00002-of-00006.parquet",
+      "tulu3:data/train-00003-of-00006.parquet",
+      "tulu3:data/train-00004-of-00006.parquet",
+      "tulu3:data/train-00005-of-00006.parquet"
+    ],
+    "source_policy": "configs/data/tulu3_sources.yaml",
+    "max_source_rows": 1200000,
+    "parquet_batch_rows": 32,
+    "max_messages": 300,
+    "max_row_chars": 131072,
+    "max_prompt_tokens": 512,
+    "max_answer_tokens": 256,
+    "seed": 17,
+    "dev_fraction": 0.15,
+    "max_examples": 1000000,
+    "max_unique_tokens": 100000000,
+    "split_token_caps": {
+      "train": 85000000,
+      "dev": 15000000
+    },
+    "training_band_shares": [
+      0.2,
+      0.2,
+      0.25,
+      0.2,
+      0.15
+    ],
+    "codec_minimum_answer_positions": 10000000,
+    "codec_dev_examples": 256,
+    "codec_validation_examples": 32,
+    "generator_processed_tokens": 100000000,
+    "language": {
+      "policy": "langid_english_natural_text_v1",
+      "model_sha256": "e2d675b6d0f511cbb5317b4770c9289754b7338dec97fce660ff09c91b3d95a7",
+      "minimum_probability": 0.9,
+      "min_evidence_chars": 40,
+      "max_evidence_chars": 4096
+    },
+    "overlap": {
+      "source_asset_id": "oasst1:data/train-00000-of-00001-b42a775f407cee45.parquet",
+      "max_source_rows": 200000,
+      "max_prompt_tokens": 512,
+      "policy": "approved_english_immediate_parent_prompts_up_to512_all_answer_lengths_v1"
+    }
+  }
+}

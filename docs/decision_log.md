@@ -249,3 +249,37 @@ automatically changing the training source. Keep the 1,024-position Tülu wave
 and its distinct codec quota separate. Data qualification, finite work and
 resource gates remain in force. Existing manifests still require the exact
 implementation fingerprint; no historical attempts were changed.
+
+## 2026-11-06 — Stage 3 research-candidate workflow
+
+Added a separately versioned Tülu/256-position experiment with offline sequence
+distillation, final post-distillation qualification, update-indexed LR warmup and
+cosine decay, and separate selected-weight/recovery cadences. Stage 1/2 defaults,
+constant-rate numerics and codec gates remain unchanged. Stage 3 finite codec
+non-improvement is advisory; invalid artifacts remain fatal. No extension of an
+existing schedule horizon or cross-experiment recovery bypass is permitted.
+
+The default target/minimum of 100,000/90,000 training pairs, 2,000 dev/test,
+25/35/40 accepted-target length shares and candidate cap are operational policies,
+not measured optima. No approved component is assumed authoritative by default;
+retaining an authoritative reference requires explicit component metadata, an
+allowlisted component and the supported normalized-exact validation rule.
+Locked test is excluded from distillation and selection. Final student/AR models
+load serially, with frozen-contract outputs cached for retries.
+
+Selected snapshots must never displace the two recent complete recoveries or the
+selected-weight dependencies those recoveries need. Logical SQLite/JSON write
+charges use a declared conservative page/journal allowance and are reported
+separately from physical-device I/O. Conservative retained-disk estimates remain
+upper allowances, not claims about fit. No source/model download, production
+teacher generation, full-Qwen training, benchmark sweep or provisioning occurred.
+
+The final retry regression additionally requires a fresh reference model's
+latency warmup before its first uncached example, preserves committed outputs,
+and creates the new attempt's artifact directory when student evaluation is
+cached. Historical recipes reject injected Stage 3 policies; Stage 3 custom
+configs reject wrong stage roles, missing fixed selection contracts, objective
+changes, and backbone-freezing warmup before model allocation. The complete
+final-source suite passed (498 passed, one CUDA skip), with a separate tiny CUDA
+pass. See the dated validation receipt for the fixture-only scope and earlier
+failures and corrections.

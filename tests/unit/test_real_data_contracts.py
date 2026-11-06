@@ -119,7 +119,15 @@ def test_actual_oasst_parquet_reader_and_preparation(tmp_path):
     )
 
 
-def test_actual_meta_inventory_and_selected_precision_memory(tmp_path):
+def test_actual_meta_inventory_and_selected_precision_memory(tmp_path, monkeypatch):
+    from ncm_lab.runtime.doctor import doctor
+
+    # Parameter inventory is real meta construction; admission uses an explicitly
+    # undersized software fixture, independent of the developer host's capacity.
+    hardware = doctor("spark")
+    hardware.update(cuda_detected=True, selected_device_index=0,
+                    devices=[{"index": 0, "name": "software-fixture-8GiB", "bytes": 8 * 1024**3}])
+    monkeypatch.setattr("ncm_lab.runtime.doctor.doctor", lambda profile: hardware)
     model = config("configs/validation/generator_pilot.yaml")["model"]
     inventory = parameter_inventory(model, Architecture().to_dict())
     assert (
