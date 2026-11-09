@@ -87,14 +87,16 @@ def charge_write(run, size):
         state["last_logical_path"] = str(path)
 
 
-def admission(run, settings, *, training):
-    """Meta inventory and shared-pool admission; no measured feasibility claim."""
+def admission(run, settings, *, training, kind="generator", data=None):
+    """Inventory the actual hierarchy/codec/frozen models; never sum Spark pools."""
     import torch
     from transformers import Qwen3Config, Qwen3ForCausalLM
+    from ncm_lab.embedded.model import EmbeddedGenerator
+    from ncm_lab.codec.model import ContinuousCodec
+    from ncm_lab.block8.config import Architecture
     from ncm_lab.runtime.doctor import doctor, memory_capacity
 
     checked(settings["model_asset_policy"])
-
     config = (
         settings["model"]["config"]
         if settings["model"].get("fixture")
@@ -111,49 +113,82 @@ def admission(run, settings, *, training):
     )
     with torch.device("meta"):
         backbone = Qwen3ForCausalLM(Qwen3Config(**config))
-        params = sum(p.numel() for p in backbone.parameters()) + backbone.config.hidden_size
+        original = sum(p.numel() for p in backbone.parameters())
+        head = backbone.lm_head.weight.numel()
+        codec = ContinuousCodec(backbone.config.hidden_size, Architecture(**settings["architecture"]))
+        codec_params = sum(p.numel() for p in codec.parameters())
+        generator = EmbeddedGenerator(backbone, Architecture(**settings["architecture"]))
+        generator_params = sum(p.numel() for p in generator.parameters())
     item = 2 if settings["dtype"] == "bfloat16" else 4
-    weights = params * item
-    recovery = params * (item + 8) if training else weights
-    minimum = (
-        weights + (params * (item + 8) if training else 0) + settings["resources"]["activation_reserve_bytes"]
-    )
-    # Two retained recoveries, one in-progress version, two referenced selections
-    # and one replacement selection before the next recovery is atomically committed.
-    disk = 3 * recovery + 3 * weights if training else weights
+    teacher_item = 2 if settings["features"]["teacher_dtype"] == "bfloat16" else 4
+    if kind == "codec":
+        params, weights = codec_params, codec_params * 4 + head * 4
+        trained = codec_params if training else 0
+        parameter_item = 4
+        checkpoint_weights = codec_params * 4
+    elif kind in {"teacher", "targets"}:
+        params, weights = original, original * teacher_item + (codec_params * 4 if kind == "targets" else 0)
+        trained = 0
+        parameter_item = teacher_item
+        checkpoint_weights = weights
+    else:
+        params, weights = generator_params, generator_params * item
+        trained = generator_params if training else 0
+        parameter_item = item
+        checkpoint_weights = weights
+    minimum = weights + trained * (parameter_item + 8) + settings["resources"]["activation_reserve_bytes"]
+    recovery = trained * (parameter_item + 8) if trained else checkpoint_weights
+    disk = 3 * recovery + 3 * checkpoint_weights if training else checkpoint_weights
+    if kind == "teacher":
+        positions = (
+            settings["features"]["target_train_positions"]
+            + settings["data"]["max_answer_tokens"]
+            - 1
+            + settings["features"]["max_dev_parents"] * settings["data"]["max_answer_tokens"]
+        )
+        disk = positions * backbone.config.hidden_size * teacher_item + settings["data"]["max_parents"] * 8192
+    if kind == "targets" and data is not None:
+        positions = sum(data.manifest["unique_answer_positions"].get(k, 0) for k in ("train", "dev"))
+        disk = (
+            positions * settings["architecture"]["latent_width"] * 4 + settings["data"]["max_parents"] * 8192
+        )
     info = doctor(settings["hardware_profile"])
     assessment = memory_capacity(info, settings["device"], settings["hardware_profile"])
     blockers = []
-    if settings["device"] == "cuda" and not info["cuda_available"]:
+    if settings["device"] == "cuda" and not info["cuda_detected"]:
         blockers.append("CUDA unavailable")
     if assessment["effective_capacity_bytes"] is None or minimum > assessment["effective_capacity_bytes"]:
         blockers.append(
-            "weights/gradients/FP32 moments plus declared activation allowance exceed known capacity"
+            "declared weights/gradients/FP32 moments and activation reserve exceed known capacity"
         )
     if disk > run.meter.budget.max_storage_bytes:
-        blockers.append("checkpoint staging exceeds retained run storage allowance")
+        blockers.append("stage cache/checkpoint staging exceeds retained storage allowance")
     if shutil.disk_usage(run.path).free < disk + settings["resources"]["reserve_free_bytes"]:
-        blockers.append("insufficient checkpoint staging/free-disk reserve")
+        blockers.append("insufficient cache/checkpoint staging and free-disk reserve")
     value = dict(
-        schema="block8_admission_v1",
+        schema="hierarchical_block8_admission_v1",
+        kind=kind,
         parameters=params,
+        parameter_inventory=dict(
+            original=original, generator=generator_params, codec=codec_params, frozen_head=head
+        ),
         weights_bytes=weights,
         minimum_declared_memory_bytes=minimum,
-        checkpoint_staging_bytes=disk,
+        checkpoint_or_cache_staging_bytes=disk,
         memory_capacity=assessment,
         blockers=blockers,
-        scope="meta arithmetic and declared reserves; actual activations/kernels/full-8B recovery unmeasured",
+        scope="meta inventory and declared reserves; actual full-8B activation/kernel/recovery peaks unmeasured",
     )
     write_json(run.path / "admission.json", value, exclusive=True)
     if blockers:
-        raise ValueError("block8 admission blocked: " + "; ".join(blockers))
+        raise ValueError("hierarchical block8 admission blocked: " + "; ".join(blockers))
     return value
 
 
 def plan(settings):
     return dict(
         status="planned",
-        schema="block8_plan_v1",
+        schema="hierarchical_block8_plan_v1",
         configuration_identity=settings["identity"],
         architecture=settings["architecture"],
         data=settings["data"],
@@ -163,7 +198,18 @@ def plan(settings):
         budget=settings["budget"],
         source=settings["source"],
         model=settings["model"],
-        stages=["source (unless explicit sealed data supplied)", "prepare", "train", "evaluate"],
+        stages=[
+            "source (unless explicit sealed data supplied)",
+            "prepare",
+            "teacher",
+            "codec",
+            "targets",
+            "generator",
+            "evaluate",
+        ],
+        codec=settings["codec"],
+        features=settings["features"],
+        block_contract=settings["block_contract"],
         research_work_started=False,
         downloads_started=False,
         model_allocated=False,
@@ -178,19 +224,21 @@ def plan(settings):
 def seal_settings(folder, settings):
     write_json(Path(folder) / "resolved_config.json", settings, exclusive=True)
     return dict(
-        schema="block8_experiment_v1",
+        schema="hierarchical_block8_experiment_v1",
         settings=reference(Path(folder) / "resolved_config.json"),
         configuration_identity=settings["identity"],
         status="created",
         stages={},
         attempts={},
-        recovery=None,
+        recoveries={"codec": None, "generator": None},
     )
 
 
 def verify_settings(state):
     from ncm_lab.runtime.io import implementation_hash
 
+    if state.get("schema") != "hierarchical_block8_experiment_v1":
+        raise ValueError("custom baseline experiments cannot resume as hierarchical block8")
     settings = read(checked(state["settings"]))
     identity = settings.pop("identity")
     if canonical_hash(settings) != identity or identity != state["configuration_identity"]:

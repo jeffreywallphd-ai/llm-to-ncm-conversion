@@ -32,7 +32,9 @@ def _overlap(canvas, source, destination):
         else:
             i += 1
             j += 1
-    return torch.tensor(sources), torch.tensor(destinations), torch.tensor(weights)
+    # Constants cached by an inference request must remain usable by later training.
+    with torch.inference_mode(False):
+        return torch.tensor(sources), torch.tensor(destinations), torch.tensor(weights)
 
 
 def resize(value, slots, canvas):

@@ -71,20 +71,52 @@ class EmbeddedGenerator(nn.Module):
                 param.requires_grad_(True)
 
     def forward(self, prompt_input_ids, prompt_attention_mask, *, return_aux=False):
+        return self._forward(prompt_input_ids, prompt_attention_mask, return_aux=return_aux)
+
+    def forward_cached_context(
+        self, prompt_input_ids, prompt_attention_mask, prefix_cache, *, return_aux=False
+    ):
+        """Inference-only native traversal; transient hierarchy KVs never enter the text cache."""
+        if (
+            self.training
+            or torch.is_grad_enabled()
+            or prompt_input_ids.shape[0] != 1
+            or not bool(prompt_attention_mask.all())
+            or prefix_cache.get_seq_length() != prompt_input_ids.shape[1]
+        ):
+            raise ValueError("cached native forward needs an exact unpadded causal inference prefix")
+        from ncm_lab.embedded.cache import ReadOnlyPrefix
+
+        return self._forward(
+            prompt_input_ids,
+            prompt_attention_mask,
+            return_aux=return_aux,
+            prefix_cache=ReadOnlyPrefix(prefix_cache),
+        )
+
+    def _forward(self, prompt_input_ids, prompt_attention_mask, *, return_aux=False, prefix_cache=None):
         if prompt_input_ids.ndim != 2 or prompt_input_ids.shape != prompt_attention_mask.shape:
             raise ValueError("prompt IDs and mask must have equal [batch,prompt] shape")
         prompt_size = prompt_input_ids.shape[1]
-        prompt = self.backbone.model.embed_tokens(prompt_input_ids)
-        answer = self.queries[None].expand(prompt.shape[0], -1, -1)
+        prompt = self.backbone.model.embed_tokens(prompt_input_ids) if prefix_cache is None else None
+        answer = self.queries[None].expand(prompt_input_ids.shape[0], -1, -1)
         compact = answer.new_zeros(answer.shape[0], answer.shape[1], self.architecture.latent_width)
         lengths = prompt_attention_mask.sum(1)
         auxiliary = []
         trace = []
         for index, layer in enumerate(self.backbone.model.layers):
-            hidden = torch.cat([prompt, answer], 1)
-            mask, positions = attention_geometry(
-                prompt_attention_mask, answer.shape[1], self.architecture.canvas, hidden.dtype
-            )
+            if prefix_cache is None:
+                hidden = torch.cat([prompt, answer], 1)
+                mask, positions = attention_geometry(
+                    prompt_attention_mask, answer.shape[1], self.architecture.canvas, hidden.dtype
+                )
+            else:
+                from ncm_lab.embedded.geometry import intervals
+
+                hidden = answer
+                left, right = intervals(self.architecture.canvas, answer.shape[1], answer.device)
+                positions = lengths[:, None] + ((left + right - 1) // 2)[None]
+                mask = hidden.new_zeros(1, 1, answer.shape[1], prompt_size + answer.shape[1])
             rotary = self.backbone.model.rotary_emb(hidden, positions)
 
             def block(value, module=layer, attention=mask, ids=positions, rope=rotary):
@@ -94,6 +126,7 @@ class EmbeddedGenerator(nn.Module):
                     position_ids=ids,
                     position_embeddings=rope,
                     use_cache=False,
+                    past_key_values=prefix_cache,
                     is_causal=False,
                 )
 
@@ -101,8 +134,11 @@ class EmbeddedGenerator(nn.Module):
                 hidden = checkpoint(block, hidden, use_reentrant=False)
             else:
                 hidden = block(hidden)
-            prompt = hidden[:, :prompt_size] * prompt_attention_mask[:, :, None]
-            answer = hidden[:, prompt_size:]
+            if prefix_cache is None:
+                prompt = hidden[:, :prompt_size] * prompt_attention_mask[:, :, None]
+                answer = hidden[:, prompt_size:]
+            else:
+                answer = hidden
             trace.append(
                 {
                     "block": index + 1,

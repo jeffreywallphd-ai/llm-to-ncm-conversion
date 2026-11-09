@@ -2,7 +2,7 @@
 
 from dataclasses import asdict
 import pytest
-from ncm_lab.block8.config import resolve, DataPolicy, Training, Decoding, Resources
+from ncm_lab.block8.config import resolve, DataPolicy, Training, CodecTraining, Features, Decoding, Resources
 from ncm_lab.data.artifacts import ArtifactWriter, LOCKED
 from ncm_lab.data.records import Example, LOCKED_SCHEMA
 from ncm_lab.inference.export import fixture_tokenizer
@@ -15,7 +15,12 @@ from ncm_lab.validation.fixtures import model_spec
 def block8_fixture(tmp_path):
     cfg = read(root() / "configs/block8/experiment.yaml")
     spec = model_spec()
-    spec["config"]["num_hidden_layers"] = 2
+    spec["config"].update(
+        num_hidden_layers=36, hidden_size=8, intermediate_size=16, num_attention_heads=1, head_dim=8
+    )
+    from ncm_lab.config.architecture import tiny_architecture
+
+    cfg["architecture"] = tiny_architecture(8, activation_checkpointing=False).to_dict()
     cfg.update(model=spec, device="cpu", dtype="float32", hardware_profile="cpu")
     cfg["data"] = asdict(
         DataPolicy(
@@ -35,18 +40,35 @@ def block8_fixture(tmp_path):
             steps=4,
             accumulation=1,
             learning_rate=0.001,
-            mask_learning_rate=0.002,
+            new_learning_rate=0.002,
             validation_interval=1,
             checkpoint_interval=1,
             max_validation_views=2,
             shard_bytes=8192,
-            activation_checkpointing=False,
-            curriculum_end_steps=(1, 2, 3, 4),
+            warmup_steps=1,
         )
     )
-    cfg["decoding"] = asdict(
-        Decoding(refinement_passes=2, max_new_tokens=24, max_blocks=3, max_evaluation_examples=2)
+    cfg["codec"] = asdict(
+        CodecTraining(
+            steps=3,
+            batch_size=2,
+            accumulation=1,
+            learning_rate=0.001,
+            new_learning_rate=0.001,
+            validation_interval=1,
+            checkpoint_interval=1,
+            max_validation_views=2,
+            max_statistics_views=4,
+            shard_bytes=8192,
+            warmup_steps=1,
+        )
     )
+    cfg["features"] = asdict(
+        Features(
+            teacher_dtype="float32", target_train_positions=32, minimum_train_positions=16, max_dev_parents=2
+        )
+    )
+    cfg["decoding"] = asdict(Decoding(max_new_tokens=24, max_blocks=3, max_evaluation_examples=2))
     cfg["resources"] = asdict(
         Resources(
             reserve_free_bytes=1,

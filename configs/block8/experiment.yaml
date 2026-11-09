@@ -1,5 +1,5 @@
 {
-  "schema": "block8_workflow_v1",
+  "schema": "hierarchical_block8_workflow_v1",
   "model": "configs/models/qwen3_8b.yaml",
   "device": "cuda",
   "dtype": "bfloat16",
@@ -31,5 +31,7 @@
     "max_candidates": 250000,
     "max_source_index_bytes": 32000000000,
     "max_candidate_bytes": 4000000000
-  }
+  },
+  "codec": {},
+  "features": {}
 }

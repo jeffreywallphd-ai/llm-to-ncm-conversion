@@ -355,3 +355,48 @@ offline suite; one separate tiny BF16 CUDA test passed. Lint, offline plan, loca
 wheel packaging and 35 shell-block syntax checks passed. The
 [dated receipt](block8_validation_2026-11-09.json) records source/log hashes and
 limits of the evidence. The original failed source experiment remains unchanged.
+
+## 2026-11-09 — Replace custom baseline with native hierarchical block continuation
+
+The user explicitly removed the custom baseline and requested a semi-AR workflow
+using the hierarchy tested by the other native stages. Remove mask embeddings,
+denoising/unmasking code and 1/2-token curricula from active implementation. Preserve
+the historical commit and software receipt, and reject its old schemas. No external
+SDAR/WeDLM baseline is implemented by this replacement.
+
+Reuse EmbeddedGenerator and ContinuousCodec: fixed eight-position blocks, four
+initial queries, width 384, all 32 updates/16 cumulative losses/36 original layers.
+Strictly causal committed text is consistent with context-causal adaptation research;
+transient native query KVs are never committed. One native traversal predicts each
+block, followed by causal text-KV construction. The old prompt-only forward API
+and single-pass stage objectives remain unchanged. Add a separately checked cached
+inference entry point that shares the same traversal implementation.
+
+Compose source/data -> bounded frozen parent teacher features -> native codec
+training/selection -> full train/dev frozen fine codes -> hierarchical generator
+training/selection -> locked rollouts. Teacher alignment remains P-1+t. Pooling stays
+block-local; normalization/scales fit only declared fixed training views. Full-pool
+raw teacher tensors are not retained. Generator training never loads a teacher or
+codec. Add explicit 0.1 training-only shifted AR loss alongside native CE + 0.1 mean
+cumulative-code loss, with activation recomputation for both traversals. Keep block
+size eight, since a 1/2-token curriculum contradicts four nonempty queries.
+
+Declare separate codec/generator 10k/20k horizons, 500/1000-update warmup/cosine
+schedules, independent recovery/RNG/phase accounting, stage-specific memory/cache
+admission and 6/18 TB per-attempt/phase logical-write allowances. No production
+assets, full-source scans, real distillation/training, benchmark sweeps or remote
+provisioning are launched during implementation. See the
+[architecture plan](hierarchical_block8_plan.md) for assumptions and deviations.
+
+A focused inference-then-training fixture exposed pre-existing resize LRU constants
+created as inference tensors, which could fail a later backward pass. Constants
+are now created outside inference mode; the resize arithmetic is unchanged and a
+direct regression covers this execution order. The initial failure and the CUDA
+admission correction are recorded in the replacement validation receipt.
+
+Replacement verification completed: 542 passing tests and three optional CUDA skips
+in the full offline suite; two tiny CUDA hierarchy/pipeline fixtures passed.
+Focused CPU tests passed (28), including codec moments/private RNG and generator
+FP32/BF16 recovery equivalence. Lint, offline planning, wheel packaging and 36 shell
+syntax checks passed. See the [replacement receipt](hierarchical_block8_validation_2026-11-09.json).
+The original failed source experiment and historical validation receipt are unchanged.

@@ -1,0 +1,240 @@
+{
+  "schema": "hierarchical_block8_software_validation_v1",
+  "recorded_at_utc": "2026-11-09T19:25:04.797162+00:00",
+  "base_commit": "a80b6f56083aed00a0ba8d02d489328de6a38374",
+  "implementation_sha256": "b60d27e39bf25010ffb77068d76ac0ce662253b3874abb7be748197abb3c0e03",
+  "architecture_plan_sha256": "a5738813efaa7ba5f3b5d49d194178938c1d8d7a86607adfb5ee2d96e1a7f359",
+  "scope": "Native eight-token hierarchical continuation replacement. Bounded CPU fixtures and two tiny CUDA fixtures only; no production assets, source scans, distillation or full-8B training.",
+  "standard_policy": {
+    "architecture": {
+      "schema": "embedded_qwen_hierarchy_v1",
+      "canvas": 8,
+      "initial_queries": 4,
+      "latent_width": 384,
+      "early_blocks": 8,
+      "hierarchy_blocks": 16,
+      "late_blocks": 12,
+      "resolutions": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8,
+        8,
+        8
+      ],
+      "gate_initial": 0.1,
+      "longer_skips": false,
+      "activation_checkpointing": true
+    },
+    "block_contract": {
+      "schema": "native_hierarchical_block8_v1",
+      "block_size": 8,
+      "conditioning": "prompt_and_committed_text_only_v1",
+      "cache": "committed_causal_text_only_v1",
+      "prediction": "one_native_hierarchy_traversal_per_block_v1",
+      "teacher_alignment": "parent_P_minus_one_plus_answer_index_v1"
+    },
+    "data": {
+      "max_prompt_tokens": 512,
+      "max_answer_tokens": 1024,
+      "max_context_tokens": 1536,
+      "max_parents": 252000,
+      "max_views": 32256000,
+      "max_row_bytes": 16777216,
+      "max_index_bytes": 32000000000,
+      "minimum_train": 90000,
+      "minimum_dev": 2000,
+      "minimum_test": 2000,
+      "target_policy": "sealed_record_targets_v1"
+    },
+    "features": {
+      "teacher_dtype": "bfloat16",
+      "target_train_positions": 10000000,
+      "minimum_train_positions": 1000000,
+      "max_dev_parents": 256
+    },
+    "codec": {
+      "steps": 10000,
+      "batch_size": 4,
+      "accumulation": 8,
+      "learning_rate": 0.0001,
+      "new_learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "gradient_clip": 1.0,
+      "validation_interval": 250,
+      "checkpoint_interval": 500,
+      "max_validation_views": 256,
+      "head_chunk": 8,
+      "shard_bytes": 67108864,
+      "optimizer_tile_elements": 1048576,
+      "optimizer_seed": 1729,
+      "warmup_steps": 500,
+      "minimum_lr_ratio": 0.1,
+      "prediction_weight": 0.1,
+      "max_statistics_views": 4096
+    },
+    "training": {
+      "steps": 20000,
+      "batch_size": 1,
+      "accumulation": 16,
+      "learning_rate": 1e-05,
+      "new_learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "gradient_clip": 1.0,
+      "validation_interval": 250,
+      "checkpoint_interval": 1000,
+      "max_validation_views": 256,
+      "head_chunk": 8,
+      "shard_bytes": 67108864,
+      "optimizer_tile_elements": 1048576,
+      "optimizer_seed": 1729,
+      "warmup_steps": 1000,
+      "minimum_lr_ratio": 0.1,
+      "auxiliary_weight": 0.1,
+      "ar_weight": 0.1
+    },
+    "decoding": {
+      "max_new_tokens": 1024,
+      "max_blocks": 128,
+      "max_evaluation_examples": 32
+    },
+    "resources": {
+      "reserve_free_bytes": 20000000000,
+      "activation_reserve_bytes": 8000000000,
+      "max_attempts_per_stage": 3,
+      "max_write_bytes": 6000000000000,
+      "max_phase_write_bytes": 18000000000000
+    },
+    "budget": {
+      "phase_id": "block8-template",
+      "max_wall_seconds": 43200,
+      "max_steps": 2000000,
+      "max_source_tokens": 2000000000,
+      "max_answer_positions": 200000000,
+      "max_canvas_positions": 200000000,
+      "max_storage_bytes": 500000000000,
+      "max_phase_wall_seconds": 129600,
+      "max_phase_steps": 6000000,
+      "max_phase_source_tokens": 6000000000,
+      "max_phase_answer_positions": 600000000,
+      "max_phase_canvas_positions": 600000000,
+      "max_phase_storage_bytes": 1500000000000,
+      "enforce_wall_time_limits": true
+    }
+  },
+  "checks": [
+    {
+      "command": "PYTHONPATH=\"$PWD/src\" CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 timeout 1500s /home/jdwall/GitProjects/llm-to-ncm-conversion/.venv/bin/python -m pytest -q --maxfail=1 -o cache_dir=/tmp/hblock-full-pytest-cache",
+      "passed": 542,
+      "skipped": 3,
+      "failed": 0,
+      "seconds": 738.06,
+      "log_sha256": "5b5882c1b0f369b042ecc5c84d021931cdd1aaecaf46345a164aa44c41fcaef9"
+    },
+    {
+      "command": "PYTHONPATH=\"$PWD/src\" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 timeout 180s /home/jdwall/GitProjects/llm-to-ncm-conversion/.venv/bin/python -m pytest tests/cuda/test_block8_cuda.py tests/block8/test_cuda_pipeline.py -q --maxfail=1 -o cache_dir=/tmp/hblock-cuda-pytest-cache",
+      "passed": 2,
+      "failed": 0,
+      "seconds": 7.65,
+      "log_sha256": "c3a23660d4e36f4ac5d5153a1e446fde6f09ed5a96262e081b89c24a3485a99a",
+      "scope": "Tiny 36-layer BF16 hierarchy gradients/SR optimizer/cache plus complete teacher/codec/targets/generator/evaluation CUDA pipeline; not full-8B feasibility."
+    },
+    {
+      "check": "Focused development regression",
+      "passed": 28,
+      "failed": 0,
+      "seconds": 81.87,
+      "log_sha256": "261cf3dceb34cfc7c33d371bd62447e7486aef548e5ce9e21ae57469ef737eb3",
+      "scope": "Actual tensors/all 32 updates/16 codes/36-layer gradients; cached/uncached output equivalence; parent P-1+t alignment; codec telescoping/freeze/train-only statistics; EOS and longer rollouts; exact FP32 codec and FP32/BF16 generator recovery; corrupt exports; source/index stops; removed-schema rejection. Final complete suite includes these checks."
+    },
+    {
+      "command": "ruff check . --no-cache",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "check": "Literal hierarchical run_block8.py --plan-only; no model/research work allocated",
+      "status": "passed"
+    },
+    {
+      "check": "README and hierarchical block guide bash/sh blocks through bash -n, none executed",
+      "blocks": 36,
+      "status": "passed"
+    },
+    {
+      "command": "python -m pip wheel --no-deps --no-build-isolation --no-index --no-cache-dir --wheel-dir /tmp/hblock-wheels .",
+      "status": "passed",
+      "wheel_sha256": "6eb09a5da19966999b00cc3aebbb4817021d20599d0ff7c2964fc4b888767946",
+      "native_cache_and_targets_packaged": true,
+      "custom_mask_model_absent": true
+    }
+  ],
+  "resolved_development_failures": [
+    {
+      "test": "test_full_backbone_hierarchy_gradients_and_frozen_target_boundary",
+      "initial_status": "failed",
+      "error": "RuntimeError: Inference tensors cannot be saved for backward",
+      "cause": "Cached resize constants were first created under inference_mode and then reused by backward.",
+      "correction": "Create cached geometry constants under inference_mode(False); preserve resize arithmetic; add direct inference-before-backward regression."
+    },
+    {
+      "test": "test_tiny_cuda_teacher_codec_targets_and_hierarchical_generator",
+      "initial_status": "failed",
+      "stage": "teacher",
+      "error": "KeyError: cuda_available",
+      "cause": "The admission consumer used a nonexistent doctor field.",
+      "correction": "Read the shared cuda_detected field; rerun full tiny CUDA pipeline."
+    }
+  ],
+  "integrity": {
+    "custom_baseline_removed_from_active_code": true,
+    "old_custom_schemas_rejected": true,
+    "shared_native_generator_and_codec_reused": true,
+    "prompt_only_forward_api_preserved": true,
+    "current_gold_and_true_length_masks_loss_only": true,
+    "teacher_and_codec_targets_frozen": true,
+    "original_failed_source_control_hashes_and_index_stat_unchanged": true,
+    "historical_custom_receipt_sha256": "2cf25dd2785872fdf29be9ae45aea46b921aceb7b1e1e9553a50a23bd80c58a3",
+    "gpl_and_vendored_notices_preserved": true,
+    "generated_python_executed": false,
+    "production_training_executed": false
+  },
+  "limitations": [
+    "No full-8B Spark peak-memory/kernel/recovery feasibility, learning-quality, convergence or latency result is established.",
+    "The native hierarchy is the proposed model; this is not a reproduction or integration of SDAR/NBDiff or a new custom baseline.",
+    "Fixed eight-token blocks preserve four queries and all 32 updates; a 1/2-token curriculum is deliberately not used.",
+    "Normalization/scales use explicit bounded training-only view subsets; broader data independence beyond sealed source/overlap inputs is unknown.",
+    "Existing sealed distilled targets can be imported; no automatic sequence-level distillation or on-policy teacher continuation generation is implemented.",
+    "Masked-block inference was removed. Generator selection is native text CE, not comparable AR perplexity; locked token exact match does not establish semantic correctness.",
+    "Memory/disk admission uses meta inventory and declared reserves; logical-write accounting is not physical device wear."
+  ]
+}

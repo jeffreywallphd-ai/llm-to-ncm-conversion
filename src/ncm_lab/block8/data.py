@@ -13,7 +13,7 @@ from ncm_lab.runtime.io import canonical_hash, digest, read, reference, resolve_
 from ncm_lab.stage3.source_index import SourceIndex
 from ncm_lab.teacher.model import model_identity, load_tokenizer
 
-SCHEMA = "block8_parent_offset_data_v1"
+SCHEMA = "hierarchical_block8_parent_offset_data_v1"
 
 
 def prepare(run, settings, inputs):
@@ -234,8 +234,8 @@ class BlockDataset:
 
     def view(self, key, start, size=8):
         example = self.parent(key)
-        if size not in {1, 2, 4, 8} or start % size or not 0 <= start < len(example.answer_ids):
-            raise ValueError("invalid block8 offset/curriculum view")
+        if size != 8 or start % size or not 0 <= start < len(example.answer_ids):
+            raise ValueError("invalid hierarchical block offset")
         # No re-rendering, no new assistant turn, no decode/retokenize boundary changes.
         return example.prompt_ids + example.answer_ids[:start], example.answer_ids[start : start + size]
 

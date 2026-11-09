@@ -1,4 +1,4 @@
-"""Plan by default; --execute explicitly starts the separate block8 workflow."""
+"""Plan by default; --execute explicitly starts the native hierarchical block8 workflow."""
 
 from ncm_lab.block8.cli import main
 

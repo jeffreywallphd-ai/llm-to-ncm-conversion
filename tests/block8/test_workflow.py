@@ -52,7 +52,7 @@ def test_parent_offsets_preserve_whole_answer_eos_and_do_not_duplicate_context(b
         assert not (Path(checked(result["dataset"])).parent / "prefixes.jsonl").exists()
     state = read(result["experiment"])
     assert set(state["stages"]) == {"prepare"}
-    assert state["recovery"] is None
+    assert state["recoveries"] == {"codec": None, "generator": None}
 
 
 def test_complete_workflow_export_generation_and_at_target_resume(block8_fixture, capsys):
@@ -67,7 +67,7 @@ def test_complete_workflow_export_generation_and_at_target_resume(block8_fixture
     assert result["status"] == "completed", result
     assert result["completed_step"] == 4
     state = read(result["experiment"])
-    training = read(checked(state["stages"]["train"]["receipt"]))["result"]
+    training = read(checked(state["stages"]["generator"]["receipt"]))["result"]
     assert training["full_backbone_trainable"] and 0 <= training["selected_step"] <= 4
     evaluated = read(checked(result["evaluation"]["report"]))
     assert evaluated["selection_used_test"] is False and evaluated["teacher_or_verifier_used"] is False
@@ -79,7 +79,7 @@ def test_complete_workflow_export_generation_and_at_target_resume(block8_fixture
         p.name: digest(p) for p in (Path(result["experiment"]).parent / "ledgers").glob("*.json")
     }
     model, tokenizer, metadata = load_export(checked(result["selected"]), "cpu")
-    assert model.architecture.block_size == 8 and metadata["teacher_codec_or_verifier_required"] is False
+    assert model.architecture.canvas == 8 and metadata["teacher_codec_or_verifier_required"] is False
     assert len(tokenizer) == 32
     generated = run_workflow(
         f["settings"],
@@ -92,7 +92,7 @@ def test_complete_workflow_export_generation_and_at_target_resume(block8_fixture
     assert generated["result"]["verification_or_repair"] is False
     assert generated["result"]["selected_step"] == metadata["selected_step"]
     assert generated["result"]["blocks"] <= 3
-    assert "block8_train" in capsys.readouterr().out
+    assert "block8_generator" in capsys.readouterr().out
 
 
 def model_state(recovery):
@@ -127,24 +127,27 @@ def test_sharded_interrupted_resume_matches_uninterrupted_update_and_preserves_f
     )
     assert interrupted["status"] == "incomplete", interrupted
     state = read(interrupted["experiment"])
-    old_receipt = checked(state["stages"]["train"]["receipt"])
-    old_recovery = state["recovery"]
+    old_receipt = checked(state["stages"]["generator"]["receipt"])
+    old_recovery = state["recoveries"]["generator"]
     old_sha = digest(old_receipt)
     resumed = run_workflow(resume=interrupted["experiment"], execute=True)
     assert resumed["status"] == "completed", resumed
     assert digest(old_receipt) == old_sha and checked(old_recovery).is_file()
     full_state = read(full["experiment"])
     new_state = read(resumed["experiment"])
-    a, b = model_state(full_state["recovery"]), model_state(new_state["recovery"])
+    a, b = (
+        model_state(full_state["recoveries"]["generator"]),
+        model_state(new_state["recoveries"]["generator"]),
+    )
     assert a.keys() == b.keys()
     for key in a:
         assert torch.equal(a[key], b[key]), key
-    for ref in (full_state["recovery"], new_state["recovery"]):
+    for ref in (full_state["recoveries"]["generator"], new_state["recoveries"]["generator"]):
         reader = CheckpointReader(checked(ref))
         assert len(reader.manifest["files"]) > 1
         assert reader.materialize(reader.field("training"))["step"] == 4
     before = read(old_receipt)["charged_work"]
-    phase = next((Path(resumed["experiment"]).parent / "ledgers").glob("*train.json"))
+    phase = next((Path(resumed["experiment"]).parent / "ledgers").glob("*generator.json"))
     assert read(phase)["charges"]["steps"] > before["steps"]
 
 
@@ -259,7 +262,7 @@ def test_cross_split_group_and_duplicate_prompt_are_rejected_before_filtering(bl
             evaluation_manifest=f["evaluation"],
         )
         assert result["status"] == "failed" and "crosses" in result["failure"]["error"], result
-        assert read(result["experiment"])["recovery"] is None
+        assert read(result["experiment"])["recoveries"]["generator"] is None
 
 
 def test_plan_and_cli_do_not_load_models_or_create_runs(block8_fixture, monkeypatch, capsys):
@@ -295,7 +298,7 @@ def test_budget_failure_is_preserved_and_never_starts_model(block8_fixture, monk
     assert result["status"] == "budget_stopped", result
     state = read(result["experiment"])
     receipt = read(checked(state["stages"]["prepare"]["receipt"]))
-    assert receipt["charged_work"]["steps"] == 1 and "train" not in state["stages"]
+    assert receipt["charged_work"]["steps"] == 1 and "generator" not in state["stages"]
     assert (Path(result["experiment"]).parent / "attempts/prepare").is_dir()
 
 
@@ -328,4 +331,131 @@ def test_hard_sqlite_parent_index_limit_preserves_diagnostics(block8_fixture):
     receipt = checked(state["stages"]["prepare"]["receipt"])
     failed = read(receipt.parent / "dataset/storage_failure.json")
     assert failed["index_bytes"] <= 65536 and failed["failed_index_preserved"]
-    assert not (receipt.parent / "dataset/manifest.json").exists() and "train" not in state["stages"]
+    assert not (receipt.parent / "dataset/manifest.json").exists() and "generator" not in state["stages"]
+
+
+def test_teacher_codec_and_targets_are_frozen_parent_aligned_and_generator_is_offline(
+    block8_fixture, monkeypatch
+):
+    from ncm_lab.block8.targets import TensorStore, FEATURES, TARGETS
+    from ncm_lab.block8.training import load_codec
+    from ncm_lab.teacher.model import prediction_states
+    import ncm_lab.teacher.model as teachers
+
+    f = block8_fixture
+    result = run_workflow(
+        f["settings"],
+        experiment_dir=f["folder"] / "offline target pipeline",
+        execute=True,
+        data_manifest=f["data"],
+        evaluation_manifest=f["evaluation"],
+        stop_after=1,
+    )
+    assert result["status"] == "incomplete", result
+    state = read(result["experiment"])
+    assert all(
+        state["stages"][s]["status"] == "completed" for s in ("prepare", "teacher", "codec", "targets")
+    )
+
+    def receipt(stage):
+        return read(checked(state["stages"][stage]["receipt"]))["result"]
+
+    data_ref = receipt("prepare")["dataset"]
+    features_ref = receipt("teacher")["features"]
+    codec_ref = receipt("codec")["codec"]
+    targets_ref = receipt("targets")["targets"]
+    codec_sha = digest(checked(codec_ref))
+    teacher = teachers.load_original(f["settings"]["model"], frozen=True)
+    with (
+        closing(BlockDataset(checked(data_ref), f["settings"])) as data,
+        closing(TensorStore(checked(features_ref), f["settings"], data, FEATURES)) as features,
+        closing(TensorStore(checked(targets_ref), f["settings"], data, TARGETS)) as targets,
+    ):
+        codec, meta = load_codec(checked(codec_ref), f["settings"], data, "cpu")
+        assert meta["train_only_statistics"] and meta["teacher_head_frozen"]
+        assert not any(p.requires_grad for p in teacher.parameters())
+        assert not any(p.requires_grad for p in codec.parameters())
+        assert set(targets.ids["train"]) == set(data.ids["train"])
+        assert set(targets.ids["dev"]) == set(data.ids["dev"])
+        assert not set(data.ids["test"]) & set(features.ids["train"] + features.ids["dev"])
+        assert not set(data.ids["test"]) & set(targets.ids["train"] + targets.ids["dev"])
+        key = features.ids["train"][0]
+        parent = data.parent(key)
+        actual = features.get(key, parent)
+        expected = prediction_states(teacher, parent.prompt_ids, parent.answer_ids)
+        torch.testing.assert_close(actual, expected)
+        with torch.no_grad():
+            code = codec.fine_codes(expected.float())
+        torch.testing.assert_close(targets.get(key, parent), code)
+        assert len(meta["scales"]) == 16 and all(len(v) == 8 for v in meta["scales"].values())
+    real_load = teachers.load_original
+
+    def guard(*args, **kwargs):
+        assert kwargs.get("frozen") is False, "generator attempted an online teacher load"
+        return real_load(*args, **kwargs)
+
+    monkeypatch.setattr(teachers, "load_original", guard)
+    monkeypatch.setattr(
+        "ncm_lab.block8.training.load_codec", lambda *a, **k: pytest.fail("generator loaded codec")
+    )
+    resumed = run_workflow(resume=result["experiment"], execute=True)
+    assert resumed["status"] == "completed", resumed
+    assert digest(checked(codec_ref)) == codec_sha
+
+
+def test_codec_exact_sharded_resume_and_independent_generator_recovery(block8_fixture):
+    f = block8_fixture
+    full = run_workflow(
+        f["settings"],
+        experiment_dir=f["folder"] / "full codec reference",
+        execute=True,
+        data_manifest=f["data"],
+        evaluation_manifest=f["evaluation"],
+    )
+    assert full["status"] == "completed", full
+    stopped = run_workflow(
+        f["settings"],
+        experiment_dir=f["folder"] / "interrupted codec",
+        execute=True,
+        data_manifest=f["data"],
+        evaluation_manifest=f["evaluation"],
+        stop_after_codec=1,
+    )
+    assert stopped["status"] == "incomplete", stopped
+    old = read(stopped["experiment"])
+    codec_recovery = old["recoveries"]["codec"]
+    assert old["recoveries"]["generator"] is None and "targets" not in old["stages"]
+    resumed = run_workflow(resume=stopped["experiment"], execute=True)
+    assert resumed["status"] == "completed", resumed
+    a, b = read(full["experiment"]), read(resumed["experiment"])
+    for phase in ("codec", "generator"):
+        x, y = model_state(a["recoveries"][phase]), model_state(b["recoveries"][phase])
+        for name in x:
+            assert torch.equal(x[name], y[name]), (phase, name)
+        left = CheckpointReader(checked(a["recoveries"][phase]))
+        right = CheckpointReader(checked(b["recoveries"][phase]))
+        ox = left.materialize(left.field("optimizer"))
+        oy = right.materialize(right.field("optimizer"))
+        assert ox["rounding_draws"] == oy["rounding_draws"]
+        assert torch.equal(ox["rounding_rng"], oy["rounding_rng"])
+        for key in ox["state"]:
+            for stat in ("exp_avg", "exp_avg_sq"):
+                assert torch.equal(ox["state"][key][stat], oy["state"][key][stat])
+    assert checked(codec_recovery).is_file()
+
+
+def test_removed_custom_baseline_contracts_are_rejected(block8_fixture):
+    f = block8_fixture
+    cfg = read(f["config"])
+    cfg["schema"] = "block8_workflow_v1"
+    write_json(f["folder"] / "old config.json", cfg)
+    with pytest.raises(ValueError, match="configuration"):
+        resolve(f["folder"] / "old config.json")
+    old = f["folder"] / "old custom export.json"
+    write_json(old, dict(schema="block8_export_v1"))
+    with pytest.raises(ValueError, match="family"):
+        load_export(old, "cpu")
+    manifest = f["folder"] / "old custom experiment.json"
+    write_json(manifest, dict(schema="block8_experiment_v1"))
+    with pytest.raises(ValueError, match="custom baseline"):
+        run_workflow(resume=manifest)

@@ -10,26 +10,26 @@ Inference needs the generator export and tokenizer, with no autoregressive repai
 fixtures verify software behavior. See [architecture](docs/architecture.md) and
 [data contracts](docs/data_contracts.md) for the scientific design and limitations.
 
-## Separate eight-token block workflow
+## Hierarchical eight-token block workflow
 
-An experimental Qwen-initialized block-autoregressive model is available alongside
-the native hierarchy. It refines eight token positions together, then appends their
-final text to a causal KV cache. Its dataset stores complete parents once with
-block offsets and keeps conversation groups and genuine EOS intact.
+The semi-autoregressive workflow now uses the tested native embedded hierarchy:
+four queries, all 32 updates, latent width 384 and all 36 Qwen layers per block.
+It prepares block data, extracts frozen teacher features, trains/selects the codec,
+builds frozen code targets, trains/selects the full-backbone hierarchical generator,
+and evaluates full-answer rollouts. The custom mask-token baseline is removed.
 
 ```bash
 python -u scripts/run_block8.py --plan-only
-# Optional preparation only; continue its printed manifest with --resume.
-python -u scripts/run_block8.py --execute --prepare-only
-# Alternatively start a fresh complete workflow.
+# Fresh full workflow, including codec and generator training.
 python -u scripts/run_block8.py --execute
 ```
 
-Execution requires verified local pinned assets and explicit finite stage budgets.
-The new workflow enables wall limits by default. It has separate dataset, export
-and recovery contracts; the 1,000-update prototype has no measured full-8B quality,
-Spark fit or speed claim. See the [block8 guide](docs/block8.md) for preparation,
-resume, generation, resource policy and limitations.
+Execution needs verified local assets and finite per-stage budgets; wall limits
+are enabled by default. Use a fresh experiment: former custom block8 schemas and
+checkpoints are incompatible. Full-8B Spark fit, quality and speed remain unmeasured.
+See the [hierarchical block guide](docs/block8.md) and
+[architecture plan](docs/hierarchical_block8_plan.md) for preparation, losses,
+cache semantics, recovery and the limits of the evidence.
 
 ## Setup
 

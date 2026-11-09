@@ -11,7 +11,7 @@ def parser():
         prog="ncm", description="Native embedded Qwen hierarchy and bounded initial training"
     )
     commands = p.add_subparsers(dest="command", required=True)
-    block = commands.add_parser("block8", help="separate eight-token block-autoregressive workflow")
+    block = commands.add_parser("block8", help="native hierarchical eight-token workflow")
     from ncm_lab.block8.cli import add_arguments as add_block8_arguments
     add_block8_arguments(block)
     pilot = commands.add_parser("pilot").add_subparsers(dest="pilot_action", required=True).add_parser("train")

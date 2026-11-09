@@ -275,6 +275,10 @@ skip), `ruff check .` passed, and the wheel includes the new module. See the
 
 ## Separate block8 workflow — 2026-11-09
 
+Historical entry: this custom baseline was subsequently retired and replaced by
+the native hierarchical workflow described below. Its dated receipt applies only
+to commit a80b6f5.
+
 Implemented a separate original-Qwen context-causal masked-block decoder, eight-token
 rollout/cache commit loop, parent/offset dataset preparation, approved Tulu adapter,
 full-backbone denoising plus AR training, dev selection, sharded selected export and
@@ -292,3 +296,28 @@ Final block8 verification: **540 passed, two optional CUDA skips** in the comple
 offline suite; the separate tiny BF16 CUDA test passed. Lint, wheel packaging and
 35 shell-block syntax checks passed. See the
 [block8 validation receipt](block8_validation_2026-11-09.json).
+
+## Native hierarchical block8 replacement — 2026-11-09
+
+The custom masked-block baseline is retired from active code. The same block8
+entry point now composes native hierarchy generation and shared codec supervision:
+source, parent/offset data, bounded frozen parent teacher states, codec fitting,
+frozen fine targets, full-backbone generator fitting and locked full-answer rollouts.
+New schemas reject old custom artifacts. Historical evidence remains identifiable.
+
+The implemented model preserves all 36 layers, four initial queries, 32 updates,
+width 384 and sixteen cumulative losses per eight-token block. Shared causal-cache
+support is checked against uncached traversal at every scale. Teacher/codec stages
+are explicit; no target or online model enters generator forward. Recovery, schedule,
+phase/write bounds and failed-run preservation are independent for codec/generator.
+
+Real 8B/Spark memory, recovery, data sufficiency, convergence, text quality and speed
+remain open measured milestones. See the [plan](hierarchical_block8_plan.md) and
+[current operator guide](block8.md). Prior custom-baseline receipts describe the old
+commit and do not validate this replacement. No production experiment was run.
+
+Final replacement validation: **542 passed, three optional CUDA skips** in the
+complete offline suite; **two tiny CUDA tests passed** separately. Focused CPU
+fixtures passed (28), as did lint, wheel, offline plan and 36 shell syntax checks.
+The [new receipt](hierarchical_block8_validation_2026-11-09.json) applies to this
+hierarchical replacement; the older custom-baseline receipt remains historical.

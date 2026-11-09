@@ -4,6 +4,8 @@ from dataclasses import asdict, dataclass
 import math
 from pathlib import Path
 from ncm_lab.runtime.budget import Budget
+from ncm_lab.config.architecture import Architecture
+from ncm_lab.config.canvas import resolve_canvas, validate_production
 from ncm_lab.runtime.io import canonical_hash, implementation_hash, read, reference, root
 from ncm_lab.teacher.model import model_identity
 
@@ -13,32 +15,14 @@ def positive(value, name, *, zero=False):
         raise ValueError("finite integer allowance required: " + name)
 
 
-@dataclass(frozen=True)
-class Architecture:
-    schema: str = "qwen_context_causal_block8_v1"
-    block_size: int = 8
-    mask_id: int = -1
-    attention: str = "causal_context_bidirectional_active_v1"
-    alignment: str = "active_same_position_ar_previous_position_v1"
-    cache: str = "committed_causal_text_only_v1"
-
-    def __post_init__(self):
-        defaults = asdict_default_architecture()
-        if asdict(self) != defaults or any(
-            type(getattr(self, k)) is not type(v) for k, v in defaults.items()
-        ):
-            raise ValueError("the separate block8 architecture requires its exact versioned contract")
-
-
-def asdict_default_architecture():
-    return dict(
-        schema="qwen_context_causal_block8_v1",
-        block_size=8,
-        mask_id=-1,
-        attention="causal_context_bidirectional_active_v1",
-        alignment="active_same_position_ar_previous_position_v1",
-        cache="committed_causal_text_only_v1",
-    )
+BLOCK_CONTRACT = dict(
+    schema="native_hierarchical_block8_v1",
+    block_size=8,
+    conditioning="prompt_and_committed_text_only_v1",
+    cache="committed_causal_text_only_v1",
+    prediction="one_native_hierarchy_traversal_per_block_v1",
+    teacher_alignment="parent_P_minus_one_plus_answer_index_v1",
+)
 
 
 @dataclass(frozen=True)
@@ -71,29 +55,28 @@ class DataPolicy:
 
 
 @dataclass(frozen=True)
-class Training:
-    steps: int = 1000
+class Optimization:
+    steps: int = 20000
+    batch_size: int = 1
     accumulation: int = 16
     learning_rate: float = 0.00001
-    mask_learning_rate: float = 0.0001
+    new_learning_rate: float = 0.0001
     weight_decay: float = 0.01
-    ar_weight: float = 0.5
-    fully_masked_fraction: float = 0.5
     gradient_clip: float = 1.0
-    validation_interval: int = 100
-    checkpoint_interval: int = 250
+    validation_interval: int = 250
+    checkpoint_interval: int = 1000
     max_validation_views: int = 256
     head_chunk: int = 8
     shard_bytes: int = 67108864
     optimizer_tile_elements: int = 1048576
     optimizer_seed: int = 1729
-    activation_checkpointing: bool = True
-    curriculum_end_steps: tuple = (50, 100, 200, 1000)
+    warmup_steps: int = 1000
+    minimum_lr_ratio: float = 0.1
 
     def __post_init__(self):
-        object.__setattr__(self, "curriculum_end_steps", tuple(self.curriculum_end_steps))
         for name in (
             "steps",
+            "batch_size",
             "accumulation",
             "validation_interval",
             "checkpoint_interval",
@@ -104,37 +87,85 @@ class Training:
         ):
             positive(getattr(self, name), name)
         positive(self.optimizer_seed, "optimizer_seed", zero=True)
+        positive(self.warmup_steps, "warmup_steps", zero=True)
         for name in (
             "learning_rate",
-            "mask_learning_rate",
+            "new_learning_rate",
             "weight_decay",
-            "ar_weight",
-            "fully_masked_fraction",
             "gradient_clip",
+            "minimum_lr_ratio",
         ):
             x = getattr(self, name)
             if type(x) not in {int, float} or not math.isfinite(x) or x < 0:
-                raise ValueError("finite nonnegative training option required: " + name)
+                raise ValueError("finite optimization option required: " + name)
         if (
-            min(self.learning_rate, self.mask_learning_rate, self.gradient_clip) <= 0
-            or not 0 < self.fully_masked_fraction <= 1
+            min(self.learning_rate, self.new_learning_rate, self.gradient_clip) <= 0
+            or not 0 < self.minimum_lr_ratio <= 1
+            or self.warmup_steps >= self.steps
             or self.head_chunk > 8
             or self.shard_bytes < 1024
-            or type(self.activation_checkpointing) is not bool
-            or len(self.curriculum_end_steps) != 4
-            or any(type(x) is not int or x <= 0 for x in self.curriculum_end_steps)
-            or list(self.curriculum_end_steps) != sorted(set(self.curriculum_end_steps))
-            or self.curriculum_end_steps[-1] != self.steps
         ):
-            raise ValueError("invalid training/curriculum; declare increasing endpoints for 1,2,4,8 tokens")
+            raise ValueError("invalid hierarchical optimization/schedule allowance")
 
-    def block_at(self, completed):
-        return next(b for b, end in zip((1, 2, 4, 8), self.curriculum_end_steps) if completed < end)
+
+@dataclass(frozen=True)
+class Training(Optimization):
+    auxiliary_weight: float = 0.1
+    ar_weight: float = 0.1
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.batch_size != 1:
+            raise ValueError("hierarchical generator uses one context per microbatch")
+        for x in (self.auxiliary_weight, self.ar_weight):
+            if type(x) not in {int, float} or not math.isfinite(x) or x < 0:
+                raise ValueError("finite hierarchical loss weights required")
+        if self.auxiliary_weight <= 0:
+            raise ValueError("hierarchical cumulative-code supervision must remain enabled")
+
+
+@dataclass(frozen=True)
+class CodecTraining(Optimization):
+    steps: int = 10000
+    batch_size: int = 4
+    accumulation: int = 8
+    learning_rate: float = 0.0001
+    new_learning_rate: float = 0.0001
+    warmup_steps: int = 500
+    checkpoint_interval: int = 500
+    prediction_weight: float = 0.1
+    max_statistics_views: int = 4096
+
+    def __post_init__(self):
+        super().__post_init__()
+        positive(self.max_statistics_views, "max_statistics_views")
+        if (
+            type(self.prediction_weight) not in {int, float}
+            or not math.isfinite(self.prediction_weight)
+            or self.prediction_weight < 0
+        ):
+            raise ValueError("finite codec consistency weight required")
+
+
+@dataclass(frozen=True)
+class Features:
+    teacher_dtype: str = "bfloat16"
+    target_train_positions: int = 10000000
+    minimum_train_positions: int = 1000000
+    max_dev_parents: int = 256
+
+    def __post_init__(self):
+        for name in ("target_train_positions", "minimum_train_positions", "max_dev_parents"):
+            positive(getattr(self, name), name)
+        if (
+            self.teacher_dtype not in {"bfloat16", "float32"}
+            or self.minimum_train_positions > self.target_train_positions
+        ):
+            raise ValueError("invalid frozen teacher subset/precision policy")
 
 
 @dataclass(frozen=True)
 class Decoding:
-    refinement_passes: int = 4
     max_new_tokens: int = 1024
     max_blocks: int = 128
     max_evaluation_examples: int = 32
@@ -142,8 +173,8 @@ class Decoding:
     def __post_init__(self):
         for name, value in asdict(self).items():
             positive(value, name)
-        if self.refinement_passes > 8 or self.max_new_tokens % 8:
-            raise ValueError("decode with 1..8 refinement passes and an eight-aligned output cap")
+        if self.max_new_tokens % 8:
+            raise ValueError("hierarchical decoding uses an eight-aligned finite output cap")
 
 
 @dataclass(frozen=True)
@@ -151,8 +182,8 @@ class Resources:
     reserve_free_bytes: int = 20000000000
     activation_reserve_bytes: int = 8000000000
     max_attempts_per_stage: int = 3
-    max_write_bytes: int = 2000000000000
-    max_phase_write_bytes: int = 6000000000000
+    max_write_bytes: int = 6000000000000
+    max_phase_write_bytes: int = 18000000000000
 
     def __post_init__(self):
         for name, value in asdict(self).items():
@@ -174,12 +205,14 @@ def resolve(path=None):
         "architecture",
         "data",
         "training",
+        "codec",
+        "features",
         "decoding",
         "resources",
         "budget",
         "source",
     }
-    if set(value) != required or value["schema"] != "block8_workflow_v1":
+    if set(value) != required or value["schema"] != "hierarchical_block8_workflow_v1":
         raise ValueError("versioned complete block8 workflow configuration required")
     if isinstance(value["model"], str):
         value["model"] = read(root() / value["model"])
@@ -188,9 +221,25 @@ def resolve(path=None):
     if value["hardware_profile"] not in {"cpu", "cuda", "spark"}:
         raise ValueError("invalid hardware profile")
     positive(value["seed"], "seed", zero=True)
-    value["architecture"] = asdict(Architecture(**value["architecture"]))
+    a = (
+        Architecture(**value["architecture"])
+        if value["architecture"]
+        else resolve_canvas("xsmall").architecture()
+    )
+    if (
+        a.canvas != 8
+        or a.initial_queries != 4
+        or (a.early_blocks, a.hierarchy_blocks, a.late_blocks) != (8, 16, 12)
+    ):
+        raise ValueError("hierarchical block8 requires native 8/16/12 layers, four queries and 32 updates")
+    if not value["model"].get("fixture"):
+        validate_production(a.to_dict())
+    value["architecture"] = a.to_dict()
+    value["block_contract"] = dict(BLOCK_CONTRACT)
     value["data"] = asdict(DataPolicy(**value["data"]))
     value["training"] = asdict(Training(**value["training"]))
+    value["codec"] = asdict(CodecTraining(**value["codec"]))
+    value["features"] = asdict(Features(**value["features"]))
     value["decoding"] = asdict(Decoding(**value["decoding"]))
     value["resources"] = asdict(Resources(**value["resources"]))
     value["budget"] = asdict(Budget(**value["budget"]))

@@ -1,4 +1,4 @@
-"""Explicit standalone orchestration; no production work happens during planning."""
+"""Source, teacher, codec, targets and hierarchical generator in explicit bounded stages."""
 
 from contextlib import closing
 from datetime import datetime, timezone
@@ -24,7 +24,7 @@ def generate_one(run, settings, selected, *, prompt=None, messages=None):
     exported = read(manifest_path)
     metadata = exported.get("metadata", {})
     if (
-        exported.get("schema") != "block8_export_v1"
+        exported.get("schema") != "hierarchical_block8_generator_export_v1"
         or model_identity(metadata.get("model_spec", {})) != model_identity(settings["model"])
         or metadata.get("architecture") != settings["architecture"]
         or metadata.get("dtype") != settings["dtype"]
@@ -54,7 +54,7 @@ def generate_one(run, settings, selected, *, prompt=None, messages=None):
         generation_seconds=time.perf_counter() - started,
         selected_export=selected,
         selected_step=manifest["selected_step"],
-        timing_scope="prefill, refinement, causal commit and token transfers; model/tokenizer load excluded",
+        timing_scope="prefill, native hierarchy traversal, causal text commit and token transfers; model/tokenizer load excluded",
     )
     write_json(run.path / "generation.json", result, exclusive=True)
     return dict(output=reference(run.path / "generation.json"), **result)
@@ -102,7 +102,7 @@ def evaluate(run, settings, dataset, selected):
             )
             run.meter.check_disk()
         result = dict(
-            schema="block8_locked_rollout_evaluation_v1",
+            schema="hierarchical_block8_locked_rollout_evaluation_v1",
             dataset=dataset,
             selected=selected,
             selected_step=manifest["selected_step"],
@@ -136,6 +136,7 @@ def run_workflow(
     prompt=None,
     messages=None,
     stop_after=None,
+    stop_after_codec=None,
 ):
     if not execute:
         if resume:
@@ -153,7 +154,7 @@ def run_workflow(
         if settings is None:
             raise ValueError("new block8 experiment needs resolved settings")
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
-        folder = Path(experiment_dir or root() / "runs/block8" / stamp).resolve()
+        folder = Path(experiment_dir or root() / "runs/hierarchical_block8" / stamp).resolve()
         folder.mkdir(parents=True, exist_ok=False)
         path = folder / "manifest.json"
         state = seal_settings(folder, settings)
@@ -205,6 +206,14 @@ def run_workflow(
                 state["failure"] = dict(stage=action, **result, receipt=receipt)
             state["stages"][action] = dict(status=status, receipt=receipt)
             state["status"] = status
+            # No stage-local model/optimizer may remain resident into the next stage.
+            import gc
+
+            gc.collect()
+            import torch
+
+            if settings["device"] == "cuda" and torch.cuda.is_available():
+                torch.cuda.empty_cache()
             if status == "completed" and state.get("failure", {}).get("stage") == action:
                 state.pop("failure")
             save()
@@ -242,17 +251,51 @@ def run_workflow(
                 failure=state.get("failure"),
             )
 
-        def progress(recovery, completed):
-            state["recovery"] = recovery
-            state["completed_step"] = completed
-            save()
+        def progress_for(action):
+            def progress(recovery, completed):
+                state["recoveries"][action] = recovery
+                state.setdefault("completed_steps", {})[action] = completed
+                save()
 
-        from ncm_lab.block8.training import train
+            return progress
 
+        from ncm_lab.block8.targets import teacher_features, targets
+        from ncm_lab.block8.training import fit_codec, train
+
+        features = attempt("teacher", lambda run: teacher_features(run, settings, prepared["dataset"]))
+        if features is None:
+            return dict(status=state["status"], experiment=str(path), failure=state.get("failure"))
+        codec = attempt(
+            "codec",
+            lambda run: fit_codec(
+                run,
+                settings,
+                prepared["dataset"],
+                features["features"],
+                state["recoveries"]["codec"],
+                progress_for("codec"),
+                stop_after=stop_after_codec,
+            ),
+        )
+        if codec is None:
+            return dict(status=state["status"], experiment=str(path), failure=state.get("failure"))
+        codes = attempt(
+            "targets",
+            lambda run: targets(run, settings, prepared["dataset"], features["features"], codec["codec"]),
+        )
+        if codes is None:
+            return dict(status=state["status"], experiment=str(path), failure=state.get("failure"))
         trained = attempt(
-            "train",
+            "generator",
             lambda run: train(
-                run, settings, prepared["dataset"], state["recovery"], progress, stop_after=stop_after
+                run,
+                settings,
+                prepared["dataset"],
+                codes["targets"],
+                codec["codec"],
+                state["recoveries"]["generator"],
+                progress_for("generator"),
+                stop_after=stop_after,
             ),
         )
         if trained is None:
@@ -270,6 +313,8 @@ def run_workflow(
             experiment=str(path),
             selected=trained["selected"],
             completed_step=trained["completed_step"],
+            codec_step=codec["completed_step"],
+            codec=codec["codec"],
             evaluation=evaluated,
             failure=state.get("failure"),
         )

@@ -1,4 +1,4 @@
-"""Full-backbone denoising plus shifted AR supervision; independent sharded recovery."""
+"""Native codec fitting and hierarchy training with sealed offline supervision."""
 
 from contextlib import closing
 import json
@@ -7,12 +7,15 @@ from pathlib import Path
 import random
 import shutil
 import torch
-from ncm_lab.block8.config import Training
+from ncm_lab.block8.config import Architecture, Training, CodecTraining
 from ncm_lab.block8.data import BlockDataset
-from ncm_lab.block8.model import BlockDecoder, load_model
+from ncm_lab.block8.model import load_model
 from ncm_lab.block8.runtime import admission, checked, charge_write
+from ncm_lab.block8.targets import TensorStore, FEATURES, TARGETS, fixed_views
+from ncm_lab.codec.model import ContinuousCodec
+from ncm_lab.embedded.geometry import masked_pool
 from ncm_lab.runtime.io import canonical_hash, digest, reference, read, write_json
-from ncm_lab.teacher.model import load_tokenizer
+from ncm_lab.teacher.model import load_tokenizer, load_frozen_head
 from ncm_lab.training.checkpoints import (
     CheckpointReader,
     INFERENCE,
@@ -20,93 +23,89 @@ from ncm_lab.training.checkpoints import (
     restore_rng,
     save_checkpoint,
 )
-from ncm_lab.training.losses import chunked_ce
+from ncm_lab.training.losses import chunked_ce, auxiliary_loss, codec_loss
 from ncm_lab.training.optimizer import TiledAdamW
+from ncm_lab.stage3.schedule import Schedule
+
+CODEC = "hierarchical_block8_selected_codec_v1"
+EXPORT = "hierarchical_block8_generator_export_v1"
 
 
-def example_loss(model, context, answer, size, sampler, policy, *, fully_masked=False):
-    """Gold labels/masks stay here, outside both model forward interfaces."""
-    device = model.mask_embedding.device
-    context_ids = torch.tensor([context], dtype=torch.long, device=device)
-    labels = torch.full((1, size), -100, dtype=torch.long, device=device)
+def padded_view(data, store, key, start, device, dtype):
+    parent = data.parent(key)
+    context, answer = data.view(key, start)
+    raw = store.get(key, parent)[start : start + 8]
+    values = torch.zeros(1, 8, raw.shape[-1], device=device, dtype=dtype)
+    values[0, : len(answer)] = raw.to(device=device, dtype=dtype)
+    labels = torch.full((1, 8), -100, device=device, dtype=torch.long)
+    labels[0, : len(answer)] = torch.tensor(answer, device=device)
+    return context, answer, values, labels, labels.ne(-100)
+
+
+def example_loss(model, context, answer, fine_targets, scales, policy):
+    """Reference block, masks and frozen codes never enter the native prompt-only API."""
+    device = next(model.parameters()).device
+    ids = torch.tensor([context], device=device, dtype=torch.long)
+    labels = torch.full((1, 8), -100, device=device, dtype=torch.long)
     labels[0, : len(answer)] = torch.tensor(answer, device=device)
     valid = labels.ne(-100)
-    active = torch.full_like(labels, -1)
-    masked = list(range(len(answer)))
-    if not fully_masked and sampler.random() >= policy.fully_masked_fraction:
-        count = sampler.randint(1, len(answer))
-        masked = sampler.sample(masked, count)
-        for i, token in enumerate(answer):
-            if i not in masked:
-                active[0, i] = token
-    predict = torch.zeros_like(valid)
-    predict[0, masked] = True
-    states = model.denoise(context_ids, active)
-    denoising = chunked_ce(model.backbone.lm_head, states, labels, predict, policy.head_chunk)
-    ar = denoising.new_zeros(())
-    if not fully_masked and policy.ar_weight:
-        # State P-1+t predicts answer[t]; active denoising has NO such shift.
-        clean = torch.tensor([context + answer[:-1]], device=device, dtype=torch.long)
-        ar_states = model.causal_states(clean)[:, len(context) - 1 :]
-        ar_labels = torch.tensor([answer], device=device)
+    output = model(ids, torch.ones_like(ids, dtype=torch.bool), return_aux=True)
+    text = chunked_ce(model.backbone.lm_head, output.answer_states, labels, valid, policy.head_chunk)
+    fine_targets = fine_targets.detach().to(dtype=next(model.parameters()).dtype)
+    latent, levels, counts = auxiliary_loss(
+        output.cumulative_codes, fine_targets, valid, model.architecture.resolutions, scales
+    )
+    ar = text.new_zeros(())
+    if policy.ar_weight:
+        from ncm_lab.embedded.cache import causal_text_states
+
+        clean = torch.tensor([context + answer[:-1]], device=device)
+        states = causal_text_states(
+            model.backbone,
+            clean,
+            checkpoint_layers=model.training and model.architecture.activation_checkpointing,
+        )[:, len(context) - 1 :]
+        truth = torch.tensor([answer], device=device)
         ar = chunked_ce(
-            model.backbone.lm_head,
-            ar_states,
-            ar_labels,
-            torch.ones_like(ar_labels, dtype=torch.bool),
-            policy.head_chunk,
+            model.backbone.lm_head, states, truth, torch.ones_like(truth, dtype=torch.bool), policy.head_chunk
         )
-    return denoising + policy.ar_weight * ar, denoising, ar
+    return (
+        text + policy.auxiliary_weight * latent + policy.ar_weight * ar,
+        dict(text_ce=text, latent_loss=latent, ar_ce=ar),
+        counts,
+    )
 
 
-def charge_example(run, context, answer, size, *, auxiliary):
-    run.meter.charge(source=len(context) + size, answer=len(answer), canvas=size, steps=1)
-    if auxiliary:
-        run.meter.charge(source=len(context) + len(answer) - 1, answer=len(answer), steps=1)
-
-
-@torch.no_grad()
-def validate(model, data, run, policy):
-    model.eval()
-    rows = data.views("dev", policy.max_validation_views)
-    if not rows:
-        raise ValueError("block8 validation has no held-out views")
-    total = 0.0
-    for key, start in rows:
-        context, answer = data.view(key, start)
-        charge_example(run, context, answer, 8, auxiliary=False)
-        _, loss, _ = example_loss(model, context, answer, 8, random.Random(0), policy, fully_masked=True)
-        value = float(loss)
-        if not math.isfinite(value):
-            raise ValueError("nonfinite held-out block8 loss")
-        total += value
-    model.train()
-    return total / len(rows)
-
-
-def export(model, settings, data, run, step, score):
+def _save_candidate(model, settings, data, run, family, step, score, extra):
     folder = run.path / "exports" / f"step-{step:09d}"
     folder.mkdir(parents=True)
-    tokenizer = load_tokenizer(settings["model"])
-    if canonical_hash(tokenizer.chat_template) != data.manifest["template_sha256"]:
-        raise ValueError("block8 training/deployment template differs")
-    run.meter.check_disk(64000000)
-    charge_write(run, 64000000)
-    tokenizer.save_pretrained(folder / "tokenizer")
-    if sum(p.stat().st_size for p in (folder / "tokenizer").iterdir()) > 64000000:
-        raise ValueError("block8 tokenizer exceeds its declared 64 MB export allowance")
     metadata = dict(
-        model_family="block8_v1",
+        model_family=family,
         architecture=settings["architecture"],
-        backbone_config=model.backbone.config.to_dict(),
+        block_contract=settings["block_contract"],
         model_spec=settings["model"],
-        dtype=settings["dtype"],
+        dtype=str(next(model.parameters()).dtype).removeprefix("torch."),
         implementation_sha256=settings["implementation_sha256"],
         selected_step=step,
         selection_loss=score,
         data_sha256=data.sha256,
         template_sha256=data.manifest["template_sha256"],
+        **extra,
     )
+    if family == EXPORT:
+        tokenizer = load_tokenizer(settings["model"])
+        if canonical_hash(tokenizer.chat_template) != data.manifest["template_sha256"]:
+            raise ValueError("hierarchical training/deployment template differs")
+        run.meter.check_disk(64000000)
+        charge_write(run, 64000000)
+        tokenizer.save_pretrained(folder / "tokenizer")
+        files = {p.name: digest(p) for p in (folder / "tokenizer").iterdir() if p.is_file()}
+        if sum(p.stat().st_size for p in (folder / "tokenizer").iterdir()) > 64000000:
+            raise ValueError("tokenizer exceeds declared export allowance")
+        metadata["backbone_config"] = model.backbone.config.to_dict()
+    else:
+        files = {}
+        metadata["hidden_size"] = model.spec["hidden_size"]
     metadata = json.loads(json.dumps(metadata, allow_nan=False))
     identity = canonical_hash(metadata)
     saved = save_checkpoint(
@@ -114,204 +113,500 @@ def export(model, settings, data, run, step, score):
         dict(identity=identity, metadata=metadata, model=model.state_dict(keep_vars=True)),
         kind=INFERENCE,
         meter=run.meter,
-        shard_bytes=settings["training"]["shard_bytes"],
+        shard_bytes=settings["training" if family == EXPORT else "codec"]["shard_bytes"],
     )
     manifest = dict(
-        schema="block8_export_v1",
+        schema=family,
         identity=identity,
         metadata=metadata,
         weights=reference(saved["manifest"]),
-        tokenizer_files={p.name: digest(p) for p in (folder / "tokenizer").iterdir() if p.is_file()},
+        tokenizer_files=files,
         selected_step=step,
-        selection="mean_fixed_dev_view_fully_masked_token_ce_v1",
         teacher_codec_or_verifier_required=False,
     )
     write_json(folder / "manifest.json", manifest, exclusive=True)
     return reference(folder / "manifest.json")
 
 
+def _candidate_reader(path, family, check=None):
+    path = Path(path)
+    manifest = read(path)
+    if manifest.get("schema") != family or manifest.get("metadata", {}).get("model_family") != family:
+        raise ValueError(
+            "hierarchical inference family required; custom baseline/native recovery artifacts are incompatible"
+        )
+    if canonical_hash(manifest["metadata"]) != manifest["identity"]:
+        raise ValueError("hierarchical export metadata identity changed")
+    weights = checked(manifest["weights"])
+    if not weights.resolve().is_relative_to(path.parent.resolve()):
+        raise ValueError("hierarchical weights escape export directory")
+    reader = CheckpointReader(weights, expected_kind=INFERENCE, identity=manifest["identity"], check=check)
+    if reader.materialize(reader.field("metadata")) != manifest["metadata"]:
+        raise ValueError("hierarchical shard metadata differs")
+    return manifest, reader
+
+
 def load_export(path, device, *, check=None):
-    """Only this separate export family is accepted; verify every shard before allocation."""
-    from transformers import AutoTokenizer, Qwen3Config, Qwen3ForCausalLM
-    from ncm_lab.block8.config import Architecture
+    from transformers import AutoTokenizer
+    from ncm_lab.embedded.model import from_metadata
     from ncm_lab.teacher.model import validate_model_spec
+    from transformers import Qwen3Config
+    from ncm_lab.block8.config import BLOCK_CONTRACT
 
     path = Path(path)
     if path.is_dir():
         path /= "manifest.json"
-    manifest = read(path)
-    if manifest.get("schema") != "block8_export_v1":
-        raise ValueError("block8 inference export required; native/recovery artifacts are incompatible")
+    manifest, reader = _candidate_reader(path, EXPORT, check)
     metadata = manifest["metadata"]
-    if metadata.get("model_family") != "block8_v1" or canonical_hash(metadata) != manifest["identity"]:
-        raise ValueError("block8 export metadata identity changed")
-    Architecture(**metadata["architecture"])
-    weights = checked(manifest["weights"])
-    if not weights.resolve().is_relative_to(path.parent.resolve()):
-        raise ValueError("block8 weights escape export directory")
-    reader = CheckpointReader(weights, expected_kind=INFERENCE, identity=manifest["identity"], check=check)
-    if reader.materialize(reader.field("metadata")) != metadata:
-        raise ValueError("block8 sharded metadata differs")
-    tokenizer_dir = path.parent / "tokenizer"
+    arch = Architecture(**metadata["architecture"])
+    if arch.canvas != 8 or metadata["block_contract"] != BLOCK_CONTRACT:
+        raise ValueError("hierarchical eight-token export contract required")
+    validate_model_spec(metadata["model_spec"], Qwen3Config(**metadata["backbone_config"]))
+    folder = path.parent / "tokenizer"
     for name, sha in manifest["tokenizer_files"].items():
-        p = (tokenizer_dir / name).resolve()
-        if p.parent != tokenizer_dir.resolve() or digest(p, check) != sha:
-            raise ValueError("block8 exported tokenizer changed")
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, local_files_only=True, trust_remote_code=False)
+        p = (folder / name).resolve()
+        if p.parent != folder.resolve() or digest(p, check) != sha:
+            raise ValueError("hierarchical tokenizer changed")
+    tokenizer = AutoTokenizer.from_pretrained(folder, local_files_only=True, trust_remote_code=False)
     if canonical_hash(tokenizer.chat_template) != metadata["template_sha256"]:
-        raise ValueError("block8 exported template changed")
-    config = Qwen3Config(**metadata["backbone_config"])
-    validate_model_spec(metadata["model_spec"], config)
-    # Construct on meta, including the single learned mask vector; initialize RoPE explicitly.
-    with torch.device("meta"):
-        model = BlockDecoder(Qwen3ForCausalLM(config), Architecture(**metadata["architecture"]))
-    model.to(dtype=getattr(torch, metadata["dtype"]))
-    model.to_empty(device=device)
-    from transformers.models.qwen3.modeling_qwen3 import Qwen3RotaryEmbedding
-
-    model.backbone.model.rotary_emb = Qwen3RotaryEmbedding(config).to(
-        device=device, dtype=model.mask_embedding.dtype
-    )
+        raise ValueError("hierarchical prompt template changed")
+    model = from_metadata(metadata, device)
     reader.load_model(model)
+    model.set_phase("full")
     return model.eval(), tokenizer, manifest
 
 
-def train(run, settings, data_ref, recovery_ref, progress, *, stop_after=None):
-    policy = Training(**settings["training"])
-    with closing(BlockDataset(checked(data_ref), settings, run.meter.check)) as data:
+def load_codec(path, settings, data, device, check=None):
+    path = Path(path)
+    receipt = read(path)
+    if (
+        receipt.get("schema") != CODEC
+        or receipt["architecture"] != settings["architecture"]
+        or receipt["data_sha256"] != data.sha256
+        or receipt["settings_identity"] != settings["identity"]
+    ):
+        raise ValueError("incompatible hierarchical selected codec")
+    candidate, reader = _candidate_reader(
+        checked(receipt["selected_weights"]), "hierarchical_block8_codec_weights_v1", check
+    )
+    if (
+        candidate["metadata"]["normalization"] != receipt["normalization"]
+        or candidate["metadata"]["features_sha256"] != receipt["features_sha256"]
+    ):
+        raise ValueError("hierarchical codec statistics/source differ")
+    model = ContinuousCodec(
+        candidate["metadata"]["hidden_size"], Architecture(**settings["architecture"])
+    ).to(device=device, dtype=torch.float32)
+    reader.load_model(model)
+    model.requires_grad_(False).eval()
+    for values in receipt["scales"].values():
+        if len(values) != model.architecture.latent_width or any(
+            not math.isfinite(v) or v < 1e-3 for v in values
+        ):
+            raise ValueError("invalid frozen codec channel scales")
+    if set(receipt["scales"]) != {str(i) for i in range(1, 32, 2)}:
+        raise ValueError("all sixteen frozen-code scales required")
+    return model, receipt
+
+
+def _fit(
+    run,
+    settings,
+    data,
+    model,
+    policy,
+    identity,
+    metadata,
+    sampler,
+    objective,
+    validation,
+    save_selected,
+    recovery_ref,
+    progress,
+    *,
+    stop_after=None,
+    reader=None,
+):
+    optimizer = TiledAdamW(
+        model.named_parameters(),
+        lr=policy.learning_rate,
+        new_lr=policy.new_learning_rate,
+        weight_decay=policy.weight_decay,
+        tile_elements=policy.optimizer_tile_elements,
+        seed=policy.optimizer_seed,
+    )
+    schedule = Schedule(policy.steps, policy.warmup_steps, policy.minimum_lr_ratio)
+    peaks = [group["lr"] for group in optimizer.groups]
+    state = dict(step=0, best_loss=None, selected=None, scheduler=schedule.state(peaks, 0))
+    if reader:
+        if reader.materialize(reader.field("metadata")) != metadata:
+            raise ValueError("hierarchical recovery metadata differs")
+        reader.load_model(model)
+        state = reader.materialize(reader.field("training"))
+        if state["scheduler"] != schedule.state(peaks, state["step"]):
+            raise ValueError("hierarchical recovery scheduler differs")
+        if state["step"]:
+            schedule.apply(optimizer, peaks, state["step"])
+        reader.load_optimizer(optimizer)
+        restore_rng(reader.materialize(reader.field("rng")), sampler)
+        checked(state["selected"])
+    recoveries, recovery = [], recovery_ref
+
+    def prune():
+        keep = {Path(ref["manifest"]).parent for _, ref in recoveries}
+        keep.add(Path(state["selected"]["manifest"]).parent)
+        for folder in (run.path / "exports").glob("step-*"):
+            if folder not in keep:
+                shutil.rmtree(folder)
+
+    def checkpoint():
+        nonlocal recovery
+        pointer = save_checkpoint(
+            run.path / "checkpoints",
+            recovery_payload(model, optimizer, identity, metadata, state, sampler),
+            meter=run.meter,
+            shard_bytes=policy.shard_bytes,
+        )
+        recovery = reference(pointer["manifest"])
+        progress(recovery, state["step"])
+        recoveries.append((Path(pointer["manifest"]).parent, state["selected"]))
+        if len(recoveries) > 2:
+            shutil.rmtree(recoveries.pop(0)[0])
+        prune()
+
+    def select():
+        model.eval()
+        with torch.no_grad():
+            score = validation()
+        model.train()
+        if not math.isfinite(score):
+            raise ValueError("nonfinite hierarchical dev selection objective")
+        if state["best_loss"] is None or score < state["best_loss"]:
+            state.update(best_loss=score, selected=save_selected(state["step"], score))
+            prune()
+        return score
+
+    if reader is None:
+        select()
+        checkpoint()
+    model.train()
+    while state["step"] < policy.steps:
+        optimizer.zero_grad()
+        totals = {}
+        for _ in range(policy.accumulation):
+            loss, parts = objective(sampler)
+            if not bool(torch.isfinite(loss)):
+                raise ValueError("nonfinite hierarchical training objective")
+            (loss / policy.accumulation).backward()
+            for name, value in parts.items():
+                totals[name] = totals.get(name, 0) + float(value.detach()) / policy.accumulation
+        report = optimizer.check_gradients()
+        report.clip_(policy.gradient_clip)
+        schedule.apply(optimizer, peaks, state["step"] + 1)
+        optimizer.step(report)
+        optimizer.zero_grad()
+        state["step"] += 1
+        state["scheduler"] = schedule.state(peaks, state["step"])
+        metric = dict(
+            step=state["step"], losses=totals, gradient_norm=report.norm, scheduler=state["scheduler"]
+        )
+        if state["step"] % policy.validation_interval == 0 or state["step"] == policy.steps:
+            metric["dev_selection_loss"] = select()
+        charge_write(run, 4096)
+        with (run.path / "metrics.jsonl").open("a") as stream:
+            stream.write(json.dumps(metric, allow_nan=False) + "\n")
+        if (
+            state["step"] % policy.checkpoint_interval == 0
+            or state["step"] == policy.steps
+            or stop_after == state["step"]
+        ):
+            checkpoint()
+        run.meter.check_disk()
+        if stop_after == state["step"] and state["step"] < policy.steps:
+            return dict(
+                status="incomplete",
+                completed_step=state["step"],
+                recovery=recovery,
+                selected=state["selected"],
+            )
+    return dict(
+        status="completed",
+        completed_step=state["step"],
+        recovery=recovery,
+        selected=state["selected"],
+        best_dev_loss=state["best_loss"],
+        selected_step=read(checked(state["selected"]))["selected_step"],
+    )
+
+
+def _normalization(data, features, rows, run):
+    count, total, squares = 0, 0.0, 0.0
+    for key, start in rows:
+        parent = data.parent(key)
+        values = features.get(key, parent)[start : start + 8].double()
+        run.meter.charge(source=len(parent.answer_ids), answer=values.shape[0], steps=1)
+        count += values.numel()
+        total += float(values.sum())
+        squares += float(values.square().sum())
+    if not count:
+        raise ValueError("empty training-only codec statistics")
+    return dict(
+        variance=max(1e-6, squares / count - (total / count) ** 2),
+        mean=total / count,
+        elements=count,
+        source="training only",
+        views_sha256=canonical_hash(rows),
+        views=len(rows),
+    )
+
+
+def fit_codec(run, settings, data_ref, features_ref, recovery_ref, progress, *, stop_after=None):
+    policy = CodecTraining(**settings["codec"])
+    with (
+        closing(BlockDataset(checked(data_ref), settings, run.meter.check)) as data,
+        closing(TensorStore(checked(features_ref), settings, data, FEATURES, run.meter.check)) as features,
+    ):
+        stats = fixed_views(data, features.ids["train"], policy.max_statistics_views, settings["seed"])
+        dev = fixed_views(data, features.ids["dev"], policy.max_validation_views, 20261029)
+        normalization = _normalization(data, features, stats, run)
         identity = canonical_hash(
-            dict(model_family="block8_v1", configuration=settings["identity"], data=data.sha256)
+            dict(family=CODEC, configuration=settings["identity"], data=data.sha256, features=features.sha256)
         )
         reader = (
             CheckpointReader(checked(recovery_ref), identity=identity, check=run.meter.check)
             if recovery_ref
             else None
         )
-        admission(run, settings, training=True)
+        admission(run, settings, training=True, kind="codec", data=data)
         torch.manual_seed(settings["seed"])
-        model = load_model(settings)
-        model.train()
-        optimizer = TiledAdamW(
-            model.named_parameters(),
-            lr=policy.learning_rate,
-            new_lr=policy.mask_learning_rate,
-            weight_decay=policy.weight_decay,
-            tile_elements=policy.optimizer_tile_elements,
-            seed=policy.optimizer_seed,
+        head = load_frozen_head(settings["model"], settings["device"], torch.float32)
+        hidden = head.weight.shape[1]
+        model = ContinuousCodec(hidden, Architecture(**settings["architecture"])).to(
+            settings["device"], dtype=torch.float32
         )
         sampler = random.Random(settings["seed"])
+        extra = dict(normalization=normalization, features_sha256=features.sha256)
         metadata = dict(
-            model_family="block8_v1",
-            settings_identity=settings["identity"],
-            architecture=settings["architecture"],
-            data_sha256=data.sha256,
-            numerical_policy=optimizer.precision_contract(),
+            family=CODEC, configuration=settings["identity"], architecture=settings["architecture"], **extra
         )
-        state = dict(
-            step=0, best_loss=None, selected=None, scheduler={"schema": "constant_separate_rates_v1"}
-        )
-        if reader:
-            if reader.materialize(reader.field("metadata")) != metadata:
-                raise ValueError("block8 recovery metadata differs")
-            reader.load_model(model)
-            reader.load_optimizer(optimizer)
-            state = reader.materialize(reader.field("training"))
-            restore_rng(reader.materialize(reader.field("rng")), sampler)
-            checked(state["selected"])
-        recoveries, recovery = [], recovery_ref
 
-        def checkpoint():
-            nonlocal recovery
-            pointer = save_checkpoint(
-                run.path / "checkpoints",
-                recovery_payload(model, optimizer, identity, metadata, state, sampler),
-                meter=run.meter,
-                shard_bytes=policy.shard_bytes,
-            )
-            recovery = reference(pointer["manifest"])
-            progress(recovery, state["step"])
-            recoveries.append((Path(pointer["manifest"]).parent, state["selected"]))
-            if len(recoveries) > 2:
-                shutil.rmtree(recoveries.pop(0)[0])
-            prune_exports()
-
-        def prune_exports():
-            retained = {Path(r["manifest"]).parent for _, r in recoveries}
-            retained.add(Path(state["selected"]["manifest"]).parent)
-            for folder in (run.path / "exports").glob("step-*"):
-                if folder not in retained:
-                    shutil.rmtree(folder)
-
-        def selection():
-            score = validate(model, data, run, policy)
-            if state["best_loss"] is None or score < state["best_loss"]:
-                selected = export(model, settings, data, run, state["step"], score)
-                state.update(best_loss=score, selected=selected)
-                # Keep every selected export referenced by either retained recovery.
-                # A resumed failed attempt and all its exports are preserved.
-                prune_exports()
-            return score
-
-        if reader is None:
-            selection()
-            checkpoint()
-        while state["step"] < policy.steps:
-            size = policy.block_at(state["step"])
-            optimizer.zero_grad()
-            totals = [0.0, 0.0, 0.0]
-            for _ in range(policy.accumulation):
-                key = sampler.choice(data.ids["train"])
+        def loss_rows(rows, sampling, cutoff=None):
+            states, valid = [], []
+            for key, start in rows:
                 parent = data.parent(key)
-                start = sampler.randrange((len(parent.answer_ids) + size - 1) // size) * size
-                context, answer = data.view(key, start, size)
-                charge_example(run, context, answer, size, auxiliary=bool(policy.ar_weight))
-                loss, denoising, ar = example_loss(model, context, answer, size, sampler, policy)
-                if not bool(torch.isfinite(loss)):
-                    raise ValueError("nonfinite block8 training loss")
-                (loss / policy.accumulation).backward()
-                totals = [
-                    x + float(y.detach()) / policy.accumulation for x, y in zip(totals, (loss, denoising, ar))
-                ]
-            report = optimizer.check_gradients()
-            report.clip_(policy.gradient_clip)
-            optimizer.step(report)
-            optimizer.zero_grad()
-            state["step"] += 1
-            metric = dict(
-                step=state["step"],
-                block_size=size,
-                loss=totals[0],
-                masked_ce=totals[1],
-                ar_ce=totals[2],
-                gradient_norm=report.norm,
-            )
-            if state["step"] % policy.validation_interval == 0 or state["step"] == policy.steps:
-                metric["dev_fully_masked_ce"] = selection()
-            charge_write(run, 4096)
-            with (run.path / "metrics.jsonl").open("a") as stream:
-                stream.write(json.dumps(metric, allow_nan=False) + "\n")
-            if (
-                state["step"] % policy.checkpoint_interval == 0
-                or state["step"] == policy.steps
-                or stop_after == state["step"]
-            ):
-                checkpoint()
-            run.meter.check_disk()
-            if stop_after == state["step"] and state["step"] < policy.steps:
-                return dict(
-                    status="incomplete",
-                    completed_step=state["step"],
-                    recovery=recovery,
-                    selected=state["selected"],
+                _, answer, value, _, mask = padded_view(
+                    data, features, key, start, settings["device"], torch.float32
                 )
-        # At-target recovery performs no extra optimizer update.
-        return dict(
-            status="completed",
-            completed_step=state["step"],
-            recovery=recovery,
-            selected=state["selected"],
-            best_dev_fully_masked_ce=state["best_loss"],
-            selected_step=read(checked(state["selected"]))["selected_step"],
-            full_backbone_trainable=all(p.requires_grad for p in model.backbone.parameters()),
-            loss_scope="equal microbatch objectives; masked-token mean plus weighted shifted AR mean; dev is mean fixed-view CE, not AR perplexity",
+                run.meter.charge(source=len(parent.answer_ids), answer=len(answer), canvas=8, steps=1)
+                states.append(value)
+                valid.append(mask)
+            loss, parts = codec_loss(
+                model,
+                head,
+                torch.cat(states),
+                torch.cat(valid),
+                normalization["variance"],
+                sampling,
+                beta=policy.prediction_weight,
+                max_head_positions=32,
+                chunk_positions=policy.head_chunk,
+                cutoff_index=cutoff,
+            )
+            return loss, dict(codec_loss=loss)
+
+        def objective(sampling):
+            rows = []
+            for _ in range(policy.batch_size):
+                key = sampling.choice(features.ids["train"])
+                start = sampling.randrange((len(data.parent(key).answer_ids) + 7) // 8) * 8
+                rows.append((key, start))
+            return loss_rows(rows, sampling)
+
+        def validation():
+            return sum(
+                float(loss_rows([row], random.Random(0), i % 31)[0]) for i, row in enumerate(dev)
+            ) / len(dev)
+
+        result = _fit(
+            run,
+            settings,
+            data,
+            model,
+            policy,
+            identity,
+            metadata,
+            sampler,
+            objective,
+            validation,
+            lambda step, score: _save_candidate(
+                model, settings, data, run, "hierarchical_block8_codec_weights_v1", step, score, extra
+            ),
+            recovery_ref,
+            progress,
+            stop_after=stop_after,
+            reader=reader,
         )
+        if result["status"] != "completed":
+            return result
+        candidate, chosen = _candidate_reader(
+            checked(result["selected"]), "hierarchical_block8_codec_weights_v1", run.meter.check
+        )
+        chosen.load_model(model)
+        model.requires_grad_(False).eval()
+        totals, squares, counts = {}, {}, {}
+        with torch.no_grad():
+            for key, start in stats:
+                parent = data.parent(key)
+                _, answer, states, _, valid = padded_view(
+                    data, features, key, start, settings["device"], torch.float32
+                )
+                run.meter.charge(source=len(parent.answer_ids), answer=len(answer), canvas=8, steps=1)
+                fine = model.fine_codes(states)
+                for level in range(1, 32, 2):
+                    pooled, mask = masked_pool(fine, valid, model.architecture.resolutions[level])
+                    values = pooled[mask].double()
+                    totals[level] = totals.get(level, 0) + values.sum(0)
+                    squares[level] = squares.get(level, 0) + values.square().sum(0)
+                    counts[level] = counts.get(level, 0) + values.shape[0]
+        scales = {
+            str(k): (squares[k] / counts[k] - (totals[k] / counts[k]).square())
+            .clamp_min(0)
+            .sqrt()
+            .clamp_min(1e-3)
+            .float()
+            .tolist()
+            for k in totals
+        }
+        receipt = dict(
+            schema=CODEC,
+            architecture=settings["architecture"],
+            settings_identity=settings["identity"],
+            data_sha256=data.sha256,
+            features_sha256=features.sha256,
+            selected_weights=result["selected"],
+            normalization=normalization,
+            scales=scales,
+            statistics_views_sha256=canonical_hash(stats),
+            selected_step=result["selected_step"],
+            teacher_head_frozen=not any(p.requires_grad for p in head.parameters()),
+            train_only_statistics=True,
+            coordinate_system="raw encoder codes; scales affect losses only",
+        )
+        write_json(run.path / "selected_codec.json", receipt, exclusive=True)
+        return dict(**result, codec=reference(run.path / "selected_codec.json"), teacher_head_frozen=True)
+
+
+def train(run, settings, data_ref, targets_ref, codec_ref, recovery_ref, progress, *, stop_after=None):
+    policy = Training(**settings["training"])
+    with (
+        closing(BlockDataset(checked(data_ref), settings, run.meter.check)) as data,
+        closing(TensorStore(checked(targets_ref), settings, data, TARGETS, run.meter.check)) as targets,
+    ):
+        if (
+            targets.manifest["codec"] != codec_ref
+            or targets.manifest["encoder_dtype"] != "float32"
+            or targets.manifest["storage_dtype"] != "float32"
+        ):
+            raise ValueError("hierarchical targets/selected codec or precision differ")
+        receipt = read(checked(codec_ref))
+        if receipt.get("schema") != CODEC or receipt["data_sha256"] != data.sha256:
+            raise ValueError("hierarchical selected codec receipt required")
+        identity = canonical_hash(
+            dict(
+                family=EXPORT,
+                configuration=settings["identity"],
+                data=data.sha256,
+                targets=targets.sha256,
+                codec=codec_ref,
+            )
+        )
+        reader = (
+            CheckpointReader(checked(recovery_ref), identity=identity, check=run.meter.check)
+            if recovery_ref
+            else None
+        )
+        admission(run, settings, training=True, kind="generator", data=data)
+        torch.manual_seed(settings["seed"])
+        model = load_model(settings)
+        sampler = random.Random(settings["seed"])
+        metadata = dict(
+            family=EXPORT,
+            configuration=settings["identity"],
+            architecture=settings["architecture"],
+            targets_sha256=targets.sha256,
+            codec=codec_ref,
+            scales_sha256=canonical_hash(receipt["scales"]),
+        )
+        dev = fixed_views(data, targets.ids["dev"], policy.max_validation_views, 20261029)
+
+        def objective(sampling):
+            key = sampling.choice(targets.ids["train"])
+            parent = data.parent(key)
+            start = sampling.randrange((len(parent.answer_ids) + 7) // 8) * 8
+            context, answer, fine, _, _ = padded_view(
+                data, targets, key, start, settings["device"], getattr(torch, settings["dtype"])
+            )
+            run.meter.charge(
+                source=len(context) + 8 + len(parent.answer_ids), answer=len(answer), canvas=8, steps=1
+            )
+            if policy.ar_weight:
+                run.meter.charge(source=len(context) + len(answer) - 1, answer=len(answer), steps=1)
+            loss, parts, counts = example_loss(model, context, answer, fine, receipt["scales"], policy)
+            if len(counts) != 16:
+                raise ValueError("all sixteen hierarchical cumulative losses required")
+            return loss, parts
+
+        def validation():
+            total = 0.0
+            for key, start in dev:
+                context, answer = data.view(key, start)
+                run.meter.charge(source=len(context) + 8, answer=len(answer), canvas=8, steps=1)
+                ids = torch.tensor([context], device=settings["device"])
+                output = model(ids, torch.ones_like(ids, dtype=torch.bool))
+                labels = torch.full((1, 8), -100, device=settings["device"], dtype=torch.long)
+                labels[0, : len(answer)] = torch.tensor(answer, device=settings["device"])
+                total += float(
+                    chunked_ce(
+                        model.backbone.lm_head,
+                        output.answer_states,
+                        labels,
+                        labels.ne(-100),
+                        policy.head_chunk,
+                    )
+                )
+            return total / len(dev)
+
+        result = _fit(
+            run,
+            settings,
+            data,
+            model,
+            policy,
+            identity,
+            metadata,
+            sampler,
+            objective,
+            validation,
+            lambda step, score: _save_candidate(
+                model,
+                settings,
+                data,
+                run,
+                EXPORT,
+                step,
+                score,
+                dict(codec=codec_ref, targets_sha256=targets.sha256),
+            ),
+            recovery_ref,
+            progress,
+            stop_after=stop_after,
+            reader=reader,
+        )
+        result.update(
+            full_backbone_trainable=all(p.requires_grad for p in model.backbone.parameters()),
+            hierarchy_updates=32,
+            cumulative_supervision_levels=16,
+            teacher_or_codec_loaded_during_generator=False,
+            loss_scope="native token CE + weighted mean cumulative-code loss + weighted causal AR CE; equal actual microbatch objectives",
+        )
+        return result

@@ -57,7 +57,9 @@ def dispatch(args):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Separate eight-token context-causal block workflow")
+    parser = argparse.ArgumentParser(
+        description="Native hierarchical eight-token block-autoregressive workflow"
+    )
     add_arguments(parser)
     args = parser.parse_args(argv)
     try:
