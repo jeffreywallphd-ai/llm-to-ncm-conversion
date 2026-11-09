@@ -10,6 +10,27 @@ Inference needs the generator export and tokenizer, with no autoregressive repai
 fixtures verify software behavior. See [architecture](docs/architecture.md) and
 [data contracts](docs/data_contracts.md) for the scientific design and limitations.
 
+## Separate eight-token block workflow
+
+An experimental Qwen-initialized block-autoregressive model is available alongside
+the native hierarchy. It refines eight token positions together, then appends their
+final text to a causal KV cache. Its dataset stores complete parents once with
+block offsets and keeps conversation groups and genuine EOS intact.
+
+```bash
+python -u scripts/run_block8.py --plan-only
+# Optional preparation only; continue its printed manifest with --resume.
+python -u scripts/run_block8.py --execute --prepare-only
+# Alternatively start a fresh complete workflow.
+python -u scripts/run_block8.py --execute
+```
+
+Execution requires verified local pinned assets and explicit finite stage budgets.
+The new workflow enables wall limits by default. It has separate dataset, export
+and recovery contracts; the 1,000-update prototype has no measured full-8B quality,
+Spark fit or speed claim. See the [block8 guide](docs/block8.md) for preparation,
+resume, generation, resource policy and limitations.
+
 ## Setup
 
 Run commands from the repository root. On **Spark/Linux**, keep the working

@@ -313,3 +313,45 @@ Validation completed with 514 passing tests and one optional CUDA skip; lint,
 README shell syntax and offline wheel packaging also passed. The dated
 [source-storage receipt](stage3_source_storage_validation_2026-11-09.json) records
 the bounded checks and preserved failed-run control-file hashes/index stat.
+
+## 2026-11-09 — Separate eight-token block-autoregressive workflow
+
+The user requested implementation of the proposed Qwen-initialized semi-AR model
+and block-conditioned dataset workflow, with tests, commit and main publication.
+Add a separate context-causal model family initialized from original pinned Qwen,
+with a learned mask vector, eight bidirectional active positions, confidence-ordered
+masked refinement and causal text-only KV commits. The 32-update hierarchy and codec
+are not part of this variant. Existing native model objectives are preserved.
+
+This explicitly changes the inference/training contract for the separate family:
+preceding gold blocks are teacher-forced context during training, and revealed
+current-block tokens are declared corruption inputs. Unrevealed/current labels,
+future blocks, true lengths and padding masks remain outside model inputs. AR loss
+uses the previous-position alignment; masked-block loss uses same-position labels.
+All backbone parameters train. Original teacher/codec caches are not relabeled.
+
+Compose approved Tulu source/group/license/overlap preprocessing or explicit sealed
+native token artifacts. Preserve complete answers and origins; create SQLite parent
+records once with offset views, rather than copied prefixes. Reject cross-split
+groups/prompts before filtering. Distinct answers/tokens and derived training views
+are reported separately. No implicit teacher distillation, quality claim or dataset
+sufficiency claim follows from this representation.
+
+Reuse tiled FP32 AdamW/moments, stochastic BF16 write-back and sharded integrity
+checks. Enable wall limits for this new workflow; retain per-run/phase work/storage,
+write charges and failed attempts. A 1,000-update horizon, 1/2/4/8 curriculum and
+four-pass decode are explicit prototype choices, not measured optima. No production
+assets, model training, benchmark sweeps or provisioning are launched during this
+implementation. See [block8 contracts and commands](block8.md).
+
+Use sampled-parent/block training with separate denoising and causal AR traversals
+for the first version. The optional all-block clean/noisy packing optimization and
+on-policy teacher-continuation acquisition are deferred. Charge repeated context
+processing and retain explicit sealed distilled-input support. This is an explicit
+implementation choice, not a claim of equivalent training efficiency.
+
+Final verification: 540 passing tests and two optional CUDA skips in the complete
+offline suite; one separate tiny BF16 CUDA test passed. Lint, offline plan, local
+wheel packaging and 35 shell-block syntax checks passed. The
+[dated receipt](block8_validation_2026-11-09.json) records source/log hashes and
+limits of the evidence. The original failed source experiment remains unchanged.

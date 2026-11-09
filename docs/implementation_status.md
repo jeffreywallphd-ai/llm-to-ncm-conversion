@@ -272,3 +272,23 @@ and speed remain unmeasured by this correction.
 Validation: the complete offline CPU suite passed (514 passed, one optional CUDA
 skip), `ruff check .` passed, and the wheel includes the new module. See the
 [source-storage validation receipt](stage3_source_storage_validation_2026-11-09.json).
+
+## Separate block8 workflow — 2026-11-09
+
+Implemented a separate original-Qwen context-causal masked-block decoder, eight-token
+rollout/cache commit loop, parent/offset dataset preparation, approved Tulu adapter,
+full-backbone denoising plus AR training, dev selection, sharded selected export and
+recovery, finite locked-test rollouts, offline planning and CLI. Native single-pass
+hierarchy/codec workflows remain separate. See [block8 guide](block8.md).
+
+Local software fixtures exercise full layer gradients, geometry/alignment, real
+cache behavior, EOS, split integrity and source/storage failures, plus exact resumed
+FP32/BF16 updates. Production 8B/Spark activation and recovery fit, adaptation corpus
+sufficiency, output quality, convergence and speed remain open. The operational
+prototype horizon is not a validated scientific recipe; no real training/download
+was started as part of this implementation.
+
+Final block8 verification: **540 passed, two optional CUDA skips** in the complete
+offline suite; the separate tiny BF16 CUDA test passed. Lint, wheel packaging and
+35 shell-block syntax checks passed. See the
+[block8 validation receipt](block8_validation_2026-11-09.json).

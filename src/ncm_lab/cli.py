@@ -11,6 +11,9 @@ def parser():
         prog="ncm", description="Native embedded Qwen hierarchy and bounded initial training"
     )
     commands = p.add_subparsers(dest="command", required=True)
+    block = commands.add_parser("block8", help="separate eight-token block-autoregressive workflow")
+    from ncm_lab.block8.cli import add_arguments as add_block8_arguments
+    add_block8_arguments(block)
     pilot = commands.add_parser("pilot").add_subparsers(dest="pilot_action", required=True).add_parser("train")
     pilot.add_argument("--steps", type=int, choices=[2, 100], required=True)
     from ncm_lab.runtime.pilot import add_arguments
@@ -93,7 +96,10 @@ def parser():
 def main(argv=None):
     try:
         args = parser().parse_args(argv)
-        if args.command == "chat":
+        if args.command == "block8":
+            from ncm_lab.block8.cli import dispatch
+            result = dispatch(args)
+        elif args.command == "chat":
             from ncm_lab.chat.server import serve
             result = serve(checkpoint=args.checkpoint, preview=args.preview, device=args.device,
                 profile=args.profile, port=args.port, max_seconds=args.max_seconds,

@@ -1,0 +1,154 @@
+{
+  "schema": "block8_software_validation_v1",
+  "recorded_at_utc": "2026-11-09T17:06:44.492498+00:00",
+  "base_commit": "820444239644c384a0514ce77f2c3c5c2f54d10d",
+  "implementation_sha256": "52a3c3607e0e45e7833d41aad3b5fcd8243737a7870edf7ed3a98465c0f15794",
+  "scope": "Bounded software fixtures, tiny production-class Qwen models and a single tiny BF16 CUDA check. No research assets, production source pass, distillation or full-8B training.",
+  "standard_policy": {
+    "architecture": {
+      "schema": "qwen_context_causal_block8_v1",
+      "block_size": 8,
+      "mask_id": -1,
+      "attention": "causal_context_bidirectional_active_v1",
+      "alignment": "active_same_position_ar_previous_position_v1",
+      "cache": "committed_causal_text_only_v1"
+    },
+    "data": {
+      "max_prompt_tokens": 512,
+      "max_answer_tokens": 1024,
+      "max_context_tokens": 1536,
+      "max_parents": 252000,
+      "max_views": 32256000,
+      "max_row_bytes": 16777216,
+      "max_index_bytes": 32000000000,
+      "minimum_train": 90000,
+      "minimum_dev": 2000,
+      "minimum_test": 2000,
+      "target_policy": "sealed_record_targets_v1"
+    },
+    "training": {
+      "steps": 1000,
+      "accumulation": 16,
+      "learning_rate": 1e-05,
+      "mask_learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "ar_weight": 0.5,
+      "fully_masked_fraction": 0.5,
+      "gradient_clip": 1.0,
+      "validation_interval": 100,
+      "checkpoint_interval": 250,
+      "max_validation_views": 256,
+      "head_chunk": 8,
+      "shard_bytes": 67108864,
+      "optimizer_tile_elements": 1048576,
+      "optimizer_seed": 1729,
+      "activation_checkpointing": true,
+      "curriculum_end_steps": [
+        50,
+        100,
+        200,
+        1000
+      ]
+    },
+    "decoding": {
+      "refinement_passes": 4,
+      "max_new_tokens": 1024,
+      "max_blocks": 128,
+      "max_evaluation_examples": 32
+    },
+    "resources": {
+      "reserve_free_bytes": 20000000000,
+      "activation_reserve_bytes": 8000000000,
+      "max_attempts_per_stage": 3,
+      "max_write_bytes": 2000000000000,
+      "max_phase_write_bytes": 6000000000000
+    },
+    "budget": {
+      "phase_id": "block8-template",
+      "max_wall_seconds": 43200,
+      "max_steps": 2000000,
+      "max_source_tokens": 2000000000,
+      "max_answer_positions": 200000000,
+      "max_canvas_positions": 200000000,
+      "max_storage_bytes": 500000000000,
+      "max_phase_wall_seconds": 129600,
+      "max_phase_steps": 6000000,
+      "max_phase_source_tokens": 6000000000,
+      "max_phase_answer_positions": 600000000,
+      "max_phase_canvas_positions": 600000000,
+      "max_phase_storage_bytes": 1500000000000,
+      "enforce_wall_time_limits": true
+    }
+  },
+  "checks": [
+    {
+      "command": "PYTHONPATH=\"$PWD/src\" CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 timeout 1500s /home/jdwall/GitProjects/llm-to-ncm-conversion/.venv/bin/python -m pytest -q --maxfail=1 -o cache_dir=/tmp/block8-full-pytest-cache",
+      "passed": 540,
+      "skipped": 2,
+      "failed": 0,
+      "seconds": 672.21,
+      "log_sha256": "8535d698c50222a8a927fd1c2b8cd0d7ba1d8a60c444cf218496f56619299363"
+    },
+    {
+      "command": "PYTHONPATH=\"$PWD/src\" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 timeout 90s /home/jdwall/GitProjects/llm-to-ncm-conversion/.venv/bin/python -m pytest tests/cuda/test_block8_cuda.py -q -o cache_dir=/tmp/block8-cuda-pytest-cache",
+      "passed": 1,
+      "failed": 0,
+      "seconds": 1.52,
+      "log_sha256": "a447b0ef6625e5f28651aff634c1379f233d8e6c96a9490bcd361bc624dc0b5f",
+      "scope": "Tiny two-layer BF16 gradient, stochastic optimizer update and causal KV equivalence; not full-8B validation."
+    },
+    {
+      "check": "Focused development regression",
+      "passed": 26,
+      "failed": 0,
+      "log_sha256": "a5fb14ececde8f4a7185ef02b8f6ea311bb3c4fa5171a32336a3b1bdd402a994",
+      "scope": "Parent/offset data, full local Parquet scan, 36-layer gradients, attention/RoPE/label alignment, eight EOS positions, multi-block caps, exact FP32/BF16 resumed model states, export corruption and hard SQLite stops. Final complete suite includes these checks."
+    },
+    {
+      "command": "ruff check . --no-cache",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "check": "Literal run_block8.py --plan-only",
+      "status": "passed",
+      "model_allocated": false,
+      "research_work_started": false
+    },
+    {
+      "check": "All README and block8 guide bash/sh blocks through bash -n, without execution",
+      "blocks": 35,
+      "status": "passed"
+    },
+    {
+      "command": "python -m pip wheel --no-deps --no-build-isolation --no-index --wheel-dir /tmp/block8-wheels .",
+      "status": "passed",
+      "wheel_sha256": "753eb1800266974f108396c94495c15430cf23303c9117eaad564ec7c4b08ac2",
+      "block8_modules_packaged": 8
+    }
+  ],
+  "resolved_development_failures": [
+    "The first end-to-end export fixture found that JSON stringifies integer configuration keys while tensor checkpoint metadata preserves their types. Metadata is now normalized at the JSON boundary before hashing and sharding; selected-export generation and resumed updates pass.",
+    "CUDA device access was unavailable inside the sandbox. The tiny test passed with direct device access; the full offline CPU suite intentionally skips both optional CUDA tests."
+  ],
+  "integrity": {
+    "native_architecture_and_objectives_unchanged": true,
+    "separate_denoising_input_contract": true,
+    "labels_and_true_length_masks_loss_only": true,
+    "whole_conversation_splits_checked_before_filtering": true,
+    "original_references_and_origins_preserved": true,
+    "original_failed_source_control_hashes_and_index_stat_unchanged": true,
+    "gpl_and_vendored_notices_preserved": true,
+    "generated_python_executed": false
+  },
+  "limitations": [
+    "The 1,000-update curriculum and four-pass decode are explicit prototype settings, not measured optima or proof of sufficient adaptation data.",
+    "No full-8B Spark training, activation/kernel/recovery feasibility, learning-quality or speedup claim is supported.",
+    "Selection CE is a masked-block objective, not comparable AR perplexity. Locked-test token exact match does not establish semantic correctness.",
+    "Whole-group/overlap checks cover supplied sealed sources only; broader contamination is unknown.",
+    "Memory and disk admission use meta arithmetic and declared reserves; write accounting is conservative logical I/O rather than physical device wear."
+  ]
+}

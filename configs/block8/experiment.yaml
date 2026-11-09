@@ -1,0 +1,35 @@
+{
+  "schema": "block8_workflow_v1",
+  "model": "configs/models/qwen3_8b.yaml",
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "hardware_profile": "spark",
+  "seed": 17,
+  "architecture": {},
+  "data": {},
+  "training": {},
+  "decoding": {},
+  "resources": {},
+  "budget": {
+    "phase_id": "block8-template",
+    "max_wall_seconds": 43200,
+    "max_phase_wall_seconds": 129600,
+    "max_steps": 2000000,
+    "max_phase_steps": 6000000,
+    "max_source_tokens": 2000000000,
+    "max_phase_source_tokens": 6000000000,
+    "max_answer_positions": 200000000,
+    "max_phase_answer_positions": 600000000,
+    "max_canvas_positions": 200000000,
+    "max_phase_canvas_positions": 600000000,
+    "max_storage_bytes": 500000000000,
+    "max_phase_storage_bytes": 1500000000000,
+    "enforce_wall_time_limits": true
+  },
+  "source": {
+    "config": "configs/stage3/source.yaml",
+    "max_candidates": 250000,
+    "max_source_index_bytes": 32000000000,
+    "max_candidate_bytes": 4000000000
+  }
+}
