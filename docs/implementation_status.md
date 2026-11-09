@@ -249,3 +249,26 @@ memory test uses an explicit 8 GiB fixture rather than asserting this host must
 fail admission. These are software checks, not full-8B Spark evidence. Exact
 commands, scope and resolved failures are recorded in
 [the validation receipt](stage3_validation_2026-11-06.json).
+
+
+## Stage 3 source-index allowance correction — 2026-11-09
+
+Diagnosed the real 4 GB source-index failure using bounded read-only SQLite
+queries. The temporary complete-scan index and selected candidate cache now have
+separate 32 GB/4 GB allowances, bounded lossless payload compression, SQLite page
+limits, early disk admission and structured storage reports. Full-scan group
+integrity, source/target policy and training settings are preserved. Earlier
+failed runs and immutable configurations remain intact; operators must start a
+new experiment under the new implementation/storage policy.
+
+Local Parquet fixtures cover a complete source index larger than the selected
+cache, preservation of long references, and hard resource failure before any
+model stage. Unit fixtures cover payload integrity/corruption limits, actual
+SQLite page enforcement, independent candidate limits and disk admission. These
+software checks do not prove the entire pinned release fits the new allowance.
+Production full-scan completion, target acceptance, full-8B feasibility, quality
+and speed remain unmeasured by this correction.
+
+Validation: the complete offline CPU suite passed (514 passed, one optional CUDA
+skip), `ruff check .` passed, and the wheel includes the new module. See the
+[source-storage validation receipt](stage3_source_storage_validation_2026-11-09.json).

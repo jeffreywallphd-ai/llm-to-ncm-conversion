@@ -94,6 +94,14 @@ def plan(settings, experiment_dir=None):
     if settings["schema"] == "stage3_single_pass_v1":
         proposal["model_asset_acquisition"] = ACQUIRE
         proposal["source_asset_acquisition"] = ACQUIRE_TULU
+        source = settings["stages"]["source"]["stage3"]
+        policy = source["source_index"]
+        proposal["source_storage"] = {
+            "policy": policy, "cumulative_write_caps": source["payload_write_caps"],
+            "peak_source_allowance_bytes": 2 * policy["max_bytes"] + policy["candidate_bytes"],
+            "required_free_bytes": 2 * policy["max_bytes"] + policy["candidate_bytes"] + policy["reserve_free_bytes"],
+            "scope": "finite source-stage allowance, not measured full-source usage or GPU memory",
+        }
     if experiment_dir is None:
         return {"status": "planned", "plan": proposal}
     folder = Path(experiment_dir).resolve()
@@ -602,6 +610,7 @@ def reports(path, state, settings):
         report.update(
             recipe_label=settings["recipe_label"], target_policy=settings["target_policy"], selected_export=export,
             source_qualification=read(checked(values["source"]["qualification"])) if "source" in values else None,
+            source_storage_policy=settings["stages"]["source"]["stage3"].get("source_index"),
             distillation={k: values.get("distill", {}).get(k) for k in ("decisions", "target_origins", "generation_policy")},
             resume_command=shlex.join([sys.executable, "-u", "scripts/run_stage3.py", "--resume", str(path), "--execute"]),
             manual_chat_command=shlex.join([sys.executable, "-m", "ncm_lab", "chat", "serve", "--checkpoint", export,

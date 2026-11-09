@@ -283,3 +283,33 @@ changes, and backbone-freezing warmup before model allocation. The complete
 final-source suite passed (498 passed, one CUDA skip), with a separate tiny CUDA
 pass. See the dated validation receipt for the fixture-only scope and earlier
 failures and corrections.
+
+
+## 2026-11-09 — Separate Stage 3 full-scan index from selected caches
+
+The reported source failure is a resource-policy defect: the complete-scan SQLite
+index was capped by `max_candidate_bytes=4,000,000,000`, although the generation
+candidate limit applies only after grouping, splitting and ranking. Read-only
+inspection found a 4,000,276,480-byte failed index with 387,813 rows, 1,115,126
+union-find nodes and no free pages. Charged work (533,790 steps) also includes
+overlap processing and is not a Tülu source-row count. The failure occurred after
+6,795 seconds with execution clocks disabled; no downstream stage started.
+
+A separately typed/versioned source-index policy now defaults to 32 GB; the
+selected-cache allowance stays 4 GB. Stage 3 index payloads use bounded lossless
+zlib JSON BLOBs, preserving full references, token IDs, component/license metadata
+and deterministic group/rank selection. Stage 1/2 keep their TEXT representation.
+SQLite pages, native retained storage, selected-cache bytes and cumulative logical
+writes are bounded independently. Disk admission precedes source processing, and
+structured diagnostic reports survive resource failures. The 32 GB headroom is
+an operational allowance, not an optimum or a measured full-source requirement.
+
+The fix is developed in an isolated worktree. The original failed experiment,
+configuration, ledger and index are not modified, migrated or discarded. A fresh
+experiment is required after the implementation/policy change. No research assets
+were downloaded and no production scan, distillation or training was rerun.
+
+Validation completed with 514 passing tests and one optional CUDA skip; lint,
+README shell syntax and offline wheel packaging also passed. The dated
+[source-storage receipt](stage3_source_storage_validation_2026-11-09.json) records
+the bounded checks and preserved failed-run control-file hashes/index stat.

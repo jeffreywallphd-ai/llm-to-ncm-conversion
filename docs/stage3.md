@@ -123,6 +123,64 @@ accepted examples without duplication or fabricated lengths. Locked test uses
 complete original references selected independently of teacher output/student quality.
 Its style distribution may differ from distilled training/dev.
 
+## Source index storage and the November 7 failure
+
+The failed source run `20261107T150600Z-3ab41bf8` retained 387,813 rows and
+1,115,126 union-find nodes in a 4,000,276,480-byte SQLite index. Its configured
+4,000,000,000-byte limit was incorrectly shared with the candidate-cache limit.
+The 250,000 generation-candidate cap applies after complete source grouping,
+splitting and ranking; it cannot limit the earlier full-scan index safely.
+No teacher distillation or training had started. The failed experiment is retained.
+
+Stage 3 now uses separate finite allowances:
+
+| Quantity | Standard allowance |
+|---|---:|
+| Temporary full-scan SQLite index (`qualification.max_source_index_bytes`) | 32,000,000,000 bytes |
+| Published candidate and locked-reference caches combined (`max_candidate_bytes`) | 4,000,000,000 bytes |
+| Uncompressed bytes per indexed row | 16,777,216 bytes |
+| Source cumulative logical payload/SQLite writes per attempt | 128,000,000,000 bytes |
+| Source cumulative logical writes across three allowed attempts | 384,000,000,000 bytes |
+
+The temporary Stage 3 payload format is versioned `zlib_json_v1` inside the
+`stage3_source_index_v1` policy. Compression preserves complete references,
+prompt/answer token IDs, licenses, origins and grouping/ranking inputs. All
+eligible rows still participate in grouping before selection. Stage 1/2 keep
+their existing TEXT indexes and policies. Codec/generator settings are unchanged.
+
+SQLite `max_page_count` enforces the main-index byte allowance, including its
+indexes. Native per-run/phase retained-storage checks remain active. Selected
+candidate-cache size and cumulative logical writes have separate checks; pruning
+or failed attempts never reset accounting. Source admission checks an allowance
+of two index capacities plus the candidate cache and free-disk reserve: 88 GB
+free for standard settings (68 GB source workspace plus 20 GB reserve). This is
+a conservative admission allowance, not measured full-source usage or a hardware
+fit claim. Other source files remain subject to the native retained-storage cap.
+The offline plan exposes these numbers without scanning data or loading a model.
+
+`source_storage.json` records the policy, observed index/cache bytes, last checked
+scan counters and capacity category. Native work charges and `artifacts/scan.json`
+retain later attempted work if a transaction fails. SQLite/disk/cache exhaustion
+stops dependent stages and prints the report path and relevant configuration
+fields. Compression and the 32 GB default have only fixture validation here;
+production full-scan completion still requires an operator run. The
+[dated validation receipt](stage3_source_storage_validation_2026-11-09.json) records
+514 passing tests, one optional CUDA skip, lint and local wheel packaging checks.
+
+Use a **new experiment after installing this fix**, since implementation and
+storage-policy identities have changed. Existing source assets are verified and
+reused read-only. Do not edit the old experiment's immutable settings or ledgers,
+delete its failed index, or bypass the implementation check. Normal launch:
+
+```bash
+python -u scripts/run_stage3.py --execute
+```
+
+For a data/tokenizer-only check first, use `--qualify-only`, retain its new
+printed manifest, then resume that same new manifest with `--execute` to continue.
+This correction does not lower quotas, sample fewer source rows, truncate
+references, change canvas size, freeze parameters, or introduce clock deadlines.
+
 ## Recovery, storage and process ownership
 
 Keep the printed absolute manifest. Resume exactly that experiment:

@@ -1,0 +1,137 @@
+{
+  "schema": "stage3_source_storage_validation_v1",
+  "recorded_at_utc": "2026-11-09T14:43:06.044236+00:00",
+  "base_commit": "b63e01587cbaf9bc0ff79800b0eb9795a55421dd",
+  "implementation_sha256": "2b126fe7f2987cb9a35b1c7b7c0052e98338677cb1faf4a0055ad5d414f95ba2",
+  "scope": "Bounded software fixtures and read-only diagnosis of one preserved failed source index. No production model/corpus acquisition, full-source rerun, distillation or training.",
+  "diagnosis": {
+    "experiment": "20261107T150600Z-3ab41bf8",
+    "source_attempt": "20261107T150601Z-3b15e81e15",
+    "index_bytes": 4000276480,
+    "old_index_and_candidate_limit_bytes": 4000000000,
+    "indexed_rows": 387813,
+    "union_find_nodes": 1115126,
+    "sqlite_page_size": 4096,
+    "sqlite_page_count": 976630,
+    "sqlite_freelist_count": 0,
+    "charged_work_steps": 533790,
+    "work_step_scope": "Includes overlap processing; not a Tulu source-row count.",
+    "elapsed_seconds": 6795.32969,
+    "root_cause": "A selected-cache byte allowance was incorrectly applied to the full-scan SQLite index before group partition and bounded candidate selection.",
+    "downstream_stages_started": false,
+    "method": "Bounded SQLite count/PRAGMA queries with mode=ro and immutable=1; first 1000 payload-length aggregates; 30-second outer limit. No source text emitted or index migration."
+  },
+  "standard_policy": {
+    "source_index": {
+      "schema": "stage3_source_index_v1",
+      "encoding": "zlib_json_v1",
+      "max_bytes": 32000000000,
+      "candidate_bytes": 4000000000,
+      "max_payload_bytes": 16777216,
+      "reserve_free_bytes": 20000000000
+    },
+    "source_write_caps": {
+      "per_run": 128000000000,
+      "aggregate": 384000000000
+    },
+    "source_peak_allowance_bytes": 68000000000,
+    "required_free_disk_bytes": 88000000000,
+    "clocks_disabled": true,
+    "training_settings_changed": false,
+    "source_selection_quotas_changed": false
+  },
+  "checks": [
+    {
+      "command": "PYTHONPATH=\"$PWD/src\" CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 timeout 1200s /home/jdwall/GitProjects/llm-to-ncm-conversion/.venv/bin/python -m pytest -q --maxfail=1 -o cache_dir=/tmp/stage3-storage-pytest-cache",
+      "passed": 514,
+      "skipped": 1,
+      "failed": 0,
+      "seconds": 639.0,
+      "log_sha256": "8b7b2c750dc83d4f404f7a2f2fc1a24006839347c52b8a4791c21f55b7f7b9b8",
+      "scope": "Complete CPU/offline software suite, including hierarchy, masks, EOS, gradient and recovery contracts; optional CUDA test skipped."
+    },
+    {
+      "check": "Focused Stage 3 workflow/source storage, legacy Stage 2 config and Tulu data fixtures",
+      "passed": 40,
+      "failed": 0,
+      "seconds": 135.72,
+      "log_sha256": "79d8785718f29f19ff29bd44d57a48b396f141e6e679387d1984e0e8b4ae2831",
+      "scope": "Full Parquet scan with temporary index larger than selected-cache cap; long original reference preservation; real SQLite FULL and dependent-stage stop; lossless/corruption/size guards; disk admission; legacy data path."
+    },
+    {
+      "command": "/home/jdwall/GitProjects/llm-to-ncm-conversion/.venv/bin/ruff check . --no-cache",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "check": "All 29 README bash/sh blocks passed bash -n; none executed",
+      "status": "passed"
+    },
+    {
+      "command": "timeout 120s /home/jdwall/GitProjects/llm-to-ncm-conversion/.venv/bin/python -m pip wheel --no-deps --no-build-isolation --no-index --wheel-dir /tmp/stage3-storage-wheels .",
+      "status": "passed",
+      "wheel_sha256": "3258fcf10112effa7bd77e4f3069db8d03e727587225fa416680fe165b843552",
+      "new_source_index_module_packaged": true
+    }
+  ],
+  "preserved_failed_run": {
+    "files": [
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/manifest.json",
+        "sha256": "03d737f398ff670084ff1644017577d86809a7eef9d86e72d119471a66df075e",
+        "bytes": 8723
+      },
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/configs/proposal.json",
+        "sha256": "e0b71b7667757ba6efb648c2e7dc9f5eebad8246268246bf4ccde1ec2b4c0b5b",
+        "bytes": 43400
+      },
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/ledgers/s1-controller-70c1c5f323983493628a22db3749962bd747c3ca.json",
+        "sha256": "5786577fb116f67cb785b436d2bed37b4948a049fd2d139f77e44e8f46b8138f",
+        "bytes": 946
+      },
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/ledgers/source-payload-writes.json",
+        "sha256": "cdaf87ad54ebca7aca7ac1051a0c9ad8b44ddea4a5c1865c7430f28a7ce3a234",
+        "bytes": 341
+      },
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/native_runs/stage3_source/20261107T150601Z-3b15e81e15/resolved_config.json",
+        "sha256": "8ff26be9944a24821c12d5f894d8a876a98806fb9429e5f3c023510e094c6613",
+        "bytes": 6563
+      },
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/native_runs/stage3_source/20261107T150601Z-3b15e81e15/manifest.json",
+        "sha256": "4b49d9cf9ae3c7a83e07a7889458801db10f5f36898597080cb16185ac0480bf",
+        "bytes": 429
+      },
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/native_runs/stage3_source/20261107T150601Z-3b15e81e15/summary.json",
+        "sha256": "e0bbbf285cfca318bd8c06bbd5b554fd0b1bc8048c47ad3fee9f68f486e9e401",
+        "bytes": 5463
+      },
+      {
+        "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/native_runs/stage3_source/20261107T150601Z-3b15e81e15/failure.json",
+        "sha256": "1748868bd10967aadbf1e068bd1997e99b07a652d2a260a2abb8947503cf56b7",
+        "bytes": 1170
+      }
+    ],
+    "index_stat": {
+      "path": "runs/stage3/large/20261107T150600Z-3ab41bf8/native_runs/stage3_source/20261107T150601Z-3b15e81e15/artifacts/preparation.sqlite",
+      "bytes": 4000276480,
+      "mtime_ns": 1794070756934481457
+    }
+  },
+  "integrity": "GPL-3.0 and vendored notices retained. Complete group processing, references, token IDs, licenses and provenance preserved. Old manifests/ledgers/index unchanged. Fixtures provide software evidence only.",
+  "limitations": [
+    "32 GB is an explicit operational allowance, not measured full-release usage or proof that the production scan completes.",
+    "88 GB free-disk admission is conservative source workspace accounting, not a GPU or whole-experiment memory-fit claim.",
+    "Cumulative write accounting covers logical bytes plus conservative SQLite allowance, not physical device wear.",
+    "A new experiment is required; old failed experiments cannot be resumed across implementation/policy identities.",
+    "Production target acceptance, full-8B feasibility, quality and speed remain unmeasured by this correction."
+  ]
+}

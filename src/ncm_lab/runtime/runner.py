@@ -109,6 +109,8 @@ def _execute(value, resume=None, stop_after=None, *, recovery_compatibility=None
                 if (run.path / "checkpoints/current.json").is_file()
                 else None,
                 "artifact_published": False,
+                **({"source_storage": reference(run.path / "source_storage.json")}
+                   if (run.path / "source_storage.json").is_file() else {}),
             },
         )
     except DataCapacityError as exc:

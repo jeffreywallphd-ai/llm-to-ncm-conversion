@@ -65,6 +65,7 @@ def derive(settings, preparation, experiment, *, persist=True):
         candidate_allowance=settings["stages"]["distill"]["stage3"]["distillation"],
         rejected_distillation_work="charged before every attempt under independent source/distill phase caps",
         selected_weights_separate_from_recovery=True,
+        source_storage_policy=settings["stages"]["source"]["stage3"]["source_index"],
     )
     # Two recent recoveries, in-progress recovery, best selected weights, export; conservative legacy fourth slot remains.
     path = Path(experiment) / "qualification/resources.json"

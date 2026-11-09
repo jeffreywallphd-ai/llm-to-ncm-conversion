@@ -263,21 +263,26 @@ def prepare_tulu(run, value, *, stage2_policy=None):
         raise ValueError("versioned pinned component policy required")
     (run.path / "artifacts").mkdir(exist_ok=True)
     database = sqlite3.connect(disk_path(run.path / "artifacts/preparation.sqlite"))
-    database.execute("PRAGMA cache_size=-4096")
-    database.execute("PRAGMA temp_store=FILE")
-    database.execute(
-        "CREATE TABLE rows(key TEXT PRIMARY KEY,id TEXT,node TEXT,split TEXT,band INTEGER,source TEXT,rank TEXT,payload TEXT,tokens INTEGER,selected INTEGER)"
-    )
-    groups = Groups(database)
-    excluded, inventory = Counter(), Counter()
-    scan = {
-        "complete": False,
-        "rows_read": 0,
-        "excluded": excluded,
-        "source_inventory": inventory,
-        "admission_order": ADMISSION_ORDER,
-    }
     try:
+        if stage3:
+            run.source_storage.configure(database)
+        database.execute("PRAGMA cache_size=-4096")
+        database.execute("PRAGMA temp_store=FILE")
+        database.execute(
+            "CREATE TABLE rows(key TEXT PRIMARY KEY,id TEXT,node TEXT,split TEXT,band INTEGER,source TEXT,rank TEXT,payload TEXT,tokens INTEGER,selected INTEGER)"
+        )
+        groups = Groups(database)
+        excluded, inventory = Counter(), Counter()
+        scan = {
+            "complete": False,
+            "rows_read": 0,
+            **({"indexed_rows": 0} if stage3 else {}),
+            "excluded": excluded,
+            "source_inventory": inventory,
+            "admission_order": ADMISSION_ORDER,
+        }
+        if stage3:
+            run.source_storage.check(phase="overlap", scan=scan)
         overlap = overlap_index(database, settings, tokenizer, run)
     except BaseException:
         database.close()
@@ -297,7 +302,7 @@ def prepare_tulu(run, value, *, stage2_policy=None):
             tokenizer_files,
             canonical_hash(tokenizer.chat_template),
             model_identity(value["model"]),
-        ]
+        ] + ([value["stage3"]["source_index"]] if stage3 else [])
     )
     identity = {
         "model": model_identity(value["model"]),
@@ -328,6 +333,8 @@ def prepare_tulu(run, value, *, stage2_policy=None):
     total_rows = sum(
         pq.ParquetFile(asset_path(root() / settings["assets_root"], a)).metadata.num_rows for a in assets
     )
+    if stage3:
+        scan["release_rows"] = total_rows
     if stage3 and total_rows > settings["max_source_rows"]:
         database.close()
         raise ValueError("pinned source metadata exceeds declared complete-pass row cap")
@@ -448,7 +455,10 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                     }
                     if stage3:
                         from ncm_lab.stage3.storage import charge
-                        charge(run, len(json.dumps(payload).encode()) + 16384)
+                        encoded, raw_bytes = run.source_storage.policy.encode(payload)
+                        charge(run, raw_bytes + 16384)
+                    else:
+                        encoded = json.dumps(payload)
                     database.execute(
                         "INSERT OR REPLACE INTO rows VALUES (?,?,?,?,?,?,?,?,?,NULL)",
                         (
@@ -466,13 +476,15 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                                 if stage2_policy is not None
                                 else settings["seed"],
                             ),
-                            json.dumps(payload),
+                            encoded,
                             len(prompt) + len(target),
                         ),
                     )
+                    if stage3 and not existing:
+                        scan["indexed_rows"] += 1
                 database.commit()
-                if stage3 and (run.path / "artifacts/preparation.sqlite").stat().st_size > stage2_policy.max_candidate_bytes:
-                    raise ValueError("source candidate index byte allowance exhausted")
+                if stage3:
+                    run.source_storage.check(phase="scan", scan=scan)
                 if scan["rows_read"] >= settings["max_source_rows"]:
                     break
             if scan["rows_read"] >= settings["max_source_rows"]:
@@ -485,6 +497,8 @@ def prepare_tulu(run, value, *, stage2_policy=None):
             if stage3:
                 from ncm_lab.stage3.data import publish_candidates as publish_tulu
 
+        if stage3:
+            run.source_storage.check(phase="group_partition", scan=scan)
         for key, node in database.execute("SELECT key,node FROM rows ORDER BY key"):
             run.meter.check()
             group = groups.find(node)
@@ -496,8 +510,13 @@ def prepare_tulu(run, value, *, stage2_policy=None):
                 else "train"
             )
             database.execute("UPDATE rows SET node=?,split=? WHERE key=?", (group, split, key))
+        if stage3:
+            run.source_storage.check(phase="rank_index", scan=scan)
         database.execute("CREATE INDEX ranked ON rows(split,band,source,rank,key)")
         database.commit()
+        if stage3:
+            run.source_storage.check(phase="publish_candidates", scan=scan)
+            run.source_storage.snapshot()
         if stage2_policy is not None:
             return publish_tulu(run, database, stage2_policy, scan, identity)
         scan["eligible"] = {

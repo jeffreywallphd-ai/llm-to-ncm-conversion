@@ -22,7 +22,11 @@ def stage3_fixture(stage1_fixture):
     source_value["data"]["source_sha256"] = digest(source)
     write_json(source_config, source_value)
     base = read(root() / "configs/stage3/experiment.yaml")
-    base["qualification"] = {**stage1_fixture["experiment"]["qualification"], "minimum_train_examples": 7}
+    base["qualification"] = {
+        **stage1_fixture["experiment"]["qualification"],
+        "minimum_train_examples": 7,
+        "max_source_index_bytes": 8000000,
+    }
     base["resources"] = stage1_fixture["experiment"]["resources"]
     base["canvas_size"] = "xsmall"
     base["distillation"]["max_candidates"] = 120
@@ -413,3 +417,127 @@ def test_invalid_scientific_stage_contract_rejected_before_allocation(stage3_fix
     write_json(path, cfg)
     with pytest.raises(ValueError, match="Stage 3"):
         resolve(stage3_fixture["config"])
+
+
+def test_source_full_scan_index_can_exceed_selected_cache_without_changing_selection(
+    tmp_path, stage3_fixture, tulu_fixture, capsys
+):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from ncm_lab.data.selection import rank
+    from ncm_lab.data.sources.tulu import DATASET
+    from ncm_lab.runtime.io import canonical_hash
+    from ncm_lab.stage1.data import partition
+    from ncm_lab.stage3.config import Qualification
+
+    recipe = read(stage3_fixture["config"])
+    recipe["qualification"].update(max_candidate_bytes=100000, max_source_index_bytes=4000000)
+    recipe["distillation"]["max_candidates"] = 16
+    write_json(stage3_fixture["config"], recipe)
+    policy = Qualification(**recipe["qualification"])
+    component = tulu_fixture["rows"][0]["source"]
+    def id_for(i):
+        return DATASET + ":" + component + ":" + str(i)
+    ranked = sorted(range(48), key=lambda i: rank(id_for(i), policy.validation_seed))
+    long_ids = {
+        str(i)
+        for i in ranked[24:]
+        if i >= 2
+        and partition("conversation:" + canonical_hash([DATASET, component, str(i)]), policy) != "test"
+    }
+    lock = read(tulu_fixture["lock"])
+    for asset in lock["assets"]:
+        path = Path(tulu_fixture["data"]["data"]["assets_root"]) / asset["path"]
+        rows = pq.read_table(path).to_pylist()
+        for row in rows:
+            if row["id"] in long_ids:
+                row["messages"][-1]["content"] = " ".join(
+                    f"This complete English reference explains example {row['id']} with detail {j} and result {j * (int(row['id']) + 1)}."
+                    for j in range(512)
+                )
+        pq.write_table(pa.Table.from_pylist(rows), path)
+        asset.update(size_bytes=path.stat().st_size, sha256=digest(path))
+    write_json(tulu_fixture["lock"], lock)
+    source_path = Path(recipe["stages"]["source"])
+    source = read(source_path)
+    source["data"] = tulu_fixture["data"]["data"]
+    write_json(source_path, source)
+    folder = tmp_path / "scan larger than candidate cache"
+    assert (
+        main(
+            [
+                "--config",
+                str(stage3_fixture["config"]),
+                "--canvas-size",
+                "medium",
+                "--experiment-dir",
+                str(folder),
+                "--qualify-only",
+            ]
+        )
+        == 0
+    ), capsys.readouterr()
+    state = read(folder / "manifest.json")
+    result = read(checked(state["stages"]["source"]["receipt"]))["result"]
+    storage_report = read(checked(result["source_storage"]))
+    assert storage_report["status"] == "completed"
+    assert storage_report["index_bytes"] > storage_report["policy"]["candidate_bytes"]
+    assert storage_report["candidate_bytes"] <= 100000
+    assert storage_report["scan"]["complete"] and storage_report["scan"]["rows_read"] == 50
+    from ncm_lab.data.artifacts import Dataset
+
+    data = Dataset(result["artifact"])
+    assert len(data) == 16 and all(
+        data[i][0].provenance["original_row_id"] not in long_ids for i in range(len(data))
+    )
+    assert all(state["stages"][name]["status"] == "pending" for name in STAGES[1:])
+    # Exact payload identity survives compression, including full long references
+    # that were indexed before split/selection but correctly excluded from test.
+    import sqlite3
+    from contextlib import closing
+    from ncm_lab.stage3.source_index import SourceIndex
+
+    with closing(sqlite3.connect(storage_report["index_path"])) as db:
+        rows = db.execute("SELECT payload FROM rows").fetchall()
+    originals = [SourceIndex().decode(r[0]) for r in rows]
+    assert all(isinstance(r[0], bytes) for r in rows)
+    assert any(
+        len(e["answer_ids"]) > 256 and len(e["provenance"]["reference_text"]) > 10000 for e in originals
+    )
+
+
+def test_source_index_limit_keeps_failed_run_and_stops_dependents(
+    tmp_path, stage3_fixture, tulu_fixture, capsys
+):
+    recipe = read(stage3_fixture["config"])
+    recipe["qualification"]["max_source_index_bytes"] = 65536
+    write_json(stage3_fixture["config"], recipe)
+    source_path = Path(recipe["stages"]["source"])
+    source = read(source_path)
+    source["data"] = tulu_fixture["data"]["data"]
+    write_json(source_path, source)
+    folder = tmp_path / "bounded failed source"
+    assert (
+        main(
+            [
+                "--config",
+                str(stage3_fixture["config"]),
+                "--canvas-size",
+                "medium",
+                "--experiment-dir",
+                str(folder),
+                "--qualify-only",
+            ]
+        )
+        == 2
+    )
+    state = read(folder / "manifest.json")
+    assert state["status"] == "budget_stopped" and state["stages"]["source"]["status"] == "budget_stopped"
+    assert all(state["stages"][name]["status"] == "pending" for name in STAGES[1:])
+    result = state["failure"]["result"]
+    report = read(checked(result["source_storage"]))
+    assert report["index_bytes"] <= 65536
+    assert report["category"] == "sqlite_or_filesystem_full"
+    assert Path(report["index_path"]).is_file() and not (folder / "handoffs/source.json").exists()
+    assert "NEW recipe/experiment" in result["reason"]
+    assert "source_storage.json" in capsys.readouterr().out

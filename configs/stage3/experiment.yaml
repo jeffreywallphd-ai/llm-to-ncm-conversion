@@ -22,7 +22,8 @@
     "test_fraction": 0.15,
     "max_candidate_bytes": 4000000000,
     "diagnostic": false,
-    "minimum_train_examples": 90000
+    "minimum_train_examples": 90000,
+    "max_source_index_bytes": 32000000000
   },
   "resources": {
     "reserve_free_bytes": 20000000000,

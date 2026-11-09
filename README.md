@@ -395,6 +395,14 @@ python -u scripts/run_stage3.py --resume /ABS/EXISTING/EXPERIMENT/manifest.json 
 python -u scripts/run_stage3.py --resume /ABS/EXISTING/EXPERIMENT/manifest.json --execute --chat-port 0
 ```
 
+Source preparation has separate finite limits: a 32 GB full-scan SQLite index
+and a 4 GB selected candidate cache. Payloads are compressed losslessly; grouping
+still covers the complete approved scan before selection. The offline plan shows
+an 88 GB source free-disk admission allowance, and failures retain a
+`source_storage.json` diagnostic. After updating to this storage fix, start a new
+experiment and preserve the old failed manifest/index; do not edit its caps or
+bypass identity checks. See [source storage details](docs/stage3.md#source-index-storage-and-the-november-7-failure).
+
 The manifest lives under `runs/stage3/large/<UTC-run-id>/`; reports are
 `reports/stage3_summary.md` and `.json`. Selected and terminal steps may differ.
 Chat is loopback-only, with independent session limits; a chat error leaves

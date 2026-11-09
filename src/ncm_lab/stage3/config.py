@@ -26,6 +26,7 @@ class Qualification:
     dev_fraction: float = 0.15
     test_fraction: float = 0.15
     max_candidate_bytes: int = 4000000000
+    max_source_index_bytes: int = 32000000000
     diagnostic: bool = False
 
     def __post_init__(self):
@@ -104,6 +105,15 @@ def resolve(path=None, *, canvas_size=None, seed=None, data_config=None, target_
         not isinstance(x, str) or not x for x in distillation["authoritative_components"]
     ):
         raise ValueError("explicit authoritative component allowlist required")
+    from ncm_lab.stage3.source_index import SourceIndex
+
+    source_index = asdict(
+        SourceIndex(
+            max_bytes=q["max_source_index_bytes"],
+            candidate_bytes=q["max_candidate_bytes"],
+            reserve_free_bytes=resources["reserve_free_bytes"],
+        )
+    )
     stages = {n: config(p, _bind_canvas=False) for n, p in recipe["stages"].items()}
     if data_config:
         stages["source"]["data"] = config(data_config, _bind_canvas=False)["data"]
@@ -153,6 +163,7 @@ def resolve(path=None, *, canvas_size=None, seed=None, data_config=None, target_
             "quality_policy": GATE,
             "target_policy": policy,
             "cache_retained_bytes": q["max_candidate_bytes"],
+            "source_index": source_index,
             "payload_write_caps": {
                 "per_run": q["max_candidate_bytes"] * 10,
                 "aggregate": q["max_candidate_bytes"] * 10 * resources["retry_allowance"],
@@ -161,6 +172,12 @@ def resolve(path=None, *, canvas_size=None, seed=None, data_config=None, target_
             "previous_locked_manifests": recipe.get("previous_locked_manifests", []),
             "evaluation": recipe.get("evaluation", {"warmup": 1, "repeats": 3}),
         }
+        if name == "source":
+            source_writes = max(q["max_candidate_bytes"] * 10, q["max_source_index_bytes"] * 4)
+            cfg["stage3"]["payload_write_caps"] = {
+                "per_run": source_writes,
+                "aggregate": source_writes * resources["retry_allowance"],
+            }
         if name in {"codec", "generator"}:
             saved_schedule = cfg.pop("stage3_schedule")
             if saved_schedule["total"] != cfg["training"]["steps"]:

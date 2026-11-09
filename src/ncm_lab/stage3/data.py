@@ -29,10 +29,25 @@ def identity(value, tokenizer, source_sha):
         canvas=value["architecture"]["canvas"],
         thinking=False,
         qualification_mode="stage3_qualified_v1",
+        source_index_policy=value["stage3"]["source_index"],
     )
 
 
 def source(run, value):
+    from ncm_lab.stage3.source_index import SourceStorage
+
+    storage = SourceStorage(run)
+    storage.preflight()
+    run.source_storage = storage
+    try:
+        result = _source(run, value)
+    except sqlite3.Error as exc:
+        storage.sqlite_failure(exc)
+    result["source_storage"] = storage.finish()
+    return result
+
+
+def _source(run, value):
     policy = Qualification(**value["stage1_data"])
     if value["data"].get("format") == "tulu_parquet":
         from ncm_lab.data.sources.tulu import prepare_tulu
@@ -51,6 +66,7 @@ def source(run, value):
     folder = run.path / "artifacts"
     folder.mkdir(parents=True, exist_ok=True)
     with closing(sqlite3.connect(folder / "candidates.sqlite")) as db:
+        run.source_storage.configure(db)
         db.execute(
             "CREATE TABLE rows(key TEXT PRIMARY KEY,id TEXT,node TEXT,split TEXT,rank TEXT,payload TEXT)"
         )
@@ -92,7 +108,8 @@ def source(run, value):
                     False,
                     provenance,
                 )
-                charge(run, len(json.dumps(asdict(example)).encode()) + 16384)
+                encoded, raw_bytes = run.source_storage.policy.encode(asdict(example))
+                charge(run, raw_bytes + 16384)
                 db.execute(
                     "INSERT OR IGNORE INTO rows VALUES(?,?,?,?,?,?)",
                     (
@@ -101,11 +118,10 @@ def source(run, value):
                         node,
                         "",
                         canonical_hash([policy.validation_seed, example.original_id]),
-                        json.dumps(asdict(example)),
+                        encoded,
                     ),
                 )
-                if (folder / "candidates.sqlite").stat().st_size > policy.max_candidate_bytes:
-                    raise DataCapacityError("candidate index byte cap exhausted")
+                run.source_storage.check(phase="scan")
         for key, node in db.execute("SELECT key,node FROM rows"):
             group = groups.find(node)
             db.execute("UPDATE rows SET node=?,split=? WHERE key=?", (group, partition(group, policy), key))
@@ -133,7 +149,7 @@ def publish_candidates(run, db, policy, scan, source_identity):
     db.execute("CREATE TABLE IF NOT EXISTS selected_prompts(key TEXT PRIMARY KEY)")
     counts = Counter()
     for payload, group, split in db.execute("SELECT payload,node,split FROM rows ORDER BY rank,key"):
-        example = Example(**json.loads(payload))
+        example = Example(**run.source_storage.policy.decode(payload))
         prompt_hash = canonical_hash(example.prompt_ids)
         if group in prior_groups or prompt_hash in prior_prompts:
             continue
@@ -156,6 +172,7 @@ def publish_candidates(run, db, policy, scan, source_identity):
         counts[split] += 1
         db.execute("INSERT INTO selected_prompts VALUES(?)", (prompt_hash,))
         run.meter.check_disk()
+        run.source_storage.check(phase="publish_candidates", publish=True)
     if counts["test"] < policy.test_examples:
         raise DataCapacityError(
             f"locked original-reference capacity: need {policy.test_examples}, found {counts['test']}"
