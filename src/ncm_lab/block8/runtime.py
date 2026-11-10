@@ -23,9 +23,12 @@ class Attempt:
         self.id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:10]
         self.path = self.experiment / "attempts" / action / self.id
         self.path.mkdir(parents=True)
-        self.value = {**settings, "stage": "block8_" + action}
+        budget = {
+            **settings["stage_budgets"].get(action, settings["budget"]),
+            "phase_id": "block8-" + settings["identity"][:24] + "-" + action,
+        }
+        self.value = {**settings, "stage": "block8_" + action, "budget": budget}
         write_json(self.path / "resolved_config.json", self.value, exclusive=True)
-        budget = {**settings["budget"], "phase_id": "block8-" + settings["identity"][:24] + "-" + action}
         self.meter = Meter(Budget(**budget), self.path, self.experiment / "ledgers")
         disk_check = self.meter.check_disk
 
@@ -196,6 +199,9 @@ def plan(settings):
         decoding=settings["decoding"],
         resources=settings["resources"],
         budget=settings["budget"],
+        stage_budgets=settings["stage_budgets"],
+        source_work_budget=settings["source_work_budget"],
+        preparation_work_budget=settings["preparation_work_budget"],
         source=settings["source"],
         model=settings["model"],
         stages=[

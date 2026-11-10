@@ -445,3 +445,32 @@ current source attempt displayed the index-building phase, without restarting or
 altering that experiment. Scientific training, dataset and recovery code did not
 change; no production work or model downloads were started. See the
 [monitor validation receipt](block8_prep_monitor_validation_2026-11-09.json).
+
+## 2026-11-10 — Separate raw preprocessing from training work allowances
+
+The real source attempt exhausted its 200-million answer-position cap after
+369,049 of 939,343 release rows. Charging before length rejection is intentional:
+tokenization/inspection consumes work even when a response is later excluded.
+The default shared training allowance was inappropriate for this complete scan.
+Keep those charges and derive sealed per-stage finite budgets instead.
+
+Source token/answer allowances use source plus overlap row bounds and a generous
+character/normalization/byte-tokenization/framing planning envelope. Preparation
+uses raw parent count and serialized row-byte bounds, since the shared source
+adapter retains long original references. A new fixture initially exposed that
+second failure after the source cap was corrected; both stages now complete the
+same bounded fixture without hiding excluded-answer work. Preserve base training
+budgets and the independent preparation step ceiling. Aggregate work allowances
+cover the declared retry count; wall/storage/canvas/write caps remain enforced.
+
+Resolve policies before identity/sealing, show them in the offline plan, and write
+the actual stage budget/phase ID into attempt metadata. Do not alter the stopped
+experiment, reuse its partial index as a complete dataset, or add a cross-version
+resume exemption. Fresh execution is required. Actual production completion and
+8B training quality/fit remain unmeasured; the fix does not start research work.
+
+The complete offline CPU suite passed: 569 tests and three optional CUDA skips
+in 725.01 seconds. Ten focused source-budget regressions, Ruff and offline planning
+passed. The original failed manifest, resolved settings, receipt, scan report and
+ledger bytes still match their saved hashes, and its index size/mtime is unchanged.
+See the [validation receipt](block8_source_budget_validation_2026-11-10.json).

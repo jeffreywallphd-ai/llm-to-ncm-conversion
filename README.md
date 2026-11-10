@@ -31,6 +31,13 @@ See the [hierarchical block guide](docs/block8.md) and
 [architecture plan](docs/hierarchical_block8_plan.md) for preparation, losses,
 cache semantics, recovery and the limits of the evidence.
 
+Raw source scanning and block-dataset preparation use separate finite work
+allowances, shown in the plan's `stage_budgets`; training retains the base budget.
+Original responses are charged before length filtering, including rejected ones.
+See [preprocessing budgets](docs/block8.md#raw-preprocessing-work-budgets). After
+updating an experiment that stopped on the old answer-position cap, start a fresh
+`--execute` run and preserve the old manifest and ledgers.
+
 Training prints each completed optimizer step. Average step time and remaining
 days/hours/minutes refresh every ten updates and repeat unchanged between refreshes.
 Follow an existing experiment read-only from another terminal, including major

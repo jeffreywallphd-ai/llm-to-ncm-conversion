@@ -1,0 +1,139 @@
+{
+  "schema": "block8_raw_preprocessing_budget_validation_v1",
+  "date": "2026-11-10",
+  "implementation_sha256": "9a87f5364d723206c9dc2ecff8652fab599cb6d0973ab82c415d211cbea0c2b0",
+  "diagnosis": {
+    "attempt": "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4",
+    "error": "BudgetStop: finite answer_positions budget exhausted",
+    "old_answer_position_cap": 200000000,
+    "charged_answer_positions": 199999655,
+    "source_rows_read": 369049,
+    "release_rows": 939343,
+    "source_model_loaded": false,
+    "cause": "raw source and candidate inspection shared a training-sized allowance; long references remain charged before later rejection"
+  },
+  "resolved_policy": {
+    "source_work": {
+      "schema": "block8_source_work_budget_v1",
+      "source_row_allowance": 1200000,
+      "overlap_reference_row_allowance": 200000,
+      "total_row_allowance": 1400000,
+      "position_allowance_per_row": 2136576,
+      "attempts_per_stage": 3,
+      "scope": "all raw tokenized responses, including later exclusions; not admitted training exposures",
+      "wall_storage_canvas_and_write_caps": "unchanged"
+    },
+    "preparation_work": {
+      "schema": "block8_preparation_work_budget_v1",
+      "parent_allowance": 252000,
+      "position_allowance_per_parent": 16777216,
+      "scope": "raw serialized parent inspection before length/EOS exclusions; not retained dataset positions",
+      "step_wall_storage_canvas_and_write_caps": "unchanged"
+    },
+    "source": {
+      "phase_id": "block8-template",
+      "max_wall_seconds": 43200,
+      "max_steps": 2000000,
+      "max_source_tokens": 2991206400000,
+      "max_answer_positions": 2991206400000,
+      "max_canvas_positions": 200000000,
+      "max_storage_bytes": 500000000000,
+      "max_phase_wall_seconds": 129600,
+      "max_phase_steps": 6000000,
+      "max_phase_source_tokens": 8973619200000,
+      "max_phase_answer_positions": 8973619200000,
+      "max_phase_canvas_positions": 600000000,
+      "max_phase_storage_bytes": 1500000000000,
+      "enforce_wall_time_limits": true
+    },
+    "prepare": {
+      "phase_id": "block8-template",
+      "max_wall_seconds": 43200,
+      "max_steps": 2000000,
+      "max_source_tokens": 4227858432000,
+      "max_answer_positions": 4227858432000,
+      "max_canvas_positions": 200000000,
+      "max_storage_bytes": 500000000000,
+      "max_phase_wall_seconds": 129600,
+      "max_phase_steps": 6000000,
+      "max_phase_source_tokens": 12683575296000,
+      "max_phase_answer_positions": 12683575296000,
+      "max_phase_canvas_positions": 600000000,
+      "max_phase_storage_bytes": 1500000000000,
+      "enforce_wall_time_limits": true
+    },
+    "base_training_budget": {
+      "phase_id": "block8-template",
+      "max_wall_seconds": 43200,
+      "max_steps": 2000000,
+      "max_source_tokens": 2000000000,
+      "max_answer_positions": 200000000,
+      "max_canvas_positions": 200000000,
+      "max_storage_bytes": 500000000000,
+      "max_phase_wall_seconds": 129600,
+      "max_phase_steps": 6000000,
+      "max_phase_source_tokens": 6000000000,
+      "max_phase_answer_positions": 600000000,
+      "max_phase_canvas_positions": 600000000,
+      "max_phase_storage_bytes": 1500000000000,
+      "enforce_wall_time_limits": true
+    }
+  },
+  "verification": {
+    "focused_initial": {
+      "passed": 9,
+      "failed": 1,
+      "reason": "new regression exposed the same budget mismatch in subsequent block preparation"
+    },
+    "focused_corrected": {
+      "passed": 10,
+      "seconds": 9.63,
+      "command": "python -m pytest -q tests/block8/test_source_budget.py tests/block8/test_workflow.py -k 'source or budget or pinned_parquet or plan'"
+    },
+    "full": {
+      "passed": 569,
+      "optional_cuda_skipped": 3,
+      "collected": 572,
+      "seconds": 725.01,
+      "execution_cap_seconds": 7200,
+      "command": "python -m pytest -q",
+      "environment": "offline CPU fixtures; local loopback enabled; CUDA_VISIBLE_DEVICES empty"
+    },
+    "ruff": "passed",
+    "diff_check": "passed",
+    "offline_plan": "passed",
+    "regression_scope": [
+      "replay previously charged counts beyond the old 200-million cap",
+      "per-run and persistent aggregate source caps still stop excess work",
+      "teacher/codec/generator/targets retain base budgets",
+      "preparation retains step/clock/storage/write caps",
+      "bounded overlap-artifact rows and invalid raw limits",
+      "pinned 51-row Parquet scan reproduces both old failures then completes preparation with long answers excluded and all raw work charged"
+    ]
+  },
+  "preserved_failed_run": {
+    "metadata_and_ledger_sha256": {
+      "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/manifest.json": "0001605084ebd842a1ba5d6f6e66daddb25ee62c88b9d5edbb4e84c98e56783f",
+      "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/resolved_config.json": "f585b8195306d9da820d89a70330cb6c83dab841b97c11a58062fdeb8542df73",
+      "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/attempts/source/20261109T213730Z-5b0b2dfd93/receipt.json": "59b5fead6b122d34bfe0b3c0e1a2b715128235e7f6b45e7dcfacedb69eb10e0c",
+      "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/attempts/source/20261109T213730Z-5b0b2dfd93/resolved_config.json": "262e6dc1d2ad0f0ab2fc19718b10a8283b335b0a7090d85f30323c9e1de8001f",
+      "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/attempts/source/20261109T213730Z-5b0b2dfd93/artifacts/scan.json": "c3408c3d5ba8188b8d878098604d0786eef0509e97d2ba9a2e4c14bffb4b2366",
+      "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/ledgers/block8-78d77a312b6dca1a62daef5e-source.json": "3d39866d7a4f391fb9754ead285b4cdfefc4da07160adb5fb267f9dc4db370ba",
+      "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/ledgers/block8_source-payload-writes.json": "15353127b9dd9d1ccb7c91db0f4fc68bc2e503e563eec5635fbf0028eb863af1"
+    },
+    "index_stat": {
+      "bytes": 1323216896,
+      "mtime_ns": 1794266184508273394
+    },
+    "verified_unchanged": true
+  },
+  "research_work": {
+    "production_scan_started": false,
+    "production_training_started": false,
+    "downloads_started": false,
+    "software_fixtures_only": true,
+    "full_production_source_completion": "unmeasured",
+    "gpu_or_quality_claims": null
+  },
+  "operator_recovery": "Preserve the failed manifest/index/ledgers and start a fresh --execute experiment under the corrected implementation; no migration or counter reset."
+}

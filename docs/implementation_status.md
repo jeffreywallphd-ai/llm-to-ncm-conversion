@@ -1,5 +1,27 @@
 # Native implementation status
 
+## Block8 raw preprocessing budget correction — 2026-11-10
+
+The reported source attempt stopped at 199,999,655 answer positions after
+369,049/939,343 rows. Raw source and candidate inspection were sharing a budget
+intended for bounded training work. Stage-specific finite source and preparation
+allowances now derive from declared raw row/character and parent/byte bounds.
+Plans and sealed attempt configurations expose their actual budgets. All raw work,
+including later exclusions, stays charged; model-training horizons, clock
+enforcement, storage and write bounds remain intact.
+
+The focused fixture reproduces the old source failure and the subsequent
+preparation failure, then completes the full same-source scan and block dataset
+with overlength references still excluded. Counter replay, hard per-run/aggregate
+stops, stage isolation and offline bound validation passed. A fresh experiment is
+required; no failed run or ledger is migrated or reset. Full production source
+completion, corpus sufficiency and full-8B feasibility remain unmeasured.
+
+Validation: **569 passed, three optional CUDA skips** in the complete offline CPU
+suite; **10 focused regressions passed**. Ruff and offline planning passed.
+Saved failed metadata/ledger hashes and index size/mtime remained unchanged. See
+the [source-budget receipt](block8_source_budget_validation_2026-11-10.json).
+
 ## Block8 major preparation messages — 2026-11-09
 
 The read-only viewer reports major source-index/publication, block-dataset,

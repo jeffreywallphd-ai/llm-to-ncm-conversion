@@ -1,4 +1,4 @@
-"""Offline resolution; the block decoder has no embedded-hierarchy/codec contract."""
+"""Offline resolution of the native hierarchical block workflow and finite budgets."""
 
 from dataclasses import asdict, dataclass
 import math
@@ -273,6 +273,11 @@ def resolve(path=None):
         bindings["overlap_artifact"] = root() / source_data["overlap"]["artifact"]
     value["source"]["policy_receipts"] = {key: reference(path) for key, path in bindings.items()}
     value["model_asset_policy"] = reference(root() / "configs/data/assets.lock.json")
+    from ncm_lab.block8.budgets import source_work_budget, preparation_work_budget
+
+    source_budget, value["source_work_budget"] = source_work_budget(value)
+    prep_budget, value["preparation_work_budget"] = preparation_work_budget(value)
+    value["stage_budgets"] = {"source": source_budget, "prepare": prep_budget}
     value["implementation_sha256"] = implementation_hash()
     value["identity"] = canonical_hash(value)
     return value

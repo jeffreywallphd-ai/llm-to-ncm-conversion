@@ -256,6 +256,43 @@ or fine-code caches, or three recovery/three inference-weight versions during co
 and a 20 GB free reserve. Stage-local models are released and allocator caches cleared
 between stages. Baseline admission arithmetic does not establish full-8B runtime fit.
 
+### Raw preprocessing work budgets
+
+The top-level `budget` remains the default for teacher, codec, target, generator
+and evaluation work. Source scanning and block-dataset preparation have separate
+finite work allowances in resolved `stage_budgets`, visible in `--plan-only`.
+These are sealed before execution. Each attempt's `resolved_config.json` records
+the actual selected budget and ledger phase ID.
+
+The full source scan charges tokenized prompts and original responses, including
+responses later excluded from the block dataset. Source candidates intentionally
+retain long original responses; block preparation charges their inspection before
+length/EOS exclusion. Neither stage can use the admitted 1,024-position answer
+limit as its raw-work bound. The old shared 200-million answer-position cap stopped
+the reported scan after 369,049 of 939,343 rows, with 199,999,655 positions charged.
+
+Source work uses declared source rows plus bounded overlap-reference rows. Its
+per-row planning allowance is `16 * max_row_chars + 128 * max_messages + 1024`,
+covering character expansion/byte tokenization and chat framing/EOS reserves.
+Block preparation uses `max_parents * max_row_bytes`: serialized integer token
+arrays cannot contain more positions than bytes. Source steps cover the scan and
+overlap passes; preparation retains its independent step ceiling. The resulting
+token/answer-position caps are at least the base caps, and their aggregate phase
+caps cover the declared retry allowance. Larger explicit base caps are preserved.
+These conservative work allowances are not corpus-size or runtime predictions.
+
+Actual work stays fully charged. Row, payload, index, write, storage and clock caps
+remain enforced; wall/storage/canvas/write limits and model-training horizons are
+unchanged. The versioned `source_work_budget` and `preparation_work_budget` records
+explain the resolved allowances. A larger preprocessing allowance does not request
+additional training updates or admit overlength answers into the generator.
+
+After this correction, start a **fresh** experiment with `--execute`. Do not edit
+the stopped run's configuration or ledgers, or resume it under the changed code.
+Its incomplete SQLite index is retained for diagnosis and is not a qualified
+dataset. The [validation receipt](block8_source_budget_validation_2026-11-10.json)
+records reproduction with small pinned Parquet fixtures and preservation checks.
+
 The design is implemented; real full-source completion, corpus sufficiency, full-8B
 Spark gradients/optimizer/recovery peaks, convergence, output quality and latency
 require separate measured evidence. Fixtures cannot support those claims.
