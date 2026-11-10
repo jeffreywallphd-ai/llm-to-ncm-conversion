@@ -31,6 +31,19 @@ See the [hierarchical block guide](docs/block8.md) and
 [architecture plan](docs/hierarchical_block8_plan.md) for preparation, losses,
 cache semantics, recovery and the limits of the evidence.
 
+Training prints each completed optimizer step. Average step time and remaining
+days/hours/minutes refresh every ten updates and repeat unchanged between refreshes.
+Follow an existing experiment read-only from another terminal, including major
+data-preparation phases without detailed preparation counters:
+
+```bash
+python -u scripts/monitor_block8.py --experiment /ABS/EXPERIMENT/manifest.json
+```
+
+See [step progress](docs/block8.md#step-progress-and-remaining-time-estimates) for
+older running experiments, pending estimates and recovery behavior. Reports are
+triggered by completed work; there are no timer-only progress messages.
+
 ## Setup
 
 Run commands from the repository root. On **Spark/Linux**, keep the working

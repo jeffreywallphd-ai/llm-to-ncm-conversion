@@ -100,6 +100,35 @@ def model_state(recovery):
     return {reader.materialize(k): reader.materialize(v) for k, v in reader.field("model")["items"]}
 
 
+def test_step_console_and_persisted_estimates_match_at_ten_updates(block8_fixture, capsys):
+    f = block8_fixture
+    cfg = read(f["config"])
+    for name, steps in (("codec", 10), ("training", 12)):
+        cfg[name].update(steps=steps, validation_interval=10, checkpoint_interval=10)
+    write_json(f["config"], cfg)
+    result = run_workflow(
+        resolve(f["config"]),
+        experiment_dir=f["folder"] / "step reporting",
+        execute=True,
+        data_manifest=f["data"],
+        evaluation_manifest=f["evaluation"],
+    )
+    assert result["status"] == "completed", result
+    output = capsys.readouterr().out
+    lines = [line for line in output.splitlines() if line.startswith("block8_generator step")]
+    assert len(lines) == 12
+    assert "avg_step=pending eta=pending" in lines[8]
+    assert "estimate_step=10" in lines[9] and "estimate_step=10" in lines[10]
+    assert "eta=0d 0h 0m" in lines[11]
+    folder = Path(result["experiment"]).parent
+    metrics = next(folder.glob("attempts/generator/*/metrics.jsonl"))
+    rows = [json.loads(line) for line in metrics.read_text().splitlines()]
+    assert rows[9]["progress"] == rows[10]["progress"]
+    assert rows[9]["progress"]["sampled_steps"] == 10
+    assert rows[9]["progress"]["average_seconds_per_step"] > 0
+    assert rows[11]["progress"]["remaining_seconds"] == 0
+
+
 @pytest.mark.parametrize("dtype", ["float32", "bfloat16"])
 def test_sharded_interrupted_resume_matches_uninterrupted_update_and_preserves_failed_attempt(
     block8_fixture, dtype

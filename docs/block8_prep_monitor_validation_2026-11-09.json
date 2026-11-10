@@ -1,0 +1,41 @@
+{
+  "schema": "block8_prep_monitor_validation_v1",
+  "date": "2026-11-09",
+  "scope": "read-only monitor preparation messages; no scientific or producer changes",
+  "implementation_sha256": "a79ec6c2ba059b40a2154d77b91f75376ec001615a73c38c221f2e4f026ed471",
+  "tests": {
+    "command": "python -m pytest -q tests/unit/test_step_progress.py tests/unit/test_block8_step_view.py",
+    "execution_cap_seconds": 60,
+    "passed": 19,
+    "elapsed_seconds": 0.14,
+    "ruff": "passed",
+    "diff_check": "passed"
+  },
+  "checked_behavior": [
+    "major source-index and qualified-data publication milestones",
+    "block dataset construction and finalization",
+    "teacher-feature and target-code cache milestones",
+    "no repeated phase report when elapsed time or file size increases",
+    "separate retry attempt phases; wait for newly announced attempts",
+    "existing training-step estimates and partial-record handling",
+    "no Torch import in standalone viewer",
+    "no experiment writes"
+  ],
+  "actual_run_observation": {
+    "experiment": "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T213730Z-da41ecf4/manifest.json",
+    "viewer_once": "passed",
+    "phase": "building the source index (overlap checks, filtering, tokenization, deduplication and grouping)",
+    "active_implementation_matches_sealed_experiment": true
+  },
+  "limits": {
+    "detection": "artifact existence and immutable attempt config timestamps; source scanning/grouping boundaries combined",
+    "row_tracking": false,
+    "live_sqlite_queries": false,
+    "timer_only_reports": false,
+    "producer_restart": false,
+    "scientific_configuration_changes": false,
+    "full_scientific_suite_repeated": false,
+    "production_training_started": false,
+    "downloads_started": false
+  }
+}

@@ -400,3 +400,48 @@ Focused CPU tests passed (28), including codec moments/private RNG and generator
 FP32/BF16 recovery equivalence. Lint, offline planning, wheel packaging and 36 shell
 syntax checks passed. See the [replacement receipt](hierarchical_block8_validation_2026-11-09.json).
 The original failed source experiment and historical validation receipt are unchanged.
+
+## 2026-11-09 — Block8 reports completed steps with ten-update estimates
+
+The operator requested step-triggered progress and a remaining-time estimate
+refreshed every ten completed updates, reused unchanged on intermediate updates.
+Add console lines and additive JSONL progress fields to the independent codec and
+generator loop. Average wall cost only over observed updates in the current
+attempt; exclude initialization and leave estimates out of model/optimizer/RNG
+recovery. Terminal output is driven by work completion and never by a timer.
+
+Provide a model-free read-only viewer for an exact manifest, including older
+running experiments. Old logs cannot supply historical step timing, so explicitly
+label viewer-observed estimates and start their observations at attachment rather
+than extrapolating replay speed. Preserve per-attempt/restored-step identity,
+partial-record handling and finite aggregate read-work limits. Keep the running
+main checkout untouched; no configuration or implementation hash bypass is added.
+These changes do not alter scientific objectives, update counts or resource caps.
+
+Verification accounted for 557 passing cases and three optional CUDA skips across
+bounded batches, including all fourteen focused progress unit checks and the tiny
+end-to-end block8 pipeline. Five chat/TensorBoard failures in the restricted run
+were resolved by a nine-test loopback-enabled rerun. Preserve the execution-cap
+outcomes in the [validation receipt](block8_progress_validation_2026-11-09.json)
+rather than describing the interrupted command as a single successful full run.
+Ruff passed, and the original running checkout's implementation hash still matches
+its sealed experiment. No production training or download was started.
+
+## 2026-11-09 — Major preparation milestones in the read-only block8 viewer
+
+The operator requested major data-preparation stages without detailed preparation
+tracking. Derive coarse phases from existing attempt artifacts, leaving the active
+producer and immutable configurations untouched. Index creation identifies the
+combined overlap/filter/tokenization/dedup/grouping phase; candidate cache creation
+identifies publication. Dataset/cache index and manifest creation identify
+construction and finalization. These are observed artifact milestones, not exact
+instrumentation of every internal operation. Never scan source records, query a
+live SQLite database, report counts/percentages, or emit timer-only preparation
+messages. A new attempt gets its own phase sequence; do not reuse a previous
+attempt's completed artifacts while a retry is initializing.
+
+Nineteen focused monitoring tests and Ruff passed. A one-shot view of the operator's
+current source attempt displayed the index-building phase, without restarting or
+altering that experiment. Scientific training, dataset and recovery code did not
+change; no production work or model downloads were started. See the
+[monitor validation receipt](block8_prep_monitor_validation_2026-11-09.json).

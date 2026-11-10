@@ -162,6 +162,75 @@ Keep ongoing native experiments on their original checkout: implementation hashe
 change when this package/shared cache support changes. The native single-pass API,
 architecture and objectives otherwise remain separate.
 
+## Step progress and remaining-time estimates
+
+Codec and generator print one line after every completed optimizer update. Lines
+include completed/target updates, percentage, objective components, gradient norm,
+learning rates, and dev selection loss when validation runs. The same information
+is appended to the attempt's `metrics.jsonl`; its `progress` field stores the
+estimate used in the console.
+
+Every tenth completed update refreshes the average wall time per update and the
+remaining duration, shown as days, hours and minutes. The average covers completed
+updates observed since training resumed in this attempt, excluding initial model
+loading, initial validation and initial checkpointing. It includes validation and
+earlier periodic checkpoint overhead during training. Remaining time is the average
+multiplied by remaining updates in this training stage. It estimates the requested
+update horizon, not convergence or the budget-limited stopping point. Generator
+duration is not inferred from codec duration. Before the first calculation the
+estimate is pending; intermediate updates repeat the previous average and estimate
+unchanged. The terminal update reports zero remaining optimizer updates. A new
+attempt starts fresh observations; numerical recovery/RNG state is unaffected.
+
+Illustrative formatting only (these numbers are not measured performance):
+
+```text
+block8_generator step 10/20000 (0.05%) text_ce=2.5 latent_loss=0.1 ar_ce=1.8 grad=0.9 lr=1e-07,1e-06 avg_step=60.00s eta=13d 21h 10m estimate_step=10
+block8_generator step 11/20000 (0.06%) text_ce=2.4 latent_loss=0.1 ar_ce=1.7 grad=0.8 lr=1.1e-07,1.1e-06 avg_step=60.00s eta=13d 21h 10m estimate_step=10
+```
+
+There are no timer-triggered reports, heartbeats, countdown refreshes, extra forward
+passes, or background training threads. Long updates, initial validation/export,
+and checkpoint writes can be quiet until work completes.
+
+To follow an exact experiment from another terminal:
+
+```bash
+python -u scripts/monitor_block8.py --experiment /ABS/EXPERIMENT/manifest.json
+```
+
+Use `--once` for a single snapshot. The read-only viewer follows stage transitions,
+major preparation milestones, new optimizer-step records and checkpoint counters.
+Preparation messages identify source input setup, source-index construction,
+publication of qualified train/evaluation data, block-dataset construction,
+frozen teacher-feature caching, and frozen target-code caching. They report each
+observed phase once per attempt, without row counts, percentages or preparation
+ETAs. Artifact creation/sealing supplies these milestones; the viewer never opens
+the active SQLite database or scans source records. Older producers do not expose
+separate scan/grouping boundaries, so overlap checks, filtering, tokenization,
+deduplication and grouping share one source-index phase. Fast phases missed between
+polls are not replayed as invented progress. Input checking and finalization are
+shown when their artifact boundaries are observed.
+
+The viewer attaches at the latest
+complete record in each existing attempt, retains actual restored step numbers,
+and keeps attempts separate. It waits for new files and tolerates a final partial
+JSONL record. Polling discovers writes but never emits timer-only status. Ctrl-C
+stops only this viewer. Its finite read-work cap is 2,592,000 polls and its aggregate
+metrics read cap is 256 MiB; no derived files or TensorBoard server are created.
+
+An older running trainer can be followed without editing its checkout or sealed
+configuration: invoke this viewer script by its absolute path from the new checkout.
+For old records without a stored estimate, the viewer measures only newly observed
+steps after attachment and marks `estimate_source=viewer_observations`. Its initial
+historical record has a pending estimate. Those estimates can include file-polling,
+observer suspension and observation delays; recorded trainer estimates take
+precedence whenever present. No implementation-hash exemption or cross-version
+training resume is introduced. Do not replace code under an active experiment to
+add console output. After updating this viewer, restart only the monitoring
+terminal with the same command; the running training process stays on its sealed
+implementation.
+
 ## Recovery and resources
 
 Codec and generator each have independent sharded model/optimizer/RNG/scheduler

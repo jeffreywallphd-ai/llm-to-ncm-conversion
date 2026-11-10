@@ -1,5 +1,43 @@
 # Native implementation status
 
+## Block8 major preparation messages — 2026-11-09
+
+The read-only viewer reports major source-index/publication, block-dataset,
+teacher-feature and target-code cache phases from existing artifact milestones.
+It emits only when an observed phase or active attempt changes. No row counters,
+preparation percentages/ETAs, live SQLite queries, source scans or training changes
+were added. Scanning and grouping remain a combined phase for older producers
+without finer markers. Restarting only the viewer enables these messages for an
+already-running experiment on its original sealed implementation.
+
+Validation: **19 focused monitoring tests passed; Ruff passed**. These cover
+source/dataset/cache transitions, silence despite time/index growth, retry
+boundaries, read-only behavior and the existing ten-step estimate behavior. This
+monitor-only change did not repeat model-training regressions. See the
+[receipt](block8_prep_monitor_validation_2026-11-09.json).
+
+## Block8 step progress — 2026-11-09
+
+Codec/generator console progress follows every completed optimizer step. An
+additive JSONL estimate refreshes every ten updates and remains unchanged on
+intermediate steps, with days/hours/minutes remaining for that stage. Its average
+uses observed completed-update wall cost in the current attempt; it is an estimate
+of the configured horizon and cannot establish convergence or runtime feasibility.
+
+A model-free read-only viewer can follow an older running experiment from another
+checkout, without modifying its sealed code/configuration. Older records use
+explicitly labelled viewer-observed timing; new records carry trainer estimates.
+No timer-only reports or scientific/recovery-state changes are introduced.
+Real-model ETA accuracy and monitoring overhead remain unmeasured.
+
+Validation accounted for all 560 collected cases across bounded runs: **557
+passed and three optional CUDA tests skipped**. Chat/TensorBoard tests passed
+with loopback access after restricted-environment failures. Long regression batches
+reached their execution caps and continued from the unfinished cases. Fourteen
+focused progress unit checks and the actual tiny block8 pipeline passed; Ruff
+passed. See the [receipt](block8_progress_validation_2026-11-09.json). The active
+checkout still matches the running experiment's sealed implementation hash.
+
 ## Stage 2 unattended workflow — 2026-11-05
 
 The Stage 2 launcher composes the six native stages at fixed 64-position

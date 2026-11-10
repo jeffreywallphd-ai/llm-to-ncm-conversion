@@ -1,0 +1,71 @@
+{
+  "schema": "block8_step_progress_software_validation_v1",
+  "date": "2026-11-09",
+  "base_commit": "a4e84ab955952785141c530bf45c100c2d3c0597",
+  "implementation_sha256": "25561ae7501a99a8abb32f2568d361d881285a1db91e7471560b46bce91f4ebd",
+  "requested_behavior": [
+    "one report per completed optimizer update",
+    "refresh cumulative current-attempt average and remaining estimate every ten updates",
+    "reuse previous estimate unchanged between refreshes",
+    "show days, hours and minutes",
+    "no timer-only reports",
+    "read-only observation of older running experiments"
+  ],
+  "focused_checks": {
+    "unit_tests_passed": 14,
+    "unit_seconds": 0.07,
+    "real_tiny_pipeline_checked": true,
+    "exact_fp32_bf16_recovery_checked": true
+  },
+  "regression_checks": {
+    "collected_cases": 560,
+    "unique_passed": 557,
+    "optional_cuda_skipped": 3,
+    "all_cases_accounted_for": true,
+    "full_command": "python -m pytest -q",
+    "initial_run": {
+      "execution_cap_seconds": 1200,
+      "status": "execution_cap_reached",
+      "conservative_complete_prefix_cases": 103,
+      "restricted_chat_tensorboard_failures": 5
+    },
+    "local_server_rerun": {
+      "command": "python -m pytest -q tests/integration/test_chat_and_pilots.py tests/integration/test_monitoring_tensorboard.py",
+      "passed": 9,
+      "seconds": 261.59,
+      "environment": "loopback enabled; original restricted preview failure was Operation not permitted"
+    },
+    "first_continuation": {
+      "execution_cap_seconds": 900,
+      "status": "execution_cap_reached",
+      "completed_cases": 39
+    },
+    "second_continuation": {
+      "execution_cap_seconds": 900,
+      "status": "execution_cap_reached",
+      "completed_cases": 14,
+      "overlap_with_prior_completed_cases": 1
+    },
+    "final_continuation": {
+      "execution_cap_seconds": 900,
+      "passed": 405,
+      "seconds": 540.19,
+      "first_case": "tests/integration/test_stage3_workflow.py::test_readme_exact_command_runs_full_fixture"
+    },
+    "coverage_method": "103-case prefix plus 39 completed cases plus 14 completed cases with one overlapping case plus final 405 cases; five restricted-environment failures resolved by the nine-test rerun"
+  },
+  "operator_validation": {
+    "actual_experiment": "/home/jdwall/GitProjects/llm-to-ncm-conversion/runs/hierarchical_block8/20261109T194554Z-98f3baf8/manifest.json",
+    "viewer_once_succeeded": true,
+    "viewer_imports_no_torch": true,
+    "active_checkout_modified": false,
+    "old_logs_estimate_only_observed_new_work": true
+  },
+  "research_work": {
+    "production_training_started": false,
+    "downloads_started": false,
+    "fixture_training_only": true,
+    "real_model_eta_accuracy": "unmeasured",
+    "gpu_performance_claims": null
+  }
+}

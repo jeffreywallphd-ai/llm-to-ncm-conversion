@@ -26,6 +26,7 @@ from ncm_lab.training.checkpoints import (
 from ncm_lab.training.losses import chunked_ce, auxiliary_loss, codec_loss
 from ncm_lab.training.optimizer import TiledAdamW
 from ncm_lab.stage3.schedule import Schedule
+from ncm_lab.monitoring.step_progress import StepEstimate, format_step
 
 CODEC = "hierarchical_block8_selected_codec_v1"
 EXPORT = "hierarchical_block8_generator_export_v1"
@@ -290,6 +291,7 @@ def _fit(
         select()
         checkpoint()
     model.train()
+    estimator = StepEstimate(policy.steps, state["step"])
     while state["step"] < policy.steps:
         optimizer.zero_grad()
         totals = {}
@@ -312,9 +314,11 @@ def _fit(
         )
         if state["step"] % policy.validation_interval == 0 or state["step"] == policy.steps:
             metric["dev_selection_loss"] = select()
+        metric["progress"] = estimator.advance(state["step"])
         charge_write(run, 4096)
         with (run.path / "metrics.jsonl").open("a") as stream:
             stream.write(json.dumps(metric, allow_nan=False) + "\n")
+        print(format_step(run.value["stage"], metric, policy.steps), flush=True)
         if (
             state["step"] % policy.checkpoint_interval == 0
             or state["step"] == policy.steps
