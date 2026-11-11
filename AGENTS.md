@@ -6,6 +6,8 @@ benchmark sweeps, remote provisioning, or submissions during planning/install.
 Every executable run needs finite per-run and aggregate phase work/storage budgets.
 Wall limits stay enabled by default. The real pilot explicitly disables run/phase
 clock enforcement while retaining elapsed observations and every non-time cap.
+The full Block8 launchers use four-hour inactivity checks by default with elapsed
+observations and finite non-time budgets.
 
 Keep reference tokens, true answer lengths/masks, teacher states and target codes
 outside the generator's prompt-only forward API. Keep whole conversation trees

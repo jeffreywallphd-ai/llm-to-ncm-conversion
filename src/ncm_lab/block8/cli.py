@@ -23,7 +23,6 @@ def add_arguments(parser):
 
 def dispatch(args):
     from ncm_lab.block8.config import resolve
-    from ncm_lab.block8.workflow import run_workflow
 
     if args.resume and args.config:
         raise ValueError("resume uses its immutable configuration")
@@ -42,8 +41,8 @@ def dispatch(args):
                 messages = json.loads(text)
     if (prompt is not None or messages is not None) and not (args.checkpoint or args.resume):
         raise ValueError("prompt inputs require an explicit block8 export")
-    return run_workflow(
-        None if args.resume else resolve(args.config),
+    settings = None if args.resume else resolve(args.config)
+    options = dict(
         resume=args.resume,
         experiment_dir=args.experiment_dir,
         execute=args.execute,
@@ -54,6 +53,18 @@ def dispatch(args):
         prompt=prompt,
         messages=messages,
     )
+    if args.execute:
+        from ncm_lab.block8.runtime import verify_settings
+        from ncm_lab.runtime.io import read
+
+        frozen = verify_settings(read(args.resume)) if args.resume else settings
+        if not frozen["budget"]["enforce_wall_time_limits"]:
+            from ncm_lab.block8.watchdog import supervise
+
+            return supervise(settings, options, frozen["resources"]["max_stall_seconds"])
+    from ncm_lab.block8.workflow import run_workflow
+
+    return run_workflow(settings, **options)
 
 
 def main(argv=None):

@@ -27,10 +27,25 @@ def prepare_fixture(fixture, path):
     )
 
 
-def test_parent_offsets_preserve_whole_answer_eos_and_do_not_duplicate_context(block8_fixture):
+def test_parent_offsets_preserve_whole_answer_eos_and_do_not_duplicate_context(block8_fixture, monkeypatch):
+    from ncm_lab.inference.export import fixture_tokenizer
+
+    tokenizer = fixture_tokenizer()
+    size_queries = 0
+
+    class CountingTokenizer:
+        chat_template = tokenizer.chat_template
+
+        def __len__(self):
+            nonlocal size_queries
+            size_queries += 1
+            return len(tokenizer)
+
+    monkeypatch.setattr("ncm_lab.block8.data.load_tokenizer", lambda spec: CountingTokenizer())
     f = block8_fixture
     result = prepare_fixture(f, f["folder"] / "prepared")
     assert result["status"] == "completed", result
+    assert size_queries == 1
     with closing(BlockDataset(checked(result["dataset"]), f["settings"])) as data:
         assert data.manifest["parents"] == dict(train=4, dev=4, test=4)
         assert data.manifest["views"] == dict(train=8, dev=8, test=8)

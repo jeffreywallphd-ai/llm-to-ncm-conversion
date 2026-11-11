@@ -1,5 +1,31 @@
 # Native implementation status
 
+## Block8 preparation vocabulary lookup — 2026-11-11
+
+Preparation caches the pinned tokenizer's full vocabulary size once and uses it
+to validate each token ID. The reported attempt reached its wall limit at 6,223
+parents with a vocabulary size lookup in the per-token loop. A local check of
+the cached tokenizer averaged 16.9 ms per lookup. The parent/offset fixture now
+checks the number of vocabulary size calls and continues to verify exact block
+offsets and EOS.
+
+The completed source-stage candidate and locked evaluation manifests can be
+passed to a fresh experiment after a preparation failure. A preparation-only
+experiment using those saved artifacts can be resumed at teacher features after
+its dataset is sealed.
+
+Full Block8 CLI launches now use a four-hour inactivity interval by default and
+record elapsed time for each attempt. Work, storage, write and retry allowances
+remain finite. The watchdog uses durable work and artifact counters and stage or
+checkpoint transitions. Cooperative stops close the attempt. Forced stops retain
+an inspection record associated with the last manifest snapshot.
+
+Validation: **574 passed, three optional CUDA skips** in the full offline CPU
+suite. Ruff and offline planning passed. The preparation-only run on the saved
+corpus advanced past 41,000 inspected parents with the new configuration.
+The saved failed-run metadata and ledger hashes, and its index size and mtime,
+match the pre-fix observations.
+
 ## Block8 raw preprocessing budget correction — 2026-11-10
 
 The reported source attempt stopped at 199,999,655 answer positions after

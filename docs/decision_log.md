@@ -474,3 +474,28 @@ in 725.01 seconds. Ten focused source-budget regressions, Ruff and offline plann
 passed. The original failed manifest, resolved settings, receipt, scan report and
 ledger bytes still match their saved hashes, and its index size/mtime is unchanged.
 See the [validation receipt](block8_source_budget_validation_2026-11-10.json).
+
+## 2026-11-11 — Cache the full tokenizer vocabulary size during Block8 preparation
+
+The completed source scan supplied 250,000 candidate records and 2,000 locked
+evaluation records. Preparation reached its 12-hour wall limit after charging
+6,223 parents and committing 5,509. The committed rows contained 2,728,996 token
+IDs. A bounded local check of 64 vocabulary size lookups on the cached pinned
+Qwen tokenizer averaged 16.9 ms per call, consistent with the observed runtime.
+The preparation loop previously made that lookup for each token ID.
+
+Read the full vocabulary size when loading the tokenizer and reuse it for the
+token bounds check. The full vocabulary includes added tokens. The parent/offset
+fixture verifies one size lookup alongside its existing EOS and block alignment
+assertions. A new preparation-only experiment uses the sealed source-stage
+artifacts from the stopped run to validate the full dataset under the fixed code.
+
+The operator requested progress-based supervision for long runs. Full Block8
+launches disable lifetime limits by default and compare durable work, writes and
+stage/checkpoint state every four hours. A stall requests cooperative closure and
+allows a bounded grace period before termination of the owned worker. Forced stop
+records preserve the exact manifest snapshot for the viewer and for recovery
+inspection. The configured work, storage, write and retry budgets still bound
+execution. The initial preparation validation inspected 36,308 parents in
+759 seconds before it was interrupted to validate the new policy with the same
+sealed source artifacts.

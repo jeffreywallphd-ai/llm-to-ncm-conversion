@@ -6,7 +6,7 @@ import shutil
 import time
 import uuid
 from ncm_lab.runtime.budget import Budget, Meter, BudgetStop
-from ncm_lab.runtime.io import canonical_hash, digest, read, reference, write_json
+from ncm_lab.runtime.io import canonical_hash, digest, read, reference, root, write_json
 from ncm_lab.stage1.io import WriteMeter
 
 
@@ -17,8 +17,13 @@ def checked(ref):
     return path
 
 
+def experiment_directory(path=None):
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
+    return Path(path or root() / "runs/hierarchical_block8" / stamp).resolve()
+
+
 class Attempt:
-    def __init__(self, experiment, action, settings):
+    def __init__(self, experiment, action, settings, *, stop_requested=None):
         self.experiment, self.action, self.settings = Path(experiment), action, settings
         self.id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:10]
         self.path = self.experiment / "attempts" / action / self.id
@@ -30,6 +35,16 @@ class Attempt:
         self.value = {**settings, "stage": "block8_" + action, "budget": budget}
         write_json(self.path / "resolved_config.json", self.value, exclusive=True)
         self.meter = Meter(Budget(**budget), self.path, self.experiment / "ledgers")
+        if stop_requested is not None:
+            check = self.meter.check
+
+            def check_with_watchdog():
+                if stop_requested():
+                    seconds = settings["resources"]["max_stall_seconds"]
+                    raise BudgetStop(f"Block8 watchdog detected no progress for {seconds} seconds")
+                check()
+
+            self.meter.check = check_with_watchdog
         disk_check = self.meter.check_disk
 
         def check_disk(additional=0):

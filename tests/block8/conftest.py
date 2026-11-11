@@ -78,6 +78,7 @@ def block8_fixture(tmp_path):
         )
     )
     cfg["budget"].update(
+        enforce_wall_time_limits=True,
         max_wall_seconds=120,
         max_phase_wall_seconds=360,
         max_storage_bytes=200000000,

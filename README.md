@@ -24,9 +24,11 @@ python -u scripts/run_block8.py --plan-only
 python -u scripts/run_block8.py --execute
 ```
 
-Execution needs verified local assets and finite per-stage budgets; wall limits
-are enabled by default. Use a fresh experiment: former custom block8 schemas and
-checkpoints are incompatible. Full-8B Spark fit, quality and speed remain unmeasured.
+Execution needs verified local assets and finite per-stage work and storage budgets.
+The full workflow checks for inactivity every four hours and allows continued work
+while the durable counters advance. Use a fresh experiment because former custom
+block8 schemas and checkpoints are incompatible. Full-8B Spark fit, quality and
+speed remain unmeasured.
 See the [hierarchical block guide](docs/block8.md) and
 [architecture plan](docs/hierarchical_block8_plan.md) for preparation, losses,
 cache semantics, recovery and the limits of the evidence.

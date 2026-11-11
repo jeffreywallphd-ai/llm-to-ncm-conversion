@@ -1,16 +1,14 @@
 """Source, teacher, codec, targets and hierarchical generator in explicit bounded stages."""
 
 from contextlib import closing
-from datetime import datetime, timezone
 from pathlib import Path
 import json
 import time
-import uuid
 from ncm_lab.block8.data import BlockDataset, import_tulu, prepare
-from ncm_lab.block8.runtime import Attempt, admission, checked, plan, seal_settings, verify_settings
+from ncm_lab.block8.runtime import Attempt, admission, checked, experiment_directory, plan, seal_settings, verify_settings
 from ncm_lab.runtime.budget import BudgetStop
 from ncm_lab.runtime.canvas_pipeline import exclusive_writer
-from ncm_lab.runtime.io import atomic_json, read, reference, root, write_json
+from ncm_lab.runtime.io import atomic_json, read, reference, write_json
 
 
 def generate_one(run, settings, selected, *, prompt=None, messages=None):
@@ -137,6 +135,7 @@ def run_workflow(
     messages=None,
     stop_after=None,
     stop_after_codec=None,
+    stop_requested=None,
 ):
     if not execute:
         if resume:
@@ -153,8 +152,7 @@ def run_workflow(
     else:
         if settings is None:
             raise ValueError("new block8 experiment needs resolved settings")
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
-        folder = Path(experiment_dir or root() / "runs/hierarchical_block8" / stamp).resolve()
+        folder = experiment_directory(experiment_dir)
         folder.mkdir(parents=True, exist_ok=False)
         path = folder / "manifest.json"
         state = seal_settings(folder, settings)
@@ -189,7 +187,7 @@ def run_workflow(
             save()
             run = None
             try:
-                run = Attempt(folder, action, settings)
+                run = Attempt(folder, action, settings, stop_requested=stop_requested)
                 run.meter.check_disk()
                 print(
                     json.dumps(dict(stage="block8_" + action, attempt=str(run.path)), allow_nan=False),

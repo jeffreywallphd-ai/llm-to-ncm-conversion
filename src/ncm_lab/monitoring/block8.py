@@ -141,7 +141,12 @@ class StepView:
         return result[-1:] if initial else result
 
     def poll(self):
-        state, _ = small_json(self.manifest)
+        state, payload = small_json(self.manifest)
+        stop_report = self.folder / "watchdog" / (hashlib.sha256(payload).hexdigest() + ".json")
+        if stop_report.is_file():
+            report, _ = small_json(stop_report)
+            self.emit(f"watchdog: {report['error']}")
+            return True
         for stage, value in state.get("stages", {}).items():
             status = value["status"]
             if self.last_stages.get(stage) != status:

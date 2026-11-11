@@ -48,6 +48,8 @@ def _prepare(run, settings, inputs):
         checked(ref)
     tokenizer_files = tokenizer_binding(settings["source"]["resolved_data"], settings["model"], run.meter)
     tokenizer = load_tokenizer(settings["model"])
+    # The full vocabulary includes added tokens and can be expensive to count.
+    vocabulary_size = len(tokenizer)
     template = canonical_hash(tokenizer.chat_template)
     folder = run.path / "dataset"
     folder.mkdir()
@@ -133,7 +135,7 @@ def _prepare(run, settings, inputs):
                 if len(example.answer_ids) > policy.max_answer_tokens:
                     excluded["answer_length"] += 1
                     continue
-                if any(i >= len(tokenizer) or i < 0 for i in example.prompt_ids + example.answer_ids):
+                if any(i >= vocabulary_size or i < 0 for i in example.prompt_ids + example.answer_ids):
                     raise ValueError("source token outside pinned tokenizer vocabulary")
                 payload = asdict(example)
                 encoded, logical = codec.encode(payload)

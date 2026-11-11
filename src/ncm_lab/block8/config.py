@@ -184,6 +184,7 @@ class Resources:
     max_attempts_per_stage: int = 3
     max_write_bytes: int = 6000000000000
     max_phase_write_bytes: int = 18000000000000
+    max_stall_seconds: int = 14400
 
     def __post_init__(self):
         for name, value in asdict(self).items():

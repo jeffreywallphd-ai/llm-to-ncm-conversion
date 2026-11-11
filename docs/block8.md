@@ -146,6 +146,12 @@ python -u scripts/run_block8.py --execute \
   --evaluation-manifest /ABS/LOCKED_TEST/manifest.json
 ```
 
+A completed source-stage receipt records the candidate and locked evaluation
+manifests as `data` and `evaluation`. These artifacts can supply a fresh
+experiment after a preparation failure and implementation update. Use
+`--prepare-only` to validate preparation before starting teacher features, then
+resume the resulting experiment with its sealed configuration.
+
 Generate with the selected hierarchical export, without teacher or codec allocation:
 
 ```bash
@@ -241,11 +247,21 @@ manifests before retirement. Failed attempts, pending writes, immutable settings
 aggregate charges remain. Teacher/target cache failures restart their owned stage
 under the same retry/work/storage accounting.
 
-Wall clocks are enabled by default for this new workflow: 12 hours per stage attempt,
-36 hours per stage phase, three attempts maximum, 500 GB retained per attempt and
-1.5 TB per stage phase. Cumulative write allowances are 6 TB per attempt / 18 TB per
-stage phase, alongside finite forward/token/position limits. These logical-write
-allowances include conservative page accounting, not physical device-wear measurements.
+The full Block8 launchers use progress supervision by default. They compare durable
+work counters, write counters, stage state and recovery pointers every four hours.
+An interval without an advance requests a budget stop at the next work check. The
+launcher terminates its worker if it remains unresponsive after a 30-second grace
+period. A forced stop records the observed manifest snapshot, and the monitor
+displays that record. The attempt's open ledger and locks support inspection before
+recovery. `resources.max_stall_seconds` configures the observation interval in a new
+experiment. The launchers retain elapsed observations, and a run that advances can
+continue beyond the former lifetime limits. An explicit `enforce_wall_time_limits`
+setting of `true` selects the configured finite wall-clock policy.
+
+Each stage allows three attempts, 500 GB retained per attempt and 1.5 TB per phase.
+Cumulative write allowances are 6 TB per attempt and 18 TB per phase, alongside
+finite forward, token and position limits. Logical writes include conservative
+page accounting.
 Source index (32 GB) and selected-cache (4 GB) allowances remain independent.
 
 Admission inventories the actual hierarchy for generator training, the native codec
@@ -281,10 +297,10 @@ token/answer-position caps are at least the base caps, and their aggregate phase
 caps cover the declared retry allowance. Larger explicit base caps are preserved.
 These conservative work allowances are not corpus-size or runtime predictions.
 
-Actual work stays fully charged. Row, payload, index, write, storage and clock caps
-remain enforced; wall/storage/canvas/write limits and model-training horizons are
-unchanged. The versioned `source_work_budget` and `preparation_work_budget` records
-explain the resolved allowances. A larger preprocessing allowance does not request
+Actual work stays fully charged under the row, payload, index, write and storage
+caps and the selected clock policy. The versioned `source_work_budget` and
+`preparation_work_budget` records explain the resolved allowances. A larger
+preprocessing allowance does not request
 additional training updates or admit overlength answers into the generator.
 
 After this correction, start a **fresh** experiment with `--execute`. Do not edit

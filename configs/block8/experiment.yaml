@@ -24,7 +24,7 @@
     "max_phase_canvas_positions": 600000000,
     "max_storage_bytes": 500000000000,
     "max_phase_storage_bytes": 1500000000000,
-    "enforce_wall_time_limits": true
+    "enforce_wall_time_limits": false
   },
   "source": {
     "config": "configs/stage3/source.yaml",
