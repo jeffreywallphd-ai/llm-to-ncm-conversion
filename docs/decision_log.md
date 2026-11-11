@@ -499,3 +499,11 @@ inspection. The configured work, storage, write and retry budgets still bound
 execution. The initial preparation validation inspected 36,308 parents in
 759 seconds before it was interrupted to validate the new policy with the same
 sealed source artifacts.
+
+## 2026-11-11 — Queue a Block8 resume behind the preparation writer
+
+The standalone Block8 launcher waits outside the supervised worker when a resume
+finds the experiment locked. It continues through the shared resume path after
+the owner releases the lock and preparation is complete. A watchdog stop or
+incomplete preparation ends the queued command with an error. Keeping the wait
+in the launcher preserves the package identity sealed by ongoing experiments.

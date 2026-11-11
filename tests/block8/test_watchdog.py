@@ -10,7 +10,8 @@ from ncm_lab.block8 import watchdog
 from ncm_lab.block8.config import resolve
 from ncm_lab.block8.runtime import checked
 from ncm_lab.monitoring.block8 import StepView
-from ncm_lab.runtime.io import atomic_json, read, root, write_json
+from ncm_lab.runtime.io import atomic_json, digest, read, root, write_json
+from scripts import run_block8 as launcher
 
 
 def test_full_block8_defaults_to_progress_based_supervision():
@@ -63,6 +64,60 @@ def test_normal_cli_prepares_a_dataset_in_a_supervised_worker(block8_fixture):
     assert receipt["wall_policy"]["numeric_wall_limits_active"] is False
     assert receipt["charged_work"]["steps"] == len(f["parents"])
     assert checked(receipt["result"]["dataset"]).is_file()
+
+
+def test_resume_launcher_waits_for_owner_then_reuses_sealed_preparation(block8_fixture, monkeypatch, capsys):
+    from ncm_lab.block8.workflow import run_workflow
+
+    f = block8_fixture
+    result = run_workflow(f["settings"], **options(f, "queued resume"))
+    assert result["status"] == "completed", result
+    manifest = Path(result["experiment"])
+    original = manifest.read_bytes()
+    lock = manifest.with_name("writer.lock")
+    lock.write_text("existing writer\n")
+    waits = []
+
+    def release_after_wait(seconds):
+        waits.append(seconds)
+        assert lock.read_text() == "existing writer\n"
+        lock.unlink()
+
+    monkeypatch.setattr(launcher, "sleep", release_after_wait)
+    assert launcher.main(["--resume", str(manifest), "--execute", "--prepare-only"]) == 0
+    assert len(waits) == 1
+    assert "Waiting for the current Block8 writer" in capsys.readouterr().err
+    assert manifest.read_bytes() == original
+
+
+@pytest.mark.parametrize("forced_stop", [False, True])
+def test_queued_resume_reports_incomplete_preparation(tmp_path, monkeypatch, capsys, forced_stop):
+    manifest = tmp_path / "manifest.json"
+    lock = tmp_path / "writer.lock"
+    write_json(manifest, {"stages": {"prepare": {"status": "running"}}})
+    lock.touch()
+    if forced_stop:
+        report = tmp_path / "watchdog" / f"{digest(manifest)}.json"
+        write_json(report, {"error": "Block8 watchdog stopped an unresponsive worker"})
+        monkeypatch.setattr(launcher, "sleep", lambda _: pytest.fail("waited after watchdog stop"))
+        error = "watchdog stopped an unresponsive worker"
+    else:
+        monkeypatch.setattr(launcher, "sleep", lambda _: lock.unlink())
+        error = "before preparation completed"
+    monkeypatch.setattr(launcher, "dispatch", lambda _: pytest.fail("resumed incomplete preparation"))
+    assert launcher.main(["--resume", str(manifest), "--execute"]) == 2
+    assert error in capsys.readouterr().out
+    assert lock.exists() == forced_stop
+
+
+def test_queued_generation_resumes_without_a_preparation_stage(tmp_path, monkeypatch):
+    manifest = tmp_path / "manifest.json"
+    lock = tmp_path / "writer.lock"
+    write_json(manifest, {"generation_export": {"manifest": "export.json"}})
+    lock.touch()
+    monkeypatch.setattr(launcher, "sleep", lambda _: lock.unlink())
+    monkeypatch.setattr(launcher, "dispatch", lambda _: {"status": "completed"})
+    assert launcher.main(["--resume", str(manifest), "--execute"]) == 0
 
 
 @pytest.fixture

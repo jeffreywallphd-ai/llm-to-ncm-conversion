@@ -21,8 +21,9 @@ checkpoint transitions. Cooperative stops close the attempt. Forced stops retain
 an inspection record associated with the last manifest snapshot.
 
 Validation: **574 passed, three optional CUDA skips** in the full offline CPU
-suite. Ruff and offline planning passed. The preparation-only run on the saved
-corpus advanced past 41,000 inspected parents with the new configuration.
+suite. Ruff and offline planning passed. The preparation-only run inspected all
+252,000 saved records and sealed its dataset. The queued resume waited for the
+writer to exit and reused the dataset from the original preparation attempt.
 The saved failed-run metadata and ledger hashes, and its index size and mtime,
 match the pre-fix observations.
 

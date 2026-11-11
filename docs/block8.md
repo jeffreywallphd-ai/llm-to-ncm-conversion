@@ -138,6 +138,11 @@ Resume that exact printed manifest to continue all remaining stages:
 python -u scripts/run_block8.py --resume /ABS/HIERARCHICAL_BLOCK8/manifest.json --execute
 ```
 
+If another process holds the writer lock, `run_block8.py --resume ... --execute`
+waits for that process to release it. The waiting command continues once
+preparation is complete. A watchdog stop record or incomplete preparation after
+release ends the wait with an error. Press `Ctrl+C` to cancel a queued resume.
+
 To reuse exact existing approved train/dev and locked evaluation artifacts:
 
 ```bash
