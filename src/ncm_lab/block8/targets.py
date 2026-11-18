@@ -40,6 +40,14 @@ class TensorWriter:
         )
         self.count, self.positions = {}, {}
 
+    def insert(self, key, split, length, file, checksum, dtype, width, parent_sha):
+        self.db.execute(
+            "INSERT INTO tensors VALUES(?,?,?,?,?,?,?,?)",
+            (key, split, length, file, checksum, dtype, width, parent_sha),
+        )
+        self.count[split] = self.count.get(split, 0) + 1
+        self.positions[split] = self.positions.get(split, 0) + length
+
     def append(self, key, parent, tensor):
         if (
             tensor.ndim != 2
@@ -53,22 +61,12 @@ class TensorWriter:
         with account(self.run.meter, file, tensor.numel() * tensor.element_size() + 65536):
             torch.save(tensor.detach().to("cpu").contiguous().clone(), file)
         charge_write(self.run, 16384)
-        self.db.execute(
-            "INSERT INTO tensors VALUES(?,?,?,?,?,?,?,?)",
-            (
-                key,
-                parent.split,
-                tensor.shape[0],
-                file.name,
-                digest(file, self.run.meter.check),
-                str(tensor.dtype).removeprefix("torch."),
-                tensor.shape[1],
-                parent.identity,
-            ),
+        self.insert(
+            key, parent.split, tensor.shape[0], file.name,
+            digest(file, self.run.meter.check), str(tensor.dtype).removeprefix("torch."),
+            tensor.shape[1], parent.identity,
         )
         self.db.commit()
-        self.count[parent.split] = self.count.get(parent.split, 0) + 1
-        self.positions[parent.split] = self.positions.get(parent.split, 0) + tensor.shape[0]
         self.run.meter.check_disk()
 
     def finish(self, extra=None):
@@ -201,7 +199,7 @@ def teacher_features(run, settings, data_ref):
         return dict(features=artifact, train_positions=positions, teacher_frozen=True)
 
 
-def targets(run, settings, data_ref, features_ref, codec_ref):
+def targets(run, settings, data_ref, features_ref, codec_ref, *, restore=None):
     from ncm_lab.block8.training import load_codec
 
     with (
@@ -225,7 +223,10 @@ def targets(run, settings, data_ref, features_ref, codec_ref):
         )
         cached = set(features.ids["train"] + features.ids["dev"])
         with closing(TensorWriter(run, settings, identity)) as writer, torch.no_grad():
+            restored = restore(writer, data) if restore is not None else set()
             for key in data.ids["train"] + data.ids["dev"]:
+                if key in restored:
+                    continue
                 parent = data.parent(key)
                 run.meter.charge(
                     source=len(parent.prompt_ids) + len(parent.answer_ids) - 1,

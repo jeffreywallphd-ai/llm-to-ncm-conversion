@@ -49,7 +49,7 @@ def load_original(spec, device="cpu", dtype=torch.float32, *, frozen):
     else:
         verify_cached_assets(spec)
         model = AutoModelForCausalLM.from_pretrained(
-            spec.get("path", spec["model_id"]),
+            cached_path(spec),
             revision=spec["revision"],
             local_files_only=True,
             trust_remote_code=False,
@@ -76,7 +76,7 @@ def load_tokenizer(spec):
 
         return fixture_tokenizer()
     return AutoTokenizer.from_pretrained(
-        spec.get("path", spec["model_id"]),
+        cached_path(spec),
         revision=spec["tokenizer_revision"],
         local_files_only=True,
         trust_remote_code=False,

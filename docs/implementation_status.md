@@ -1,5 +1,36 @@
 # Native implementation status
 
+## Block8 restart from a different terminal directory — 2026-11-18
+
+The real target cache completed with 219,014 train/dev tensors. Generator training
+logged 762 updates before interruption, with its complete recovery at step zero.
+The next restart failed during model loading because it interpreted the relative
+asset path against the terminal directory. Model and tokenizer loaders now use
+the absolute verified cache directory. The pinned real configuration and tokenizer
+loaded successfully from `/tmp` without network access or backbone allocation.
+The supported earlier producer passes the compatibility check with its original
+settings and completed dependency receipts.
+
+Validation recorded **588 passed and three optional CUDA skips** in the complete
+offline CPU suite. Ruff passed. Tests cover local loading from another working
+directory, resume with the prior sealed producer, unknown implementation rejection,
+executor provenance, and interrupted target-cache recovery.
+
+## Block8 target-cache backup and restart — 2026-11-16
+
+A local backup of the active target stage contains **186,509 committed tensors**
+and a consistent SQLite index. Every copied file matched its recorded hash. The
+recovery launcher can recover newer valid original entries too, with the backup
+as a fallback. The recovery fixture reused both sources, computed only missing
+targets, and continued through the regular generator workflow. A separate fixture
+verified recovery of a hot journal on a private copy. The live writer lock was
+left in place. Real resumed target computation remains to be observed after reboot.
+After the final backup budget guard, the Block8 suite and isolated process cleanup
+test recorded **50 passed and one CUDA skip**. Ruff passed. The wider offline
+suite had **581 passed, three skipped, and one process-cleanup race** where a
+child's `/proc` entry disappeared between existence check and read. That test
+passed on isolated rerun.
+
 ## Block8 preparation vocabulary lookup — 2026-11-11
 
 Preparation caches the pinned tokenizer's full vocabulary size once and uses it

@@ -507,3 +507,28 @@ finds the experiment locked. It continues through the shared resume path after
 the owner releases the lock and preparation is complete. A watchdog stop or
 incomplete preparation ends the queued command with an error. Keeping the wait
 in the launcher preserves the package identity sealed by ongoing experiments.
+
+## 2026-11-16 — Recover a partial Block8 target cache after an office reboot
+
+Copy committed per-parent target tensors and a consistent SQLite index into a
+separate local backup. Verify the stored hashes before publishing the snapshot.
+Recovery uses the newest valid rows from the original attempt and the backup,
+rolls back a hot SQLite journal on a private copy, and computes missing rows with
+the same frozen teacher and codec. A separate target attempt records its executor,
+linked inputs, and recovered rows. The original configuration and prior work charges
+remain sealed. The older workflow can reuse the completed target-stage handoff.
+
+## 2026-11-18 — Resolve cached assets consistently across resume terminals
+
+The reported generator restart verified Qwen assets against the repository root,
+then passed the raw relative model path to Transformers. A terminal opened outside
+the repository caused Transformers to treat the local path as a Hub identifier.
+Model and tokenizer loading now use the same absolute cached path as verification.
+
+The fixed implementation accepts the prior Block8 producer after reconstructing
+its package identity from the known earlier runtime, target writer and model
+loader files. Every remaining package file must match that predecessor. New
+attempts record their actual executor hash alongside the sealed producer hash.
+The original resolved settings, failed receipts and work ledgers stay preserved.
+The complete offline CPU suite passed with 588 cases and three CUDA skips.
+Ruff passed, and the real cached tokenizer/configuration loaded from `/tmp`.

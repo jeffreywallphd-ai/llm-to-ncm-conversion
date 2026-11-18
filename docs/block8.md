@@ -169,9 +169,10 @@ python -u scripts/run_block8.py --execute \
 creates a new explicit recipe. New runs live under `runs/hierarchical_block8/`.
 Old custom `block8_workflow_v1` configs/experiments/exports are incompatible and must
 remain on their old commit if needed. No migration or latest-run search is performed.
-Keep ongoing native experiments on their original checkout: implementation hashes
-change when this package/shared cache support changes. The native single-pass API,
-architecture and objectives otherwise remain separate.
+Ongoing experiments verify their implementation identity before resuming. The
+2026-11-18 path and cache recovery update accepts the earlier Block8 producer
+after verifying every unchanged package file against its original identity.
+Attempt receipts record both the sealed producer and the current executor.
 
 ## Step progress and remaining-time estimates
 
@@ -251,6 +252,23 @@ Retain two own recoveries and their referenced selected exports; publish replace
 manifests before retirement. Failed attempts, pending writes, immutable settings and
 aggregate charges remain. Teacher/target cache failures restart their owned stage
 under the same retry/work/storage accounting.
+
+For a planned reboot on Linux, the target stage has a separate recovery command.
+Use it while target generation is running to copy committed tensors and a consistent
+SQLite snapshot to another directory on the same filesystem.
+
+```bash
+python -u scripts/recover_block8_targets.py backup --experiment /ABS/EXPERIMENT/manifest.json --backup /ABS/BACKUP
+```
+
+After reboot and before starting a writer, run the command with `recover` in place
+of `backup`. It archives pre-boot locks, validates candidates from the original
+attempt and backup, and computes the remaining entries through the normal target
+writer. After it completes, run the usual Block8 resume command. The supported
+earlier producer can resume through the compatible implementation check.
+Recovery records its own executor and preserves the sealed settings,
+previous attempts, and phase ledgers. The backup depends on the run's prepared
+dataset, teacher features, and codec on disk.
 
 The full Block8 launchers use progress supervision by default. They compare durable
 work counters, write counters, stage state and recovery pointers every four hours.

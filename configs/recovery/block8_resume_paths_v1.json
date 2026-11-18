@@ -1,0 +1,5 @@
+{
+  "schema": "block8_resume_implementation_transition_v1",
+  "predecessor_implementation_sha256": "63e53b8db3387868b828fba6ff72ce715939cb97cb4c5566827e4e0d5af36ef3",
+  "successor_implementation_sha256": "32632b1fabb2cfaf5d9951b46d5f6c2176bcf8c53490e7b4b805aefb251f97c7"
+}

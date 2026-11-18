@@ -6,8 +6,15 @@ import shutil
 import time
 import uuid
 from ncm_lab.runtime.budget import Budget, Meter, BudgetStop
-from ncm_lab.runtime.io import canonical_hash, digest, read, reference, root, write_json
+from ncm_lab.runtime.io import canonical_hash, digest, implementation_hash, read, reference, root, write_json
 from ncm_lab.stage1.io import WriteMeter
+
+PREDECESSOR_IMPLEMENTATION = "63e53b8db3387868b828fba6ff72ce715939cb97cb4c5566827e4e0d5af36ef3"
+PREDECESSOR_FILES = {
+    "block8/runtime.py": "aab1e759c127534c71708330256fd7c3dc6b36a9a95bb96c29b3626630322c16",
+    "block8/targets.py": "f9509a9fecc367c5d82950102e62b9cb191dcbad90512f4b7d6be55ec8ba8be9",
+    "teacher/model.py": "5119fc2108d609bb2f7bf7976cb31cb48cb45cbd2809017265533030a13e04e9",
+}
 
 
 def checked(ref):
@@ -23,7 +30,7 @@ def experiment_directory(path=None):
 
 
 class Attempt:
-    def __init__(self, experiment, action, settings, *, stop_requested=None):
+    def __init__(self, experiment, action, settings, *, stop_requested=None, executor_sha256=None):
         self.experiment, self.action, self.settings = Path(experiment), action, settings
         self.id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:10]
         self.path = self.experiment / "attempts" / action / self.id
@@ -33,6 +40,10 @@ class Attempt:
             "phase_id": "block8-" + settings["identity"][:24] + "-" + action,
         }
         self.value = {**settings, "stage": "block8_" + action, "budget": budget}
+        if executor_sha256 is None and implementation_hash() != settings["implementation_sha256"]:
+            executor_sha256 = compatible_implementation(settings)
+        if executor_sha256 is not None:
+            self.value["executor_sha256"] = executor_sha256
         write_json(self.path / "resolved_config.json", self.value, exclusive=True)
         self.meter = Meter(Budget(**budget), self.path, self.experiment / "ledgers")
         if stop_requested is not None:
@@ -76,11 +87,13 @@ class Attempt:
             elapsed_seconds=time.perf_counter() - self.started,
             charged_work=self.meter.used,
             wall_policy=self.meter.wall_report(),
-            implementation_sha256=self.settings["implementation_sha256"],
+            implementation_sha256=self.value.get("executor_sha256", self.settings["implementation_sha256"]),
             resolved_config_sha256=digest(self.path / "resolved_config.json"),
             origin="software_fixture" if self.settings["model"].get("fixture") else "real_model",
             research_claims=[],
         )
+        if "executor_sha256" in self.value:
+            value["producer_implementation_sha256"] = self.settings["implementation_sha256"]
         write_json(self.path / "receipt.json", value, exclusive=True)
         return reference(self.path / "receipt.json")
 
@@ -255,9 +268,7 @@ def seal_settings(folder, settings):
     )
 
 
-def verify_settings(state):
-    from ncm_lab.runtime.io import implementation_hash
-
+def read_settings(state):
     if state.get("schema") != "hierarchical_block8_experiment_v1":
         raise ValueError("custom baseline experiments cannot resume as hierarchical block8")
     settings = read(checked(state["settings"]))
@@ -265,6 +276,32 @@ def verify_settings(state):
     if canonical_hash(settings) != identity or identity != state["configuration_identity"]:
         raise ValueError("block8 resolved configuration identity changed")
     settings["identity"] = identity
-    if implementation_hash() != settings["implementation_sha256"]:
+    return settings
+
+
+def compatible_implementation(settings):
+    current = implementation_hash()
+    if current == settings["implementation_sha256"]:
+        return current
+    package = Path(__file__).resolve().parents[1]
+    predecessor = canonical_hash([
+        (name, PREDECESSOR_FILES[name] if name in PREDECESSOR_FILES else digest(path))
+        for path in sorted(package.rglob("*.py"))
+        if (name := path.relative_to(package).as_posix()) != "block8/cache_recovery.py"
+    ])
+    if predecessor != PREDECESSOR_IMPLEMENTATION or settings["implementation_sha256"] != predecessor:
         raise ValueError("block8 implementation changed; preserve this experiment and start a fresh one")
+    transition = read(package.parents[1] / "configs/recovery/block8_resume_paths_v1.json")
+    if transition != dict(
+        schema="block8_resume_implementation_transition_v1",
+        predecessor_implementation_sha256=predecessor,
+        successor_implementation_sha256=current,
+    ):
+        raise ValueError("block8 implementation changed beyond the registered resume compatibility update")
+    return current
+
+
+def verify_settings(state):
+    settings = read_settings(state)
+    compatible_implementation(settings)
     return settings

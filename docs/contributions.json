@@ -45,5 +45,9 @@
   "block8_prepare_vocab_human_request": "User reported the preparation wall-budget stop and requested diagnosis, fix, tests, commit, main fast-forward and remote-main push.",
   "block8_prepare_vocab_ai_assistance": "Codex read-only stopped-run diagnosis, bounded local tokenizer lookup timing, cached vocabulary-size validation, regression coverage and a preparation-only validation experiment reusing the sealed source artifacts.",
   "block8_inactivity_human_request": "User requested that larger Block8 runs continue while making progress and proposed four-hour inactivity checks.",
-  "block8_inactivity_ai_assistance": "Codex Block8 launcher supervision using durable progress evidence, cooperative and forced-stop handling, sealed clock policy configuration, targeted fault-injection tests and operator documentation."
+  "block8_inactivity_ai_assistance": "Codex Block8 launcher supervision using durable progress evidence, cooperative and forced-stop handling, sealed clock policy configuration, targeted fault-injection tests and operator documentation.",
+  "block8_target_backup_human_request": "User requested a recoverable target-cache backup before a mandatory workstation update and reboot.",
+  "block8_target_backup_ai_assistance": "Codex copied and hash-verified a live target snapshot, implemented input-bound recovery and safe pre-boot lock handling, and exercised interrupted-cache recovery on CPU fixtures.",
+  "block8_resume_path_human_request": "User reported the generator resume asset-path failure and requested diagnosis, fix, tests, publication to main, and a terminal restart.",
+  "block8_resume_path_ai_assistance": "Codex resolved local model and tokenizer paths, added producer compatibility with executor provenance, verified real local configuration and tokenizer loading from another directory, and ran CPU resume and cache recovery regressions."
 }
